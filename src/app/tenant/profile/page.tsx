@@ -16,13 +16,21 @@ export default async function ProfilePage() {
 
   if (!rpUser) return <div>User not found</div>;
 
-  // Get lease info
-  const { data: leaseLink } = await supabase
+  // Get lease info — include active and draft (upcoming) leases
+  const { data: leaseLinks } = await supabase
     .from("rp_lease_tenants")
-    .select("lease_id")
+    .select("lease_id, rp_leases!inner(id, status)")
     .eq("user_id", rpUser.id)
-    .limit(1)
-    .single();
+    .in("rp_leases.status", ["active", "draft"]);
+
+  const sortedLinks = (leaseLinks ?? []).sort((a, b) => {
+    const aStatus = (a as any).rp_leases?.status ?? "";
+    const bStatus = (b as any).rp_leases?.status ?? "";
+    if (aStatus === "active" && bStatus !== "active") return -1;
+    if (bStatus === "active" && aStatus !== "active") return 1;
+    return 0;
+  });
+  const leaseLink = sortedLinks[0] ?? null;
 
   let lease = null;
   let property = null;
@@ -30,7 +38,7 @@ export default async function ProfilePage() {
   if (leaseLink) {
     const { data: leaseData } = await supabase
       .from("rp_leases")
-      .select("start_date, end_date, monthly_rent, currency_code")
+      .select("start_date, end_date, monthly_rent, currency_code, property_id")
       .eq("id", leaseLink.lease_id)
       .single();
     lease = leaseData;
@@ -39,7 +47,7 @@ export default async function ProfilePage() {
       const { data: propData } = await supabase
         .from("rp_properties")
         .select("address_line1, city, province_state, postal_code")
-        .eq("id", (await supabase.from("rp_leases").select("property_id").eq("id", leaseLink.lease_id).single()).data?.property_id ?? "")
+        .eq("id", lease.property_id)
         .single();
       property = propData;
     }

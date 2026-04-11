@@ -32,13 +32,22 @@ export default async function TenantDashboard() {
 
   if (!rpUser) return <div>User not found</div>;
 
-  // Fetch active lease via rp_lease_tenants
-  const { data: leaseLink } = await supabase
+  // Fetch lease via rp_lease_tenants — include active and draft (upcoming) leases
+  const { data: leaseLinks } = await supabase
     .from("rp_lease_tenants")
-    .select("lease_id")
+    .select("lease_id, rp_leases!inner(id, status)")
     .eq("user_id", rpUser.id)
-    .limit(1)
-    .single();
+    .in("rp_leases.status", ["active", "draft"]);
+
+  // Pick the first active lease, or fall back to draft
+  const sortedLinks = (leaseLinks ?? []).sort((a, b) => {
+    const aStatus = (a as any).rp_leases?.status ?? "";
+    const bStatus = (b as any).rp_leases?.status ?? "";
+    if (aStatus === "active" && bStatus !== "active") return -1;
+    if (bStatus === "active" && aStatus !== "active") return 1;
+    return 0;
+  });
+  const leaseLink = sortedLinks[0] ?? null;
 
   let lease = null;
   let property = null;
@@ -116,6 +125,18 @@ export default async function TenantDashboard() {
             ? "Partial"
             : "Settled";
 
+  // Contextual lease label
+  const now = new Date();
+  const leaseStartDate = lease ? new Date(lease.start_date) : null;
+  const leaseEndDate = lease ? new Date(lease.end_date) : null;
+  const leaseNotStarted = leaseStartDate && leaseStartDate > now;
+  const leaseEnded = leaseEndDate && leaseEndDate < now;
+  const leaseLabel = leaseNotStarted
+    ? "Upcoming Lease"
+    : leaseEnded
+      ? "Lease Ended"
+      : "Current Residence";
+
   return (
     <section className="space-y-8">
       {/* Hero + Rent Status */}
@@ -124,16 +145,34 @@ export default async function TenantDashboard() {
         <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-primary text-white p-8 md:p-10 flex flex-col justify-end min-h-[240px] md:min-h-[320px] shadow-ambient-lg">
           <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-container to-primary opacity-80" />
           <div className="relative z-10">
-            <span className="inline-block px-3 py-1 bg-secondary-fixed/20 text-secondary-fixed rounded-full text-xs font-bold uppercase tracking-widest mb-4">
-              Current Residence
+            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${
+              leaseNotStarted
+                ? "bg-primary-fixed/20 text-primary-fixed"
+                : leaseEnded
+                  ? "bg-error-container/20 text-error-container"
+                  : "bg-secondary-fixed/20 text-secondary-fixed"
+            }`}>
+              {leaseLabel}
             </span>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-2">
-              Welcome home, {rpUser.first_name}
+              Welcome{leaseEnded ? "" : " home"}, {rpUser.first_name}
             </h2>
             {property && (
               <p className="text-blue-100 text-base md:text-lg opacity-80 flex items-center gap-2">
                 <span className="material-symbols-outlined">apartment</span>
                 {address}
+              </p>
+            )}
+            {leaseNotStarted && leaseStartDate && (
+              <p className="text-blue-100 text-sm opacity-70 mt-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">event</span>
+                Lease starts <DateDisplay date={leaseStartDate} format="medium" /> — {Math.ceil((leaseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days away
+              </p>
+            )}
+            {leaseEnded && leaseEndDate && (
+              <p className="text-blue-100 text-sm opacity-70 mt-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">event_busy</span>
+                Lease ended <DateDisplay date={leaseEndDate} format="medium" />
               </p>
             )}
           </div>
@@ -239,31 +278,46 @@ export default async function TenantDashboard() {
             <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 border border-outline-variant/10 shadow-ambient-sm">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-headline font-bold text-lg">
-                  Lease Remaining
+                  {leaseNotStarted ? "Lease Starts" : "Lease Remaining"}
                 </h3>
                 <span className="text-xs font-bold text-on-surface-variant">
-                  Expires{" "}
-                  <DateDisplay date={lease.end_date} format="short" />
+                  {leaseNotStarted ? "Starts" : "Expires"}{" "}
+                  <DateDisplay date={leaseNotStarted ? lease.start_date : lease.end_date} format="short" />
                 </span>
               </div>
-              <div className="relative pt-1">
-                <div className="flex mb-2 items-center justify-between">
-                  <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-secondary bg-secondary-fixed">
-                    {daysRemaining > 0
-                      ? `${daysRemaining} Days Left`
-                      : "Expired"}
+              {leaseNotStarted && leaseStartDate ? (
+                <div className="text-center py-4">
+                  <span className="text-4xl font-headline font-black text-primary">
+                    {Math.ceil((leaseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))}
                   </span>
-                  <span className="text-xs font-semibold inline-block text-secondary">
-                    {leaseProgress}%
-                  </span>
+                  <p className="text-sm font-semibold text-on-surface-variant mt-1">days until move-in</p>
                 </div>
-                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-surface-container-high">
-                  <div
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-secondary transition-all duration-500"
-                    style={{ width: `${leaseProgress}%` }}
-                  />
+              ) : (
+                <div className="relative pt-1">
+                  <div className="flex mb-2 items-center justify-between">
+                    <span className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
+                      leaseEnded
+                        ? "text-error bg-error-container"
+                        : "text-secondary bg-secondary-fixed"
+                    }`}>
+                      {daysRemaining > 0
+                        ? `${daysRemaining} Days Left`
+                        : "Expired"}
+                    </span>
+                    <span className="text-xs font-semibold inline-block text-secondary">
+                      {leaseProgress}%
+                    </span>
+                  </div>
+                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-surface-container-high">
+                    <div
+                      className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ${
+                        leaseEnded ? "bg-error" : "bg-secondary"
+                      }`}
+                      style={{ width: `${leaseProgress}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

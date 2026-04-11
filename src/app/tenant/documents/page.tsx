@@ -33,13 +33,21 @@ export default async function DocumentsPage() {
 
   if (!rpUser) return <div>User not found</div>;
 
-  // Get lease
-  const { data: leaseLink } = await supabase
+  // Get lease — include active and draft (upcoming) leases
+  const { data: leaseLinks } = await supabase
     .from("rp_lease_tenants")
-    .select("lease_id")
+    .select("lease_id, rp_leases!inner(id, status)")
     .eq("user_id", rpUser.id)
-    .limit(1)
-    .single();
+    .in("rp_leases.status", ["active", "draft"]);
+
+  const sortedLinks = (leaseLinks ?? []).sort((a, b) => {
+    const aStatus = (a as any).rp_leases?.status ?? "";
+    const bStatus = (b as any).rp_leases?.status ?? "";
+    if (aStatus === "active" && bStatus !== "active") return -1;
+    if (bStatus === "active" && aStatus !== "active") return 1;
+    return 0;
+  });
+  const leaseLink = sortedLinks[0] ?? null;
 
   let documents: Array<{
     id: string;
