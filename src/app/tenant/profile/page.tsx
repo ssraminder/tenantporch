@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { DateDisplay } from "@/components/shared/date-display";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { ProfileForm } from "./profile-form";
+import { getLeaseDisplayStatus } from "@/lib/lease-utils";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -38,7 +40,7 @@ export default async function ProfilePage() {
   if (leaseLink) {
     const { data: leaseData } = await supabase
       .from("rp_leases")
-      .select("start_date, end_date, monthly_rent, currency_code, property_id")
+      .select("start_date, end_date, monthly_rent, currency_code, property_id, status")
       .eq("id", leaseLink.lease_id)
       .single();
     lease = leaseData;
@@ -52,6 +54,8 @@ export default async function ProfilePage() {
       property = propData;
     }
   }
+
+  const leaseDisplayStatus = lease ? getLeaseDisplayStatus(lease) : null;
 
   return (
     <section className="space-y-8">
@@ -86,7 +90,12 @@ export default async function ProfilePage() {
               {property && (
                 <div className="flex flex-col">
                   <span className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">
-                    Current Residence
+                    {leaseDisplayStatus?.key === "upcoming_lease"
+                      ? "Upcoming Residence"
+                      : leaseDisplayStatus?.key === "expired" ||
+                          leaseDisplayStatus?.key === "terminated"
+                        ? "Previous Residence"
+                        : "Current Residence"}
                   </span>
                   <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
                     <span className="material-symbols-outlined text-primary-container">
@@ -129,9 +138,14 @@ export default async function ProfilePage() {
 
               {lease && (
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">
-                    Lease Term
-                  </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] uppercase tracking-widest text-on-surface-variant">
+                      Lease Term
+                    </span>
+                    {leaseDisplayStatus && (
+                      <StatusBadge status={leaseDisplayStatus.label} />
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
                     <span className="material-symbols-outlined text-primary-container">
                       event

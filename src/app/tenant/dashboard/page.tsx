@@ -4,6 +4,12 @@ import { formatCurrency } from "@/lib/currency";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
 import { RentCountdown } from "@/components/shared/rent-countdown";
+import {
+  getLeaseDisplayStatus,
+  getLeaseHeroLabel,
+  getTodayDateString,
+  daysBetween,
+} from "@/lib/lease-utils";
 
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   rent_due: { icon: "payments", color: "bg-secondary" },
@@ -90,52 +96,80 @@ export default async function TenantDashboard() {
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // Calculate lease countdown
-  const daysRemaining = lease
-    ? Math.ceil(
-        (new Date(lease.end_date).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+  // ─── Lease display status (timezone-safe) ───
+  const leaseDisplayStatus = lease
+    ? getLeaseDisplayStatus(lease)
+    : null;
+  const heroLabel = lease
+    ? getLeaseHeroLabel(lease)
+    : null;
+
+  // ─── Lease countdown (timezone-safe) ───
+  const today = getTodayDateString();
+  const daysRemaining = lease?.end_date
+    ? daysBetween(today, lease.end_date)
     : 0;
-  const totalDays = lease
-    ? Math.ceil(
-        (new Date(lease.end_date).getTime() -
-          new Date(lease.start_date).getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
-    : 1;
+  const totalDays =
+    lease?.start_date && lease?.end_date
+      ? daysBetween(lease.start_date, lease.end_date)
+      : 1;
   const leaseProgress = lease
-    ? Math.min(100, Math.max(0, Math.round(((totalDays - daysRemaining) / totalDays) * 100)))
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(((totalDays - Math.max(0, daysRemaining)) / totalDays) * 100)
+        )
+      )
     : 0;
 
   const address = property
     ? `${property.address_line1}${property.address_line2 ? `, ${property.address_line2}` : ""}, ${property.city}, ${property.province_state} ${property.postal_code}`
     : "";
 
-  // Rent status
-  const rentStatus = currentRent?.status ?? "upcoming";
-  const rentStatusLabel =
-    rentStatus === "upcoming"
-      ? "Upcoming"
-      : rentStatus === "due"
-        ? "Due"
-        : rentStatus === "overdue"
-          ? "Overdue"
-          : rentStatus === "partial"
-            ? "Partial"
-            : "Settled";
+  // ─── Rent display values ───
+  const currency = lease?.currency_code ?? "CAD";
+  const isLeaseEnded =
+    leaseDisplayStatus?.key === "expired" ||
+    leaseDisplayStatus?.key === "terminated";
+  const isLeaseUpcoming =
+    leaseDisplayStatus?.key === "upcoming_lease" ||
+    leaseDisplayStatus?.key === "draft";
 
-  // Contextual lease label
-  const now = new Date();
-  const leaseStartDate = lease ? new Date(lease.start_date) : null;
-  const leaseEndDate = lease ? new Date(lease.end_date) : null;
-  const leaseNotStarted = leaseStartDate && leaseStartDate > now;
-  const leaseEnded = leaseEndDate && leaseEndDate < now;
-  const leaseLabel = leaseNotStarted
-    ? "Upcoming Lease"
-    : leaseEnded
-      ? "Lease Ended"
-      : "Current Residence";
+  // Amount: for upcoming/draft use monthly_rent; for active use rent schedule; for ended show 0
+  const rentDisplayAmount = isLeaseEnded
+    ? 0
+    : Number(currentRent?.amount_due ?? lease?.monthly_rent ?? 0);
+
+  // Rent status label
+  const rentStatusLabel = isLeaseEnded
+    ? "Ended"
+    : isLeaseUpcoming
+      ? "Upcoming"
+      : currentRent?.status === "due"
+        ? "Due"
+        : currentRent?.status === "overdue"
+          ? "Overdue"
+          : currentRent?.status === "partial"
+            ? "Partial"
+            : "Upcoming";
+
+  // Hero badge color
+  const heroBadgeClass = (() => {
+    switch (leaseDisplayStatus?.key) {
+      case "draft":
+        return "bg-surface-variant/20 text-on-surface-variant";
+      case "upcoming_lease":
+        return "bg-primary-fixed/20 text-primary-fixed";
+      case "expiring_soon":
+        return "bg-secondary-fixed/20 text-secondary-fixed";
+      case "expired":
+      case "terminated":
+        return "bg-error-container/20 text-error-container";
+      default:
+        return "bg-secondary-fixed/20 text-secondary-fixed";
+    }
+  })();
 
   return (
     <section className="space-y-8">
@@ -145,17 +179,16 @@ export default async function TenantDashboard() {
         <div className="lg:col-span-8 relative overflow-hidden rounded-3xl bg-primary text-white p-8 md:p-10 flex flex-col justify-end min-h-[240px] md:min-h-[320px] shadow-ambient-lg">
           <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-container to-primary opacity-80" />
           <div className="relative z-10">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${
-              leaseNotStarted
-                ? "bg-primary-fixed/20 text-primary-fixed"
-                : leaseEnded
-                  ? "bg-error-container/20 text-error-container"
-                  : "bg-secondary-fixed/20 text-secondary-fixed"
-            }`}>
-              {leaseLabel}
-            </span>
+            {heroLabel && (
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${heroBadgeClass}`}
+              >
+                {heroLabel.heading}
+              </span>
+            )}
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-2">
-              Welcome{leaseEnded ? "" : " home"}, {rpUser.first_name}
+              Welcome{heroLabel?.showWelcomeHome ? " home" : ""},{" "}
+              {rpUser.first_name}
             </h2>
             {property && (
               <p className="text-blue-100 text-base md:text-lg opacity-80 flex items-center gap-2">
@@ -163,16 +196,10 @@ export default async function TenantDashboard() {
                 {address}
               </p>
             )}
-            {leaseNotStarted && leaseStartDate && (
+            {heroLabel?.sublabel && (
               <p className="text-blue-100 text-sm opacity-70 mt-2 flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">event</span>
-                Lease starts <DateDisplay date={leaseStartDate} format="medium" /> — {Math.ceil((leaseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))} days away
-              </p>
-            )}
-            {leaseEnded && leaseEndDate && (
-              <p className="text-blue-100 text-sm opacity-70 mt-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">event_busy</span>
-                Lease ended <DateDisplay date={leaseEndDate} format="medium" />
+                {heroLabel.sublabel}
               </p>
             )}
           </div>
@@ -186,40 +213,68 @@ export default async function TenantDashboard() {
               <h3 className="font-headline font-bold text-xl">Monthly Rent</h3>
               <StatusBadge status={rentStatusLabel} />
             </div>
-            <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-sm font-medium text-on-surface-variant">
-                {lease?.currency_code ?? "CAD"}
-              </span>
-              <span className="text-3xl md:text-4xl font-extrabold text-primary">
-                {formatCurrency(
-                  Number(currentRent?.amount_due ?? lease?.monthly_rent ?? 0),
-                  lease?.currency_code ?? "CAD"
-                )}
-              </span>
-            </div>
-            {currentRent && (
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-on-surface-variant font-medium">
-                  Due:{" "}
-                  <DateDisplay date={currentRent.due_date} format="medium" />
+
+            {isLeaseEnded ? (
+              /* Expired / terminated — no rent due */
+              <div className="py-4">
+                <p className="text-lg font-bold text-on-surface-variant">
+                  No rent due
                 </p>
-                <span className="text-on-surface-variant">·</span>
-                <RentCountdown dueDate={currentRent.due_date} />
+                <p className="text-sm text-on-surface-variant mt-1">
+                  Lease has ended
+                </p>
               </div>
+            ) : (
+              /* Active / upcoming / draft — show amount */
+              <>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-sm font-medium text-on-surface-variant">
+                    {currency}
+                  </span>
+                  <span className="text-3xl md:text-4xl font-extrabold text-primary">
+                    {formatCurrency(rentDisplayAmount, currency)}
+                  </span>
+                </div>
+                {isLeaseUpcoming && currentRent ? (
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">
+                    First rent due:{" "}
+                    <DateDisplay date={currentRent.due_date} format="medium" />
+                  </p>
+                ) : isLeaseUpcoming && lease ? (
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">
+                    First rent due:{" "}
+                    <DateDisplay date={lease.start_date} format="medium" />
+                  </p>
+                ) : currentRent ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm text-on-surface-variant font-medium">
+                      Due:{" "}
+                      <DateDisplay
+                        date={currentRent.due_date}
+                        format="medium"
+                      />
+                    </p>
+                    <span className="text-on-surface-variant">&middot;</span>
+                    <RentCountdown dueDate={currentRent.due_date} />
+                  </div>
+                ) : null}
+              </>
             )}
           </div>
-          <Link
-            href="/tenant/payments"
-            className="mt-6 w-full py-4 bg-secondary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95"
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontVariationSettings: "'FILL' 1" }}
+          {!isLeaseEnded && (
+            <Link
+              href="/tenant/payments"
+              className="mt-6 w-full py-4 bg-secondary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95"
             >
-              account_balance_wallet
-            </span>
-            Pay Rent Now
-          </Link>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                account_balance_wallet
+              </span>
+              Pay Rent Now
+            </Link>
+          )}
         </div>
       </div>
 
@@ -274,32 +329,52 @@ export default async function TenantDashboard() {
         {/* Right Column */}
         <div className="lg:col-span-5 space-y-6">
           {/* Lease Countdown */}
-          {lease && (
+          {lease && leaseDisplayStatus && (
             <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 border border-outline-variant/10 shadow-ambient-sm">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-headline font-bold text-lg">
-                  {leaseNotStarted ? "Lease Starts" : "Lease Remaining"}
+                  {leaseDisplayStatus.key === "upcoming_lease" ||
+                  leaseDisplayStatus.key === "draft"
+                    ? "Lease Starts"
+                    : "Lease Remaining"}
                 </h3>
                 <span className="text-xs font-bold text-on-surface-variant">
-                  {leaseNotStarted ? "Starts" : "Expires"}{" "}
-                  <DateDisplay date={leaseNotStarted ? lease.start_date : lease.end_date} format="short" />
+                  {leaseDisplayStatus.key === "upcoming_lease" ||
+                  leaseDisplayStatus.key === "draft"
+                    ? "Starts"
+                    : "Expires"}{" "}
+                  <DateDisplay
+                    date={
+                      leaseDisplayStatus.key === "upcoming_lease" ||
+                      leaseDisplayStatus.key === "draft"
+                        ? lease.start_date
+                        : lease.end_date ?? lease.start_date
+                    }
+                    format="short"
+                  />
                 </span>
               </div>
-              {leaseNotStarted && leaseStartDate ? (
+
+              {leaseDisplayStatus.key === "upcoming_lease" ||
+              leaseDisplayStatus.key === "draft" ? (
                 <div className="text-center py-4">
                   <span className="text-4xl font-headline font-black text-primary">
-                    {Math.ceil((leaseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))}
+                    {daysBetween(today, lease.start_date)}
                   </span>
-                  <p className="text-sm font-semibold text-on-surface-variant mt-1">days until move-in</p>
+                  <p className="text-sm font-semibold text-on-surface-variant mt-1">
+                    days until move-in
+                  </p>
                 </div>
               ) : (
                 <div className="relative pt-1">
                   <div className="flex mb-2 items-center justify-between">
-                    <span className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
-                      leaseEnded
-                        ? "text-error bg-error-container"
-                        : "text-secondary bg-secondary-fixed"
-                    }`}>
+                    <span
+                      className={`text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${
+                        isLeaseEnded
+                          ? "text-error bg-error-container"
+                          : "text-secondary bg-secondary-fixed"
+                      }`}
+                    >
                       {daysRemaining > 0
                         ? `${daysRemaining} Days Left`
                         : "Expired"}
@@ -311,7 +386,7 @@ export default async function TenantDashboard() {
                   <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-surface-container-high">
                     <div
                       className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ${
-                        leaseEnded ? "bg-error" : "bg-secondary"
+                        isLeaseEnded ? "bg-error" : "bg-secondary"
                       }`}
                       style={{ width: `${leaseProgress}%` }}
                     />

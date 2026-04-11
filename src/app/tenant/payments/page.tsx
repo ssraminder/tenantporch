@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaymentMethodBadge } from "@/components/shared/payment-method-badge";
 import { DateDisplay } from "@/components/shared/date-display";
 import { RentCountdown } from "@/components/shared/rent-countdown";
+import { getLeaseDisplayStatus } from "@/lib/lease-utils";
 
 export default async function PaymentsPage() {
   const supabase = await createClient();
@@ -76,12 +77,27 @@ export default async function PaymentsPage() {
     ["upcoming", "due", "overdue", "partial"].includes(r.status)
   );
 
+  // ─── Fix: Use amount_due (NOT balance_owing) for current balance ───
   const currentBalance = (rentSchedule ?? [])
     .filter((r) => ["due", "overdue", "partial"].includes(r.status))
-    .reduce((sum, r) => sum + Number(r.balance_owing), 0);
+    .reduce((sum, r) => sum + Number(r.amount_due ?? 0) - Number(r.amount_paid ?? 0), 0);
 
   const surcharge = Number(lease?.card_surcharge_percent ?? 0);
   const currency = lease?.currency_code ?? "CAD";
+
+  // ─── Lease display status ───
+  const leaseDisplayStatus = lease ? getLeaseDisplayStatus(lease) : null;
+  const isLeaseEnded =
+    leaseDisplayStatus?.key === "expired" ||
+    leaseDisplayStatus?.key === "terminated";
+  const isLeaseUpcoming =
+    leaseDisplayStatus?.key === "upcoming_lease" ||
+    leaseDisplayStatus?.key === "draft";
+
+  // ─── Fix: Display amount uses amount_due, falls back to monthly_rent ───
+  const displayAmount = Number(
+    nextDue?.amount_due ?? lease?.monthly_rent ?? 0
+  );
 
   let landlordEmail = "";
   if (property?.landlord_id) {
@@ -109,21 +125,39 @@ export default async function PaymentsPage() {
         <div className="col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-xl p-6 md:p-8 shadow-ambient-sm flex flex-col justify-between border-l-4 border-secondary">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-              Current Balance
+              {isLeaseEnded ? "Lease Status" : "Current Balance"}
             </span>
-            <div className="flex items-baseline gap-1 mt-2">
-              <span className="text-sm font-bold text-secondary">{currency}</span>
-              <h3 className="text-3xl md:text-4xl font-headline font-black text-primary tracking-tighter">
-                {formatCurrency(currentBalance, currency)}
-              </h3>
-            </div>
-            {nextDue && (
-              <div className="mt-1">
-                <p className="text-xs text-on-surface-variant">
-                  Due: <DateDisplay date={nextDue.due_date} format="medium" />
-                </p>
-                <RentCountdown dueDate={nextDue.due_date} className="mt-1" />
+
+            {isLeaseEnded ? (
+              <div className="mt-4">
+                <p className="text-lg font-bold text-on-surface-variant">No rent due</p>
+                <p className="text-xs text-on-surface-variant mt-1">Lease has ended</p>
               </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-1 mt-2">
+                  <span className="text-sm font-bold text-secondary">{currency}</span>
+                  <h3 className="text-3xl md:text-4xl font-headline font-black text-primary tracking-tighter">
+                    {formatCurrency(isLeaseUpcoming ? displayAmount : currentBalance, currency)}
+                  </h3>
+                </div>
+                {isLeaseUpcoming ? (
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    First rent due:{" "}
+                    <DateDisplay
+                      date={nextDue?.due_date ?? lease!.start_date}
+                      format="medium"
+                    />
+                  </p>
+                ) : nextDue ? (
+                  <div className="mt-1">
+                    <p className="text-xs text-on-surface-variant">
+                      Due: <DateDisplay date={nextDue.due_date} format="medium" />
+                    </p>
+                    <RentCountdown dueDate={nextDue.due_date} className="mt-1" />
+                  </div>
+                ) : null}
+              </>
             )}
           </div>
           <div className="mt-6 h-16 w-full flex items-end gap-1">
@@ -149,79 +183,100 @@ export default async function PaymentsPage() {
               Secure Payment
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">Payment Amount</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="text-on-surface-variant font-bold">{currency} $</span>
-                  </div>
-                  <div className="w-full pl-16 pr-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-lg font-headline font-bold text-primary">
-                    {formatCurrency(Number(nextDue?.balance_owing ?? lease?.monthly_rent ?? 0), currency).replace(/^\$/, "").replace(/^CA\$/, "")}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3 mt-4">
-                <p className="text-xs font-bold text-on-surface-variant uppercase">Available Methods</p>
-                {/* E-Transfer */}
-                <div className="p-4 bg-surface-bright border-2 border-secondary rounded-xl">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="material-symbols-outlined text-secondary">swap_horiz</span>
-                    <div>
-                      <span className="text-sm font-bold text-primary">Interac E-Transfer</span>
-                      <span className="block text-[10px] text-tertiary-fixed-dim uppercase font-bold">No Surcharge</span>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-surface-container-low rounded-lg text-xs text-on-surface-variant space-y-1">
-                    <p>Send to: <span className="font-bold text-primary">{landlordEmail}</span></p>
-                    <p>Memo: <span className="font-bold text-primary">
-                      {property?.address_line1} - {nextDue ? new Date(nextDue.due_date).toLocaleDateString("en-CA", { month: "long", year: "numeric" }) : "Rent"}
-                    </span></p>
-                  </div>
-                </div>
-                {/* Card */}
-                <div className="p-4 bg-surface-container-low border border-outline-variant/10 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-outline-variant">credit_card</span>
-                    <div>
-                      <span className="text-sm font-bold text-primary">Credit / Debit Card</span>
-                      {surcharge > 0 && (
-                        <span className="block text-[10px] text-on-surface-variant font-medium">+{surcharge}% Processing Fee</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Order Summary */}
-            <div className="bg-primary text-white rounded-2xl p-6 md:p-8 flex flex-col justify-between shadow-ambient-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-              <div className="space-y-4 relative z-10">
-                <h5 className="text-sm font-bold text-blue-200/50 uppercase tracking-widest">Order Summary</h5>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-blue-100/70 text-sm">Rent Amount</span>
-                  <span className="font-bold">{formatCurrency(Number(lease?.monthly_rent ?? 0), currency)}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-t border-white/10">
-                  <span className="text-blue-100/70 text-sm">Surcharge ({surcharge}%)</span>
-                  <span className="font-bold">{formatCurrency(0, currency)}</span>
-                </div>
-                <div className="flex justify-between items-center py-4 border-t border-white/20 mt-4">
-                  <span className="text-white font-black text-lg">Total</span>
-                  <span className="text-2xl font-black text-secondary-fixed-dim">
-                    {formatCurrency(Number(lease?.monthly_rent ?? 0), currency)}
-                  </span>
-                </div>
-              </div>
-              <button className="w-full bg-secondary-fixed text-on-secondary-fixed py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all mt-6 relative z-10 shadow-lg shadow-black/40">
-                Process Payment
-              </button>
-              <p className="text-[10px] text-center text-blue-200/40 mt-4 font-medium italic">
-                Payments are protected by 256-bit SSL encryption
+
+          {isLeaseEnded ? (
+            <div className="text-center py-12">
+              <span className="material-symbols-outlined text-4xl text-outline-variant mb-3 block">
+                check_circle
+              </span>
+              <p className="text-on-surface-variant font-medium">
+                Your lease has ended. No payments are due.
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">Payment Amount</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="text-on-surface-variant font-bold">{currency} $</span>
+                    </div>
+                    <div className="w-full pl-16 pr-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-lg font-headline font-bold text-primary">
+                      {formatCurrency(displayAmount, currency)
+                        .replace(/^\$/, "")
+                        .replace(/^CA\$/, "")}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3 mt-4">
+                  <p className="text-xs font-bold text-on-surface-variant uppercase">Available Methods</p>
+                  {/* E-Transfer */}
+                  <div className="p-4 bg-surface-bright border-2 border-secondary rounded-xl">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="material-symbols-outlined text-secondary">swap_horiz</span>
+                      <div>
+                        <span className="text-sm font-bold text-primary">Interac E-Transfer</span>
+                        <span className="block text-[10px] text-tertiary-fixed-dim uppercase font-bold">No Surcharge</span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-surface-container-low rounded-lg text-xs text-on-surface-variant space-y-1">
+                      <p>Send to: <span className="font-bold text-primary">{landlordEmail}</span></p>
+                      <p>Memo: <span className="font-bold text-primary">
+                        {property?.address_line1} -{" "}
+                        {nextDue
+                          ? new Date(nextDue.due_date).toLocaleDateString("en-CA", {
+                              month: "long",
+                              year: "numeric",
+                              timeZone: "America/Edmonton",
+                            })
+                          : "Rent"}
+                      </span></p>
+                    </div>
+                  </div>
+                  {/* Card */}
+                  <div className="p-4 bg-surface-container-low border border-outline-variant/10 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-outline-variant">credit_card</span>
+                      <div>
+                        <span className="text-sm font-bold text-primary">Credit / Debit Card</span>
+                        {surcharge > 0 && (
+                          <span className="block text-[10px] text-on-surface-variant font-medium">+{surcharge}% Processing Fee</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Order Summary */}
+              <div className="bg-primary text-white rounded-2xl p-6 md:p-8 flex flex-col justify-between shadow-ambient-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-secondary opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+                <div className="space-y-4 relative z-10">
+                  <h5 className="text-sm font-bold text-blue-200/50 uppercase tracking-widest">Order Summary</h5>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-blue-100/70 text-sm">Rent Amount</span>
+                    <span className="font-bold">{formatCurrency(displayAmount, currency)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-t border-white/10">
+                    <span className="text-blue-100/70 text-sm">Surcharge ({surcharge}%)</span>
+                    <span className="font-bold">{formatCurrency(0, currency)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-4 border-t border-white/20 mt-4">
+                    <span className="text-white font-black text-lg">Total</span>
+                    <span className="text-2xl font-black text-secondary-fixed-dim">
+                      {formatCurrency(displayAmount, currency)}
+                    </span>
+                  </div>
+                </div>
+                <button className="w-full bg-secondary-fixed text-on-secondary-fixed py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all mt-6 relative z-10 shadow-lg shadow-black/40">
+                  Process Payment
+                </button>
+                <p className="text-[10px] text-center text-blue-200/40 mt-4 font-medium italic">
+                  Payments are protected by 256-bit SSL encryption
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Transaction History */}
