@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { Navbar } from "@/components/landing/navbar";
+import { Hero } from "@/components/landing/hero";
+import { Features } from "@/components/landing/features";
+import { PricingSlider, type Plan } from "@/components/landing/pricing-slider";
+import { Testimonials } from "@/components/landing/testimonials";
+import { Footer } from "@/components/landing/footer";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -8,6 +13,7 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Redirect authenticated users to their dashboard
   if (user) {
     const { data: rpUser } = await supabase
       .from("rp_users")
@@ -19,31 +25,57 @@ export default async function Home() {
     if (rpUser) redirect("/tenant/dashboard");
   }
 
+  // Fetch plans for pricing section
+  const { data: plansRaw } = await supabase
+    .from("rp_plans")
+    .select(
+      "id, slug, name, per_unit_price, min_properties, max_properties, features, card_surcharge_percent"
+    )
+    .eq("is_active", true)
+    .order("sort_order");
+
+  const plans: Plan[] = (plansRaw ?? []).map((p) => ({
+    ...p,
+    per_unit_price: Number(p.per_unit_price),
+    card_surcharge_percent: Number(p.card_surcharge_percent),
+  }));
+
   return (
-    <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-4">
-      <div className="text-center max-w-xl">
-        <h1 className="font-headline text-5xl md:text-6xl font-extrabold text-primary italic mb-4">
-          TenantPorch
-        </h1>
-        <p className="text-on-surface-variant text-lg mb-8">
-          Your front porch to smarter renting. Canadian rental property
-          management made simple.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link
-            href="/login"
-            className="px-8 py-3 bg-primary text-on-primary font-bold rounded-xl hover:opacity-90 transition-all"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="px-8 py-3 bg-secondary-fixed text-on-secondary-fixed font-bold rounded-xl hover:bg-secondary-fixed-dim transition-all"
-          >
-            Get Started
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-surface">
+      <Navbar />
+
+      <main className="pt-16">
+        <Hero />
+
+        {/* Social proof */}
+        <section className="py-10 md:py-12 bg-surface-container-low">
+          <div className="max-w-7xl mx-auto px-6">
+            <p className="text-center text-on-surface-variant font-medium mb-6 md:mb-8 text-sm">
+              Trusted by 200+ Canadian landlords across the provinces
+            </p>
+            <div className="flex flex-wrap justify-center gap-8 md:gap-12 opacity-40 grayscale">
+              {["METROBASE", "MAPLEHOUSING", "CDNPROPS", "LAKEVIEW MGMT"].map(
+                (name) => (
+                  <div
+                    key={name}
+                    className="text-lg md:text-2xl font-black italic tracking-tighter text-on-surface"
+                  >
+                    {name}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </section>
+
+        <Features />
+
+        <PricingSlider plans={plans} />
+
+        <Testimonials />
+      </main>
+
+      <Footer />
     </div>
   );
 }
