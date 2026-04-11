@@ -13,7 +13,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -25,6 +25,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Refresh the session — this is the primary purpose of the middleware
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -37,6 +38,7 @@ export async function updateSession(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
 
+  // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -44,44 +46,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (pathname === "/login" || pathname === "/signup")) {
-    // Fetch user role to redirect appropriately
-    const { data: rpUser } = await supabase
-      .from("rp_users")
-      .select("role")
-      .eq("auth_id", user.id)
-      .single();
-
-    const url = request.nextUrl.clone();
-    if (rpUser?.role === "landlord") {
-      url.pathname = "/admin/dashboard";
-    } else {
-      url.pathname = "/tenant/dashboard";
-    }
-    return NextResponse.redirect(url);
-  }
-
-  // Role-based route protection
-  if (user && (pathname.startsWith("/tenant") || pathname.startsWith("/admin"))) {
-    const { data: rpUser } = await supabase
-      .from("rp_users")
-      .select("role")
-      .eq("auth_id", user.id)
-      .single();
-
-    if (rpUser) {
-      if (pathname.startsWith("/admin") && rpUser.role !== "landlord") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/tenant/dashboard";
-        return NextResponse.redirect(url);
-      }
-      if (pathname.startsWith("/tenant") && rpUser.role === "landlord") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/admin/dashboard";
-        return NextResponse.redirect(url);
-      }
-    }
-  }
+  // Role-based redirects are handled by the /tenant and /admin layouts
+  // to avoid expensive DB queries in edge middleware
 
   return supabaseResponse;
 }
