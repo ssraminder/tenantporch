@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch - Onboarding</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fd;
+        }
+        .headline-font {
+            font-family: 'Manrope', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center overflow-x-hidden">
+<!-- Progress Indicator - Top Fixed -->
+<nav class="fixed top-0 left-0 w-full z-50 bg-surface/80 backdrop-blur-md px-6 py-4">
+<div class="flex items-center justify-between mb-4">
+<span class="text-xs font-bold headline-font text-primary tracking-widest uppercase">TenantPorch</span>
+<span class="text-xs font-medium text-on-surface-variant">Step 02 of 04</span>
+</div>
+<div class="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-1/2 rounded-full transition-all duration-500"></div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-[390px] pt-24 pb-32 px-6 flex flex-col min-h-screen">
+<!-- Editorial Header Section -->
+<header class="mb-10">
+<h1 class="text-4xl headline-font font-extrabold text-primary leading-tight tracking-tight mb-3">
+                Regional <br/>Focus.
+            </h1>
+<p class="text-on-surface-variant leading-relaxed font-body">
+                Select your primary province of operation to customize provincial compliance documents and tax settings.
+            </p>
+</header>
+<!-- Asymmetric Bento Grid for Province Selection -->
+<section class="flex flex-col gap-4">
+<!-- Province Card: Ontario (Active State Example) -->
+<button class="relative group w-full text-left overflow-hidden rounded-xl bg-surface-container-lowest p-5 border-2 border-secondary shadow-sm transition-all duration-200">
+<div class="flex justify-between items-start">
+<div>
+<div class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">ON</div>
+<h3 class="headline-font text-xl font-bold text-primary">Ontario</h3>
+<p class="text-xs text-on-surface-variant mt-1">LTB Compliance &amp; Standard Leases</p>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<!-- Subtle Gradient Accent -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-secondary/5 to-transparent rounded-full -mr-16 -mt-16"></div>
+</button>
+<!-- Province Card: British Columbia -->
+<button class="w-full text-left overflow-hidden rounded-xl bg-surface-container-low p-5 hover:bg-surface-container-high transition-all duration-200">
+<div class="flex justify-between items-start">
+<div>
+<div class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">BC</div>
+<h3 class="headline-font text-xl font-bold text-primary">British Columbia</h3>
+<p class="text-xs text-on-surface-variant mt-1">RTB Guidelines &amp; Security Deposits</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-30">arrow_forward_ios</span>
+</div>
+</button>
+<!-- Province Card: Alberta -->
+<button class="w-full text-left overflow-hidden rounded-xl bg-surface-container-low p-5 hover:bg-surface-container-high transition-all duration-200">
+<div class="flex justify-between items-start">
+<div>
+<div class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider mb-2 inline-block">AB</div>
+<h3 class="headline-font text-xl font-bold text-primary">Alberta</h3>
+<p class="text-xs text-on-surface-variant mt-1">RTA Standards &amp; Inspection Lists</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-30">arrow_forward_ios</span>
+</div>
+</button>
+<!-- Other Provinces Option -->
+<button class="w-full flex items-center justify-between px-5 py-4 rounded-xl bg-transparent border border-outline-variant/30 text-on-surface-variant hover:border-outline-variant transition-all">
+<span class="text-sm font-medium">Other Provinces &amp; Territories</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</section>
+<!-- Contextual Information Card -->
+<div class="mt-8 p-6 rounded-2xl bg-primary text-white relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-2 text-secondary-fixed">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="text-[10px] font-bold uppercase tracking-widest headline-font">Canadian Regulatory Shield</span>
+</div>
+<p class="text-sm text-on-primary-container leading-snug">
+                    TenantPorch automatically updates your lease templates based on the latest <span class="text-white font-semibold">2024 Provincial Legislation</span>.
+                </p>
+</div>
+<!-- Background Image Texture -->
+<div class="absolute inset-0 opacity-10 bg-center bg-cover" data-alt="abstract geometric pattern with subtle lines and architectural shapes in deep navy and charcoal tones" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDngLc1j2ws167oIHmxxL-c9ytQBdvJ8D9mdaSF4zXNC3KgzWOFd_LFyitxLn1p8CULdugVM3CTA9nPzSYO9iYcHGFPetGspG33XvysR54D4rMvT5StMgRZDDFZVl_h4STk6VF8yoiY0cHmyYFePptemQAak6MHnwOeFeU2VHRGd0blJZznzswMSjNDAT0_5E_QyhTVKd8XaVHmNKMWknzR-M01--FLz9NajrEYmIzjKi_JQl-a9VcUeqP8qtmMKIzzevkDrkb3FmsL')">
+</div>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<footer class="fixed bottom-0 left-0 w-full p-6 bg-surface-bright/90 backdrop-blur-2xl z-50">
+<div class="flex gap-4 items-center">
+<button class="w-14 h-14 flex items-center justify-center rounded-xl bg-surface-container-high text-primary hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<button class="flex-1 h-14 bg-primary text-white rounded-xl headline-font font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                Continue to Property Details
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="mt-4 flex justify-center">
+<div class="h-1 w-24 bg-on-surface/10 rounded-full"></div>
+</div>
+</footer>
+<!-- Anti-Standard Detail: Floating Help Trigger -->
+<button class="fixed bottom-28 right-6 w-12 h-12 bg-white shadow-2xl rounded-full flex items-center justify-center text-secondary border border-secondary/10 active:scale-90 transition-all z-40">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help_center</span>
+</button>
+</body></html>

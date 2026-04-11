@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Get Started | TenantPorch</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .compliance-ledger-border {
+            border-left: 4px solid #001c07;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation Suppression (Transactional Page) -->
+<!-- As per logic: suppressed TopNavBar/BottomNavBar/SideNav for Onboarding journey -->
+<main class="flex-grow flex items-center justify-center p-6 md:p-12">
+<div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<!-- Side Panel: Brand & Context -->
+<div class="lg:col-span-4 space-y-8">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-2xl" data-icon="domain">domain</span>
+</div>
+<span class="text-2xl font-headline font-extrabold tracking-tight text-primary">TenantPorch</span>
+</div>
+<div class="space-y-4">
+<h1 class="text-4xl font-headline font-extrabold text-primary leading-tight">Secure your portfolio’s future.</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed">Join the network of elite Canadian landlords managing high-compliance property portfolios with Structured Serenity.</p>
+</div>
+<!-- Step Indicator (Bento-style list) -->
+<nav class="space-y-3">
+<div class="flex items-center gap-4 p-4 rounded-xl bg-surface-container-highest/30">
+<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">1</div>
+<span class="font-headline font-semibold text-primary">Account Details</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-sm">2</div>
+<span class="font-headline font-semibold">Jurisdiction</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-sm">3</div>
+<span class="font-headline font-semibold">First Property</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl opacity-40">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-bold text-sm">4</div>
+<span class="font-headline font-semibold">Invite Tenants</span>
+</div>
+</nav>
+</div>
+<!-- Main Wizard Canvas -->
+<div class="lg:col-span-8">
+<!-- Progress Bar Top -->
+<div class="mb-8 w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-1/4 transition-all duration-500"></div>
+</div>
+<!-- Form Card -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-[0_24px_48px_rgba(4,21,52,0.06)] p-8 md:p-12">
+<!-- Step 1: Account (Current View) -->
+<div class="space-y-8" id="step-1">
+<div class="space-y-2">
+<h2 class="text-2xl font-headline font-bold text-primary">Establish Your Identity</h2>
+<p class="text-on-surface-variant">We use this information to generate legally compliant documentation for your region.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-label font-medium text-on-surface-variant">Full Legal Name</label>
+<input class="w-full px-4 py-3 rounded-lg bg-surface-container-low border-0 outline outline-2 outline-outline-variant/20 focus:outline-secondary focus:ring-0 transition-all text-on-surface placeholder:text-outline/50" placeholder="Johnathan Doe" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-label font-medium text-on-surface-variant">Business Email</label>
+<input class="w-full px-4 py-3 rounded-lg bg-surface-container-low border-0 outline outline-2 outline-outline-variant/20 focus:outline-secondary focus:ring-0 transition-all text-on-surface placeholder:text-outline/50" placeholder="j.doe@example.ca" type="email"/>
+</div>
+<div class="col-span-full space-y-2">
+<label class="text-sm font-label font-medium text-on-surface-variant">Create Secure Password</label>
+<input class="w-full px-4 py-3 rounded-lg bg-surface-container-low border-0 outline outline-2 outline-outline-variant/20 focus:outline-secondary focus:ring-0 transition-all text-on-surface placeholder:text-outline/50" placeholder="••••••••••••" type="password"/>
+<p class="text-[10px] text-outline uppercase tracking-widest font-semibold">Security: High Complexity Required</p>
+</div>
+</div>
+<div class="pt-4 flex justify-end items-center gap-6">
+<span class="text-sm text-outline font-medium">Already have an account? <a class="text-primary font-bold hover:text-secondary transition-colors" href="#">Sign in</a></span>
+<button class="bg-primary text-on-primary px-10 py-4 rounded-lg font-headline font-bold hover:bg-primary-container transition-all active:scale-95 shadow-lg shadow-primary/10">
+                                Continue to Step 2
+                            </button>
+</div>
+</div>
+<!-- Step 2: Hidden/Mock State (Province Selector) -->
+<div class="hidden space-y-8" id="step-2">
+<div class="space-y-2">
+<h2 class="text-2xl font-headline font-bold text-primary">Select Primary Jurisdiction</h2>
+<p class="text-on-surface-variant">Rental laws vary significantly by province. We'll tailor your compliance ledger accordingly.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Province Card: Ontario -->
+<button class="group p-6 rounded-xl bg-surface-container-low border-2 border-transparent hover:border-secondary transition-all text-left flex flex-col h-full">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase w-fit mb-4">ON</span>
+<h3 class="text-lg font-headline font-bold text-primary mb-2">Ontario</h3>
+<p class="text-sm text-on-surface-variant leading-snug">RTA compliant leases and LTB automated filings included.</p>
+</button>
+<!-- Province Card: Alberta -->
+<button class="group p-6 rounded-xl bg-surface-container-low border-2 border-transparent hover:border-secondary transition-all text-left flex flex-col h-full">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase w-fit mb-4">AB</span>
+<h3 class="text-lg font-headline font-bold text-primary mb-2">Alberta</h3>
+<p class="text-sm text-on-surface-variant leading-snug">Residential Tenancy Act templates with automated rent increases.</p>
+</button>
+<!-- Province Card: BC -->
+<button class="group p-6 rounded-xl bg-surface-container-low border-2 border-transparent hover:border-secondary transition-all text-left flex flex-col h-full">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase w-fit mb-4">BC</span>
+<h3 class="text-lg font-headline font-bold text-primary mb-2">British Columbia</h3>
+<p class="text-sm text-on-surface-variant leading-snug">RTB compliance and security deposit management features.</p>
+</button>
+</div>
+</div>
+<!-- Step 3 Overlay Preview: Property Details -->
+<!-- This would be dynamic in a real app, here for design preview -->
+<div class="hidden pt-12 mt-12 border-t border-outline-variant/10" id="step-3-preview">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<h3 class="font-headline font-bold text-primary">Property Setup</h3>
+<div class="bg-surface-container-low p-6 rounded-xl compliance-ledger-border">
+<div class="flex gap-4 items-start">
+<div class="bg-surface-container-highest p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="home_work">home_work</span>
+</div>
+<div>
+<div class="text-sm font-label text-outline mb-1 uppercase tracking-wider">Draft Asset</div>
+<div class="text-lg font-headline font-bold text-primary">Unassigned Property</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-center bg-surface-container-high/20 rounded-2xl p-8">
+<img alt="Modern architecture" class="rounded-xl shadow-lg w-full h-48 object-cover" data-alt="Modern architectural house exterior with large glass windows and clean lines under a clear blue sky, professional architectural photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoMvIFd44X-DH3KKfVDH45l8rBJBSybPdtMcvBCiNFNGnvAHq3eX_BqKyBlvC7pUG1QH9_oG9rSos_YANUn42TcXd02XLBq96Wl2jseNS06j_3CPNPNDBZ-NIVi2UnvOgcIBX-4R6tr75Gxzd_0MnPagG_HDvCyu4yvNgCWlQdGmt9wH_8NRfrPGsmp1N5eLqz8Gz1CyYjaKkGtdeyN5ObhKshYyXZavYv5lG7lnQs85O0lAXFmKvZ4c25Ac4rpPjIDHLZC-wul-pH"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Editorial Bottom Note -->
+<div class="mt-12 text-center max-w-lg mx-auto">
+<p class="text-sm text-outline leading-relaxed italic">
+                        "The Digital Curator for Canada's most discerning landlords. 
+                        Trusted by property owners across ON, AB, and BC for institutional-grade portfolio oversight."
+                    </p>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Embellishment: Background Elements -->
+<div class="fixed top-0 right-0 -z-10 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl opacity-50"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl opacity-30"></div>
+<!-- Script Placeholder (Mandated No-JS rule, so states are visual-only) -->
+<!-- The prompt requested Step 1-4, I have visualized Step 1 as active and hinted at the rest via layout/opacity -->
+</body></html>

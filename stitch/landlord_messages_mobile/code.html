@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d9dade",
+                    "tertiary-container": "#003312",
+                    "tertiary-fixed-dim": "#4ae176",
+                    "secondary-container": "#fdcd74",
+                    "surface-variant": "#e1e2e6",
+                    "surface-tint": "#4f5e81",
+                    "primary-container": "#1b2a4a",
+                    "primary": "#041534",
+                    "inverse-primary": "#b7c6ee",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#191c1f",
+                    "on-primary-fixed-variant": "#384668",
+                    "tertiary-fixed": "#6bff8f",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#00a94c",
+                    "on-secondary-fixed": "#271900",
+                    "secondary-fixed": "#ffdea6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f2f3f7",
+                    "on-tertiary-fixed": "#002109",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e1e2e6",
+                    "outline": "#75777f",
+                    "outline-variant": "#c5c6cf",
+                    "secondary-fixed-dim": "#eec068",
+                    "surface-container-high": "#e7e8ec",
+                    "primary-fixed": "#d9e2ff",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fd",
+                    "on-background": "#191c1f",
+                    "secondary": "#7b5804",
+                    "tertiary": "#001c07",
+                    "background": "#f8f9fd",
+                    "on-surface-variant": "#45464e",
+                    "surface-container": "#edeef2",
+                    "on-primary-container": "#8392b7",
+                    "inverse-on-surface": "#eff1f5",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "inverse-surface": "#2e3134",
+                    "surface": "#f8f9fd",
+                    "on-tertiary-fixed-variant": "#005321",
+                    "on-primary-fixed": "#0a1a3a",
+                    "on-secondary-container": "#785601",
+                    "primary-fixed-dim": "#b7c6ee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<!-- TopNavBar (Fixed Mobile Header) -->
+<header class="fixed top-0 z-50 w-full h-16 bg-slate-50/80 backdrop-blur-xl flex justify-between items-center px-6">
+<div class="flex items-center gap-3">
+<h1 class="text-xl font-headline font-bold text-blue-950 tracking-tight">Messages</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="relative text-blue-900 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-secondary rounded-full"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User avatar" data-alt="Close up portrait of a professional man in a navy suit with warm lighting against a blurred office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBF9LRZdyWU8zoyctfHEJIOu03Fbsd4d3TNKv6a2C5fCd_hkfzo4FodtXFVe95V0QuOE57Z19lJtglfNpHAS_-ZPsj9x9NjFRRbDpxsDXrPE6Uff6fQLgsoUldDVwATAX2L_Z7dSXHHV_rMx2L0NWTwc3KVKcD4SHVDc6hzSwNICp8kcFE_18pB0pa2qczTN2ikf97YyLSLFbZgFTvFckRRfgkYtBZdeuzC-dwBP8p6WQ-PlDYKiU0RcHyIfa6FnO4DnYlEb4BJT6p9"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<main class="pt-16 pb-20 h-screen overflow-y-auto hide-scrollbar bg-surface-container-low">
+<!-- Search & Filter Area -->
+<div class="px-6 py-4 flex gap-3">
+<div class="flex-1 flex items-center bg-surface-container-lowest rounded-xl px-4 py-2 shadow-sm border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full font-body" placeholder="Search conversations..." type="text"/>
+</div>
+<button class="w-11 h-11 flex items-center justify-center bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+<!-- Notification Log Snippet (Recent Activity) -->
+<div class="px-6 mb-6">
+<div class="bg-primary-container p-4 rounded-xl flex items-center gap-4 relative overflow-hidden">
+<!-- Golden Glow Texture -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary to-primary-container opacity-50"></div>
+<div class="relative z-10 w-10 h-10 flex items-center justify-center bg-secondary-fixed text-on-secondary-fixed rounded-lg">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+</div>
+<div class="relative z-10">
+<p class="text-xs font-label uppercase tracking-widest text-secondary-fixed-dim opacity-80">Recent Alert</p>
+<p class="text-sm font-headline font-semibold text-white">New maintenance request in ON</p>
+</div>
+<button class="relative z-10 ml-auto text-white">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Message Threads List -->
+<div class="px-6 space-y-3">
+<!-- Active/Unread Thread -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex gap-4 border-l-4 border-secondary shadow-sm active:scale-95 transition-all cursor-pointer">
+<div class="relative flex-shrink-0">
+<img alt="Tenant Avatar" class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of a smiling young woman with dark hair in a bright outdoor setting with soft sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIgSD4-gLOGOsK7ZeQWY-cnILgoSrX4eAv1JDeay59Qj_8dp3War4SKgLLUbkinlf2nCl2xHFcKw14O7ZN8J7uJGhlu_TLc6IiOrWqUUmU6GJZ_AS2WEmATVeHAakgUzUSX2XjhrgvsMYCF1tVxBJwUQYI1cV-l6lHNPJl_fmq19Egw2k2-uiQcwVHEY7uy2alEc17hEqJtV70zxchNCDbuOZlJtEuE_0LbAAI4DmY9z3gs14LJOw4Y5AcUqFjYo_75RE25WAOYQQE"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-tertiary-fixed-dim border-2 border-surface-container-lowest rounded-full"></span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-headline font-bold text-primary truncate">Sarah Jenkins</h3>
+<span class="text-[10px] font-label font-semibold text-secondary">2m ago</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium truncate">The kitchen faucet is still leaking after the last repair...</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="bg-surface-container text-[10px] px-2 py-0.5 rounded-full font-label uppercase tracking-tighter text-on-surface-variant">ON</span>
+<span class="text-[10px] text-on-surface-variant/60 font-medium">Unit 402 - Harbour St.</span>
+</div>
+</div>
+</div>
+<!-- Read Thread -->
+<div class="bg-surface-container-lowest/60 p-4 rounded-xl flex gap-4 active:scale-95 transition-all cursor-pointer">
+<div class="relative flex-shrink-0 grayscale">
+<img alt="Tenant Avatar" class="w-12 h-12 rounded-full object-cover" data-alt="Modern professional portrait of a man with glasses wearing a white t-shirt against a grey studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPJqk3JhkBIMK3ydD57zu7NmKKj8ilX6H7FU-qUgc1_rjpTHk8QYOyzQwE2xOKT6BGwcBRCUx6-K04fMTKh8SvEw1UUS1bzOEmvgz7gDssj0T257ToJu8DFor4egV3IRbe6mHvpFgbBzYv5oB74FTfnKWzF2od9r3mFkoYVJBlA1vwKzNbE2j0u5NF5cXrTWWcY3VTmVV9OMHavMb0fAkl-OlZo-7czXkq0axW_tj_on49lc0Nzk-r_3jxLZAsd2-8z7yVugYrfQmI"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-headline font-semibold text-on-surface truncate">Marcus Thompson</h3>
+<span class="text-[10px] font-label text-on-surface-variant/50">2h ago</span>
+</div>
+<p class="text-sm text-on-surface-variant/70 truncate">CAD $2,450.00 rent payment has been initiated successfully.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="bg-surface-container text-[10px] px-2 py-0.5 rounded-full font-label uppercase tracking-tighter text-on-surface-variant">AB</span>
+<span class="text-[10px] text-on-surface-variant/40 font-medium">Lakeside Estates</span>
+</div>
+</div>
+</div>
+<!-- Unread Thread 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex gap-4 border-l-4 border-secondary shadow-sm active:scale-95 transition-all cursor-pointer">
+<div class="relative flex-shrink-0">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-headline font-bold">
+                        GR
+                    </div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-headline font-bold text-primary truncate">George Rossi</h3>
+<span class="text-[10px] font-label font-semibold text-secondary">Yesterday</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium truncate">When can I expect the new lease documents to arrive?</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="bg-surface-container text-[10px] px-2 py-0.5 rounded-full font-label uppercase tracking-tighter text-on-surface-variant">BC</span>
+<span class="text-[10px] text-on-surface-variant/60 font-medium">Skyline Tower</span>
+</div>
+</div>
+</div>
+<!-- Read Thread 2 -->
+<div class="bg-surface-container-lowest/60 p-4 rounded-xl flex gap-4 active:scale-95 transition-all cursor-pointer">
+<div class="relative flex-shrink-0 grayscale">
+<img alt="Tenant Avatar" class="w-12 h-12 rounded-full object-cover" data-alt="A portrait of a thoughtful woman with natural lighting, soft shadows, and a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCazf0H4IQWq-eos3L19KnTNlUN3UHvWl-1LDQc8H76g0v1TWo6bO3qxAFkUKPB1SV3l0W3pBt66cLfCssY6FrLaaTT06Y7JSF11Zfc2Ib5_A2QABUcUegW77aw7n2dPipYP-W0rvkc_lQnR0bgb06PR-0PcrT3VepzvZr7iPowQ2t5FeXVIOi8nmIgzJC63tkc4AmtMUeNuR_0--l6TwKhOc5eZ9rpt1JtKiaEOL7ArELWFzLLpXnfdjdPjQ586ISiq76aDmsv_7bM"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<h3 class="font-headline font-semibold text-on-surface truncate">Elena Vance</h3>
+<span class="text-[10px] font-label text-on-surface-variant/50">Oct 24</span>
+</div>
+<p class="text-sm text-on-surface-variant/70 truncate">Thanks for the quick response on the parking issue!</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="bg-surface-container text-[10px] px-2 py-0.5 rounded-full font-label uppercase tracking-tighter text-on-surface-variant">ON</span>
+<span class="text-[10px] text-on-surface-variant/40 font-medium">Park View Lofts</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Compliance Ledger Mini-Section -->
+<div class="px-6 mt-8 mb-4">
+<h4 class="font-headline font-bold text-xs uppercase tracking-widest text-primary mb-4">Legal Compliance Notices</h4>
+<div class="bg-surface-bright p-4 rounded-xl relative overflow-hidden flex flex-col gap-3 shadow-inner">
+<!-- Vertical Progress Ribbon -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+<div class="pl-3">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-label font-bold text-error uppercase tracking-widest">Action Required</span>
+<span class="material-symbols-outlined text-error text-lg" data-icon="priority_high">priority_high</span>
+</div>
+<p class="text-sm font-semibold text-primary mt-1">Tenant N12 Form - Unit 301</p>
+<p class="text-xs text-on-surface-variant mt-1">Submission deadline approaching for Ontario Landlord Board.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for New Message -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-primary text-white rounded-full shadow-[0_8px_30px_rgb(4,21,52,0.3)] flex items-center justify-center z-50 active:scale-90 transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="edit_square">edit_square</span>
+</button>
+<!-- BottomNavBar (Mobile Shell) -->
+<nav class="fixed bottom-0 w-full h-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl flex justify-around items-center px-4 pb-safe border-t border-slate-200/10 z-50">
+<a class="flex flex-col items-center justify-center text-slate-500 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 rounded-xl px-4 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="mail" style="font-variation-settings: 'FILL' 1;">mail</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Messages</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</a>
+</nav>
+</body></html>

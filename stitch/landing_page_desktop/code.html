@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch | Property Management Made Simple</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopAppBar -->
+<nav class="fixed top-0 z-50 w-full px-6 py-4 h-16 flex justify-between items-center bg-slate-50/80 backdrop-blur-xl">
+<div class="text-xl font-manrope font-bold text-blue-950 tracking-tight">TenantPorch</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-blue-950 font-bold border-b-2 border-amber-600 transition-all" href="#">Properties</a>
+<a class="text-blue-800/60 hover:text-amber-600 transition-colors duration-200" href="#">How it Works</a>
+<a class="text-blue-800/60 hover:text-amber-600 transition-colors duration-200" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="professional portrait of a Canadian real estate professional in a bright modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx0tdbFRl7TU3O8SOAP860gwGmXHiDbAiT_Rmv5wOMUWOta_kqK5KQFzJ053AWJ-yeMEqkYjOe_qR8yFujDW8e2EyMkwnFnDAY-FvRzWAZOjscSfCcFl13UlCXMNl1tPQm80pGHkyVV7O9l0CSzRFDJ6LYasi0FldD8N7SxqEbChqO1brpxetClnrIfQYWIHdfhZp2WuxM9_mpuBKNdWMBtizcV798FbL4Lowu-u5qPWOK5tYSd_ubdJ_9Oa02OvY0IgEaCdR_RSIM"/>
+</div>
+</div>
+</nav>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative overflow-hidden bg-surface py-24 px-6">
+<div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+<div class="space-y-8 z-10">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                        Trusted across Canada
+                    </div>
+<h1 class="text-6xl md:text-7xl font-extrabold text-primary tracking-tight leading-[1.1]">
+                        Property Management <span class="text-secondary">Made Simple</span>
+</h1>
+<p class="text-xl text-on-surface-variant max-w-lg font-light leading-relaxed">
+                        Built for Canadian landlords. Province-compliant. Tenant-friendly. Manage your portfolio with architectural precision.
+                    </p>
+<div class="flex flex-wrap gap-4">
+<button class="px-8 py-4 bg-primary text-on-primary rounded-lg font-semibold hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-primary/10">
+                            Start Free
+                        </button>
+<button class="px-8 py-4 bg-secondary-fixed text-on-secondary-fixed rounded-lg font-semibold hover:opacity-90 active:scale-95 transition-all">
+                            See Pricing
+                        </button>
+</div>
+<div class="flex gap-4 pt-4">
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-bold uppercase rounded-full tracking-widest">AB</span>
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-bold uppercase rounded-full tracking-widest">ON</span>
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-bold uppercase rounded-full tracking-widest">BC</span>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -top-12 -right-12 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-2xl shadow-primary/5 transform lg:rotate-2 border border-outline-variant/10">
+<img alt="Dashboard interface" class="rounded-lg w-full" data-alt="clean minimal property management dashboard showing rental income charts and upcoming maintenance tasks with deep navy accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeM3RYcwbTnrLEeX59MHABH-fTeJE7Wxu7ZAHGqOrK1ZyCGs1V4bWTve7HCFzIgZVQss8ZhvcF8UpcWcWZO6rGgW-UoA73vwX2ffKjEclNAAYkmGVXO3AvQt_auF2m5vWcTV5IFN6ZBzkRW4EaQvKhJfvlf81roDXVGteA8lgR8SG8rgBHsJOOGeovjvTiW0xKluHLTDUacDaP3P1nM14GgTPz6YyOi-I1APoK7miRN3V9IcF2pjlTb6gOvyHQtqY6ZspEtJc2zf6c"/>
+</div>
+<div class="absolute -bottom-8 -left-8 bg-white p-6 rounded-xl shadow-xl border border-outline-variant/10 hidden md:block">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-tertiary-container/10 rounded-full flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant">Recent Rent Collection</p>
+<p class="text-lg font-bold text-primary">CAD $2,450.00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Social Proof -->
+<section class="py-12 bg-surface-container-low border-y border-outline-variant/10">
+<div class="max-w-7xl mx-auto px-6">
+<p class="text-center text-on-surface-variant font-medium mb-8">Trusted by 200+ Canadian landlords across the provinces</p>
+<div class="flex flex-wrap justify-center gap-12 opacity-50 grayscale">
+<div class="text-2xl font-black italic tracking-tighter">METROBASE</div>
+<div class="text-2xl font-black italic tracking-tighter">MAPLEHOUSING</div>
+<div class="text-2xl font-black italic tracking-tighter">CDNPROPS</div>
+<div class="text-2xl font-black italic tracking-tighter">LAKEVIEW MGMT</div>
+</div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="py-24 px-6 max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+<div class="max-w-2xl">
+<h2 class="text-4xl font-bold text-primary mb-4">Precision tools for modern management</h2>
+<p class="text-on-surface-variant">We've replaced the chaos of spreadsheets with an editorial, structured flow designed for efficiency.</p>
+</div>
+<div class="text-secondary font-bold flex items-center gap-2 cursor-pointer group">
+                    View all features <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Feature 1 -->
+<div class="md:col-span-2 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/5 flex flex-col justify-between min-h-[320px] hover:shadow-md transition-shadow">
+<div>
+<div class="w-12 h-12 bg-secondary-fixed rounded-lg flex items-center justify-center text-secondary mb-6">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<h3 class="text-2xl font-bold text-primary mb-3">Rent Collection</h3>
+<p class="text-on-surface-variant leading-relaxed">Automated CAD transfers directly to your account. No more chasing cheques or e-transfers.</p>
+</div>
+</div>
+<!-- Feature 2 -->
+<div class="md:col-span-2 bg-primary p-8 rounded-xl shadow-sm flex flex-col justify-between min-h-[320px] text-white overflow-hidden relative">
+<div class="z-10">
+<div class="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-white mb-6">
+<span class="material-symbols-outlined">handyman</span>
+</div>
+<h3 class="text-2xl font-bold mb-3">Maintenance Tracking</h3>
+<p class="text-blue-100/70 leading-relaxed">Centralized ticketing system for tenants and contractors. Track status from report to resolution.</p>
+</div>
+<div class="absolute -right-8 -bottom-8 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+</div>
+<!-- Feature 3 -->
+<div class="md:col-span-1 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/5 hover:shadow-md transition-shadow">
+<div class="w-10 h-10 bg-surface-container text-primary rounded-lg flex items-center justify-center mb-6">
+<span class="material-symbols-outlined">description</span>
+</div>
+<h3 class="text-xl font-bold text-primary mb-2">Document Vault</h3>
+<p class="text-sm text-on-surface-variant">Encrypted storage for leases, IDs, and insurance.</p>
+</div>
+<!-- Feature 4 -->
+<div class="md:col-span-3 bg-surface-container-low p-8 rounded-xl shadow-sm border border-outline-variant/5 flex flex-col md:flex-row gap-8 items-center">
+<div class="flex-1">
+<div class="w-10 h-10 bg-tertiary/10 text-tertiary rounded-lg flex items-center justify-center mb-6">
+<span class="material-symbols-outlined">gavel</span>
+</div>
+<h3 class="text-2xl font-bold text-primary mb-3">Compliance Tools</h3>
+<p class="text-on-surface-variant">Automated province-specific forms (Ontario Standard Lease, BC Form RTB-1) updated to the latest regulations.</p>
+</div>
+<div class="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-outline-variant/10 w-full md:w-64">
+<div class="flex justify-between items-center mb-4">
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Compliance Status</span>
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] rounded-full">ACTIVE</span>
+</div>
+<div class="space-y-3">
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim w-3/4"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant">RTB Form Filing: 75% Complete</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-24 bg-surface-container-low px-6">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-bold text-primary mb-4">Pricing that scales with you</h2>
+<p class="text-on-surface-variant">Simple, transparent plans with no hidden Canadian "convenience" fees.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Free -->
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 flex flex-col">
+<div class="mb-8">
+<h3 class="text-xl font-bold text-primary mb-2">Free</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-sm font-medium text-on-surface-variant">CAD $</span>
+<span class="text-4xl font-black text-primary">0</span>
+</div>
+<p class="text-sm text-on-surface-variant mt-2">Up to 2 units</p>
+</div>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Essential Rent Tracking
+                            </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Document Storage (1GB)
+                            </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Community Support
+                            </li>
+</ul>
+<button class="w-full py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors">Start Free</button>
+</div>
+<!-- Pro -->
+<div class="bg-primary p-8 rounded-xl border border-primary shadow-2xl shadow-primary/20 flex flex-col relative scale-105 z-10">
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-xs font-bold tracking-widest">MOST POPULAR</div>
+<div class="mb-8">
+<h3 class="text-xl font-bold text-white mb-2">Pro</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-sm font-medium text-blue-200">CAD $</span>
+<span class="text-4xl font-black text-white">15</span>
+<span class="text-sm text-blue-200">/unit/mo</span>
+</div>
+<p class="text-sm text-blue-200 mt-2">Best for growing portfolios</p>
+</div>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3 text-sm text-white">
+<span class="material-symbols-outlined text-secondary-fixed text-lg">check_circle</span>
+                                Automated Rent Collection
+                            </li>
+<li class="flex items-center gap-3 text-sm text-white">
+<span class="material-symbols-outlined text-secondary-fixed text-lg">check_circle</span>
+                                Province-Specific Forms
+                            </li>
+<li class="flex items-center gap-3 text-sm text-white">
+<span class="material-symbols-outlined text-secondary-fixed text-lg">check_circle</span>
+                                Maintenance Workflows
+                            </li>
+<li class="flex items-center gap-3 text-sm text-white">
+<span class="material-symbols-outlined text-secondary-fixed text-lg">check_circle</span>
+                                Priority Email Support
+                            </li>
+</ul>
+<button class="w-full py-3 bg-secondary text-on-secondary font-bold rounded-lg hover:opacity-90 transition-opacity">Get Started</button>
+</div>
+<!-- Business -->
+<div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 flex flex-col">
+<div class="mb-8">
+<h3 class="text-xl font-bold text-primary mb-2">Business</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-sm font-medium text-on-surface-variant">CAD $</span>
+<span class="text-4xl font-black text-primary">12</span>
+<span class="text-sm text-on-surface-variant">/unit/mo</span>
+</div>
+<p class="text-sm text-on-surface-variant mt-2">50+ units (volume pricing)</p>
+</div>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Everything in Pro
+                            </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Custom Accounting Exports
+                            </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Dedicated Portfolio Manager
+                            </li>
+<li class="flex items-center gap-3 text-sm text-on-surface">
+<span class="material-symbols-outlined text-tertiary text-lg">check_circle</span>
+                                Multi-user Permissions
+                            </li>
+</ul>
+<button class="w-full py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors">Contact Sales</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonials -->
+<section class="py-24 px-6 max-w-7xl mx-auto">
+<h2 class="text-3xl font-bold text-center text-primary mb-16 italic">"The editorial interface makes my monthly reports feel like a high-end portfolio presentation."</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+<div class="bg-surface-container-low p-10 rounded-xl relative">
+<span class="material-symbols-outlined absolute -top-4 -left-4 text-6xl text-secondary/10">format_quote</span>
+<p class="text-lg text-on-surface-variant leading-relaxed mb-6">
+                        As an Ontario landlord, compliance is my biggest headache. TenantPorch automated my standard lease agreements and saved me hours of legal research.
+                    </p>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-slate-300">
+<img alt="Landlord portrait" class="w-full h-full object-cover rounded-full" data-alt="close-up portrait of a middle-aged professional man smiling confidently with soft urban background lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoaP4SN3BWLV_WcGljZYsi1_U12fj753Ieo4QDdzEtqBZV8zpgn6zX-zJ5Sr4EI9ydII-stOfynyekKzQ27XqacSqlOS9WRGZp_jYtUg8YzilWk0-QQEIvRtQz-3ym1sTG4OTpg5ZpadwQY1DLjiSdpj5J973cnkgxa6lD6pqUmBxYtUBb_bIibkdv8Z6l8eb6SYMMOev026L5eNRJu_9c6KHf4X_aV4w-maOB-gTUgbRPTx9Goglx856YprHnySulCn2J3w-Ecrgh"/>
+</div>
+<div>
+<p class="font-bold text-primary">Marcus Thorne</p>
+<p class="text-sm text-on-surface-variant">Owner, Thorne Properties (Toronto)</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-10 rounded-xl relative">
+<span class="material-symbols-outlined absolute -top-4 -left-4 text-6xl text-secondary/10">format_quote</span>
+<p class="text-lg text-on-surface-variant leading-relaxed mb-6">
+                        Rent collection is finally seamless. The CAD formatting and strong vertical alignment of financial data makes it so easy to see my cash flow at a glance.
+                    </p>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-slate-300">
+<img alt="Landlord portrait" class="w-full h-full object-cover rounded-full" data-alt="professional woman in her 40s with a warm expression in a sunlit architectural studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw_5ss86L_8T7cikoRRiNXUdSAgmQgyQwEKAk9QjC9ZFK7sHj_70R0gEdQsG1S1bBK7f8nmD2hTJKeAn0tK2xrsnydx05DccVLVULgVEtjqMD_G07BLbylGFX_iXA6g2KBU-bjuRLt-ilYXUWDoZefmzAB30McqRVBp28rrpGv7jljSiau_8_LKxepg1W0d_c_1qQ37hKGqeduA3X42pI9x2he87nDiMMIH_zpyK_FsFq411Ar4Xot31TUv87Lj5MA0ZSz56WUQbqU"/>
+</div>
+<div>
+<p class="font-bold text-primary">Elena Rodriguez</p>
+<p class="text-sm text-on-surface-variant">Property Manager (Vancouver)</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-primary text-blue-200 py-16 px-6">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="space-y-4">
+<div class="text-2xl font-black italic text-white">TenantPorch</div>
+<p class="text-sm leading-relaxed opacity-70">
+                    Elevating property management for the modern Canadian landlord. Structured serenity for your portfolio.
+                </p>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Product</h4>
+<ul class="space-y-4 text-sm">
+<li><a class="hover:text-secondary transition-colors" href="#">Properties</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Compliance Hub</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Rent Ledger</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Integrations</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Compliance</h4>
+<ul class="space-y-4 text-sm">
+<li><a class="hover:text-secondary transition-colors" href="#">Ontario LTB</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">BC RTB</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Alberta SA</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Connect</h4>
+<ul class="space-y-4 text-sm">
+<li><a class="hover:text-secondary transition-colors" href="#">LinkedIn</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Support Center</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Contact Us</a></li>
+</ul>
+<div class="mt-8 flex gap-4">
+<span class="material-symbols-outlined cursor-pointer hover:text-white">language</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-white">mail</span>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto pt-16 mt-16 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs opacity-50">
+<p>© 2024 TenantPorch. All rights reserved. Canadian Property Mgmt.</p>
+<div class="flex gap-8">
+<a href="#">Terms of Service</a>
+<a href="#">Security</a>
+<a href="#">Accessibility</a>
+</div>
+</div>
+</footer>
+<!-- BottomNavBar (Mobile Only) -->
+<div class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 backdrop-blur-2xl flex justify-around items-center h-20 px-4 pb-safe lg:hidden border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(4,21,52,0.06)]">
+<div class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 rounded-xl px-2 py-1 scale-90">
+<span class="material-symbols-outlined">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Build</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</div>
+</div>
+</body></html>

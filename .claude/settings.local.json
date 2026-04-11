@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx create-next-app@14 . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(mkdir -p /tmp/tp-init)",
+      "Read(//tmp/**)",
+      "Bash(npx create-next-app@14 tenantporch --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(cp -r /tmp/tp-init/tenantporch/src .)",
+      "Bash(cp -r /tmp/tp-init/tenantporch/public .)",
+      "Bash(cp /tmp/tp-init/tenantporch/package.json .)",
+      "Bash(cp /tmp/tp-init/tenantporch/tsconfig.json .)",
+      "Bash(cp /tmp/tp-init/tenantporch/next.config.mjs .)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init -d)"
+    ]
+  }
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch - Canadian Property Management</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container-lowest": "#ffffff",
+                "surface-dim": "#d9dade",
+                "tertiary-container": "#003312",
+                "tertiary-fixed-dim": "#4ae176",
+                "secondary-container": "#fdcd74",
+                "surface-variant": "#e1e2e6",
+                "surface-tint": "#4f5e81",
+                "primary-container": "#1b2a4a",
+                "primary": "#041534",
+                "inverse-primary": "#b7c6ee",
+                "on-error": "#ffffff",
+                "on-error-container": "#93000a",
+                "on-surface": "#191c1f",
+                "on-primary-fixed-variant": "#384668",
+                "tertiary-fixed": "#6bff8f",
+                "error-container": "#ffdad6",
+                "on-tertiary-container": "#00a94c",
+                "on-secondary-fixed": "#271900",
+                "secondary-fixed": "#ffdea6",
+                "on-primary": "#ffffff",
+                "surface-container-low": "#f2f3f7",
+                "on-tertiary-fixed": "#002109",
+                "on-secondary": "#ffffff",
+                "surface-container-highest": "#e1e2e6",
+                "outline": "#75777f",
+                "outline-variant": "#c5c6cf",
+                "secondary-fixed-dim": "#eec068",
+                "surface-container-high": "#e7e8ec",
+                "primary-fixed": "#d9e2ff",
+                "error": "#ba1a1a",
+                "surface-bright": "#f8f9fd",
+                "on-background": "#191c1f",
+                "secondary": "#7b5804",
+                "tertiary": "#001c07",
+                "background": "#f8f9fd",
+                "on-surface-variant": "#45464e",
+                "surface-container": "#edeef2",
+                "on-primary-container": "#8392b7",
+                "inverse-on-surface": "#eff1f5",
+                "on-tertiary": "#ffffff",
+                "on-secondary-fixed-variant": "#5d4200",
+                "inverse-surface": "#2e3134",
+                "surface": "#f8f9fd",
+                "on-tertiary-fixed-variant": "#005321",
+                "on-primary-fixed": "#0a1a3a",
+                "on-secondary-container": "#785601",
+                "primary-fixed-dim": "#b7c6ee"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased overflow-x-hidden selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- TopNavBar -->
+<nav class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl fixed top-0 z-50 w-full flex justify-between items-center px-6 py-4 h-16">
+<div class="text-xl font-manrope font-bold text-blue-950 dark:text-white tracking-tight">TenantPorch</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-blue-800/60 dark:text-blue-300/60" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-blue-800/60 dark:text-blue-300/60" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-slate-200">
+<img alt="User avatar" data-alt="Close-up portrait of a professional male business owner in his 40s with a warm confident expression, soft office lighting background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaB5L7OyM5Lc5LLS4R_prPglbOH1cQNiICSirBsvxdveN6XNcjL-qY-heX39PQxo3ufH8WsAZQkgs8CrP6nKnfHK-2iuq5tYp28QYKlOelwFN79JY7iGimrwEKbqyhTPTzomzQTqVwLHjyT2Zgrx_U0cd_A6j9qgFI7rfxQziMKc4ZGwaGakHbxfveoacWOij_fGuHyvKfn9KSc3EViVpENHRS-hhVmAPz19A_1mjK4JIYdWNSNJVVVuc2cPxzKKvtba2SJBhqVdNh"/>
+</div>
+</div>
+</nav>
+<main class="pt-16 pb-32">
+<!-- Hero Section -->
+<section class="px-6 py-12 flex flex-col gap-8 bg-gradient-to-b from-slate-100 to-transparent">
+<div class="space-y-4">
+<span class="inline-block px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold uppercase tracking-widest">Digital Curator</span>
+<h1 class="text-4xl font-extrabold text-primary leading-[1.1] tracking-tight">
+                    Structured Serenity for Canadian Landlords.
+                </h1>
+<p class="text-on-surface-variant text-lg leading-relaxed">
+                    Elevate your property portfolio with an editorial management experience. Composed, clear, and compliant.
+                </p>
+</div>
+<div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow-2xl">
+<img alt="Modern minimalist Canadian apartment" class="w-full h-full object-cover" data-alt="Interior of a modern luxury Canadian apartment with large windows showing a city skyline, minimalist wood furniture, and soft morning sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8X1YwehxFJ5V3WtEdyxzFxxYQSmI0Jby_aju3qB55ekska8PQjy-ifPtSzOggVUZ3lt__ejwIo7NOHY0cXC1N6XWlYiOKTU6Hiaxd7gi72fbKfBIVvwZAvI10eVz52nsxJLQCxI7o9BPmO-XK_V3DtV-zNUnNFfvv7MTSOyJu4ifsTiN5A2_Tk3CETuPiFABBOkfCXLFyWeUXZZy37q3HaSTXwW4tc9IVJ9efHypXtxtsWM427SWxKIMOrqyZGFS7C4ke7AiOUZVL"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+<div class="absolute bottom-4 left-4 flex gap-2">
+<span class="bg-surface-variant/90 backdrop-blur px-2 py-1 rounded-full text-[10px] font-bold uppercase">ON</span>
+<span class="bg-surface-variant/90 backdrop-blur px-2 py-1 rounded-full text-[10px] font-bold uppercase">BC</span>
+<span class="bg-surface-variant/90 backdrop-blur px-2 py-1 rounded-full text-[10px] font-bold uppercase">AB</span>
+</div>
+</div>
+</section>
+<!-- Feature Cards (Single Column) -->
+<section class="px-6 py-12 flex flex-col gap-10">
+<div class="space-y-2">
+<h2 class="text-2xl font-bold text-primary">The Curated Toolkit</h2>
+<div class="h-1 w-12 bg-secondary rounded-full"></div>
+</div>
+<!-- Bento Card 1 -->
+<div class="bg-surface-container-low rounded-3xl p-6 flex flex-col gap-4 border border-outline-variant/10">
+<div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-secondary-fixed">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+</div>
+<h3 class="text-xl font-bold text-primary">Portfolio Architecture</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                    Organize multi-unit dwellings with architectural precision. Visualized data for effortless oversight across provinces.
+                </p>
+</div>
+<!-- Bento Card 2 -->
+<div class="bg-surface-container-lowest rounded-3xl p-6 flex flex-col gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/10">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary-fixed">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</div>
+<h3 class="text-xl font-bold text-primary">Rent Collection</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                    Automated CAD $ settlement with integrated compliance ledgers for every transaction. Settled with a single tap.
+                </p>
+</div>
+<!-- Bento Card 3 -->
+<div class="bg-surface-container-low rounded-3xl p-6 flex flex-col gap-4 border border-outline-variant/10">
+<div class="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<h3 class="text-xl font-bold text-primary">Lease Composition</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                    Provincial-standard lease agreements generated instantly. Editorial clarity meets legal compliance.
+                </p>
+</div>
+</section>
+<!-- Pricing Tiers -->
+<section class="px-6 py-12 bg-primary text-on-primary">
+<div class="mb-10 text-center space-y-4">
+<h2 class="text-3xl font-bold">Invest in Order</h2>
+<p class="text-on-primary-container">Scale your serenity as your portfolio grows.</p>
+</div>
+<div class="flex flex-col gap-6">
+<!-- Basic Card -->
+<div class="bg-primary-container p-8 rounded-3xl border border-outline-variant/10 flex flex-col gap-6">
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-primary-container">The Artisan</h4>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-xs text-on-primary-container">CAD</span>
+<span class="text-4xl font-bold">$29</span>
+<span class="text-sm text-on-primary-container">/mo</span>
+</div>
+</div>
+<ul class="space-y-4 text-sm text-on-primary-container">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Up to 5 Units</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Standard Lease Templates</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Basic Financial Reports</li>
+</ul>
+<button class="w-full py-4 bg-white text-primary rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95">Select Plan</button>
+</div>
+<!-- Pro Card (Featured) -->
+<div class="bg-surface-container-lowest text-on-surface p-8 rounded-3xl border-2 border-secondary-fixed flex flex-col gap-6 relative overflow-hidden shadow-2xl">
+<div class="absolute top-0 right-0 bg-secondary-fixed px-4 py-1 rounded-bl-xl text-[10px] font-black text-on-secondary-fixed uppercase tracking-tighter">Most Curated</div>
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest text-secondary">The Estate</h4>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-xs text-on-surface-variant font-medium">CAD</span>
+<span class="text-4xl font-bold text-primary">$89</span>
+<span class="text-sm text-on-surface-variant">/mo</span>
+</div>
+</div>
+<ul class="space-y-4 text-sm text-on-surface-variant">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs text-secondary" data-icon="check">check</span> Unlimited Units</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs text-secondary" data-icon="check">check</span> Multi-Province Compliance</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs text-secondary" data-icon="check">check</span> Advanced Ledger Exports</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-xs text-secondary" data-icon="check">check</span> Priority Maintenance Sync</li>
+</ul>
+<button class="w-full py-4 bg-secondary text-white rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95 shadow-lg shadow-secondary/20">Elevate Now</button>
+</div>
+</div>
+</section>
+<!-- Compliance Section (Editorial Layout) -->
+<section class="px-6 py-16 space-y-8">
+<h2 class="text-3xl font-bold text-primary max-w-[280px]">Regulatory confidence, by design.</h2>
+<div class="relative bg-surface-bright p-6 rounded-3xl border-l-8 border-tertiary">
+<p class="text-on-surface-variant italic text-sm leading-relaxed">
+                    "TenantPorch transformed our Ontario portfolio from a mess of spreadsheets to a composed, compliant business model."
+                </p>
+<div class="mt-6 flex items-center gap-4">
+<img alt="Landlord Profile" class="w-10 h-10 rounded-full grayscale" data-alt="Professional profile headshot of a middle-aged woman with a kind smile, minimalist grey studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDr7_RK_Z3csX5nHjo84It3hzQw2ccDZfWlWgvub1Wvui-sauzRVtFdpyQwY1SLnwA1L2a5IuJNfONoqvfryGVeCSqbUSi25aU6_-7l2dFe-6_GEZrOW6-4yggVlywIrfuV-TXjq_e4mZ2do-IcvgpE466xvLwuAM_sGRxt1dyZL4Wz7fqCMIB3kFD4vPrZ_BUDcM7DTSK3gnYxSCeXKRgk3oQOv7p7EPX0cEBbor5zYvAydTE18I7ih0ERMpicsOSgm0cDOqYBP92D"/>
+<div>
+<p class="text-xs font-bold text-primary">Sarah Jennings</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Toronto Estates</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Mobile Optimized Footer -->
+<footer class="px-6 py-12 bg-surface-container-high flex flex-col gap-8">
+<div class="space-y-4">
+<div class="text-2xl font-black text-primary italic">TenantPorch</div>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                    Sophisticated property management for the modern Canadian landlord. Built in Vancouver, scaled for the world.
+                </p>
+</div>
+<div class="grid grid-cols-2 gap-8">
+<div class="space-y-4">
+<p class="text-[10px] font-bold text-primary uppercase tracking-widest">Resources</p>
+<ul class="text-sm text-on-surface-variant space-y-2">
+<li>Legal Guide</li>
+<li>Tax Filing</li>
+<li>Support</li>
+</ul>
+</div>
+<div class="space-y-4">
+<p class="text-[10px] font-bold text-primary uppercase tracking-widest">Connect</p>
+<ul class="text-sm text-on-surface-variant space-y-2">
+<li>Twitter</li>
+<li>LinkedIn</li>
+<li>Contact</li>
+</ul>
+</div>
+</div>
+<div class="pt-8 border-t border-outline-variant/30 text-[10px] text-on-surface-variant/60 text-center uppercase tracking-widest">
+                © 2024 TenantPorch. All rights reserved.
+            </div>
+</footer>
+</main>
+<!-- BottomNavBar (Mobile Shell) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(4,21,52,0.06)] border-t border-slate-200/10 flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<div class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-2 py-1 transition-all scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Properties</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Finance</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Mainten.</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">More</span>
+</div>
+</nav>
+<!-- Sticky Start Free CTA -->
+<div class="fixed bottom-24 left-6 right-6 z-[60]">
+<button class="w-full h-14 bg-primary text-on-primary rounded-2xl font-bold flex items-center justify-center gap-3 shadow-2xl shadow-primary/40 active:scale-95 transition-all">
+<span>Start Free Trial</span>
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</body></html>

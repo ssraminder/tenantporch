@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch | Landlord Financials</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { display: none; }
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col max-w-[390px] mx-auto overflow-x-hidden pb-24">
+<!-- Top Navigation Anchor -->
+<header class="bg-slate-50/80 backdrop-blur-xl flex justify-between items-center w-full px-6 py-4 h-16 sticky top-0 z-50">
+<h1 class="text-xl font-headline font-bold text-primary tracking-tight">Financials</h1>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary" data-icon="settings">settings</span>
+</div>
+</header>
+<main class="flex-1 px-5 pt-4 space-y-6">
+<!-- Revenue Chart Card -->
+<section class="bg-primary rounded-2xl p-6 relative overflow-hidden shadow-xl shadow-primary/10">
+<div class="relative z-10">
+<p class="text-on-primary-container font-label text-xs uppercase tracking-widest mb-1">Total Portfolio Revenue</p>
+<div class="flex items-baseline gap-2">
+<span class="text-white text-3xl font-headline font-extrabold tracking-tight">CAD $42,850.00</span>
+<span class="text-tertiary-fixed text-sm font-medium">+12.4%</span>
+</div>
+<!-- Simplified Abstract Chart Representation -->
+<div class="mt-8 h-32 flex items-end gap-2">
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[40%]"></div>
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[60%]"></div>
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[45%]"></div>
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[75%]"></div>
+<div class="flex-1 bg-secondary rounded-t-lg h-[90%] shadow-[0_-4px_12px_rgba(123,88,4,0.3)]"></div>
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[65%]"></div>
+<div class="flex-1 bg-primary-container/40 rounded-t-lg h-[55%]"></div>
+</div>
+<div class="flex justify-between mt-2 text-[10px] font-label text-on-primary-container uppercase tracking-tighter">
+<span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span class="text-secondary font-bold">MAY</span><span>JUN</span><span>JUL</span>
+</div>
+</div>
+<!-- Decorative Background Element -->
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-secondary/10 rounded-full blur-3xl"></div>
+</section>
+<!-- Utility Billing Quick Flow -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h2 class="text-lg font-headline font-bold text-primary">Pending Utilities</h2>
+<button class="text-secondary text-sm font-semibold flex items-center gap-1">
+                    Process All <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 snap-x">
+<!-- Utility Card 1 -->
+<div class="min-w-[280px] snap-center bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-outline-variant/10">
+<div class="flex justify-between mb-4">
+<div class="p-2 bg-secondary-fixed rounded-xl">
+<span class="material-symbols-outlined text-on-secondary-fixed" data-icon="bolt">bolt</span>
+</div>
+<span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter self-start">ON</span>
+</div>
+<h3 class="text-primary font-bold">Hydro - unit 402</h3>
+<p class="text-on-surface-variant text-xs mb-4">128 Adelaide St, Toronto</p>
+<div class="flex justify-between items-center border-t border-outline-variant/10 pt-4">
+<span class="text-primary font-bold text-lg">CAD $142.80</span>
+<button class="bg-secondary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md">Rebill Tenant</button>
+</div>
+</div>
+<!-- Utility Card 2 -->
+<div class="min-w-[280px] snap-center bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-outline-variant/10">
+<div class="flex justify-between mb-4">
+<div class="p-2 bg-primary-fixed rounded-xl">
+<span class="material-symbols-outlined text-on-primary-fixed" data-icon="water_drop">water_drop</span>
+</div>
+<span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tighter self-start">BC</span>
+</div>
+<h3 class="text-primary font-bold">Water - Main House</h3>
+<p class="text-on-surface-variant text-xs mb-4">450 Robson St, Vancouver</p>
+<div class="flex justify-between items-center border-t border-outline-variant/10 pt-4">
+<span class="text-primary font-bold text-lg">CAD $89.15</span>
+<button class="bg-secondary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md">Rebill Tenant</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Compliance Ledger / Transaction Table -->
+<section class="space-y-4">
+<h2 class="text-lg font-headline font-bold text-primary">Recent Transactions</h2>
+<div class="bg-surface-container-low rounded-2xl overflow-hidden">
+<div class="space-y-px">
+<!-- Transaction Item -->
+<div class="bg-surface-container-lowest p-4 flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-1 h-8 bg-tertiary rounded-full"></div>
+<div>
+<p class="text-sm font-bold text-primary">Rent: Unit 12B</p>
+<p class="text-xs text-on-surface-variant">Confirmed • May 01</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD $2,450.00</p>
+<span class="material-symbols-outlined text-tertiary-container text-xs" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Transaction Item -->
+<div class="bg-surface-container-lowest p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div>
+<p class="text-sm font-bold text-primary">Maintenance: HVAC</p>
+<p class="text-xs text-on-surface-variant">Pending • May 02</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD $320.00</p>
+<span class="material-symbols-outlined text-secondary-container text-xs" data-icon="pending" style="font-variation-settings: 'FILL' 1;">pending</span>
+</div>
+</div>
+<!-- Transaction Item -->
+<div class="bg-surface-container-lowest p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-1 h-8 bg-tertiary rounded-full"></div>
+<div>
+<p class="text-sm font-bold text-primary">Rent: Unit 08</p>
+<p class="text-xs text-on-surface-variant">Confirmed • Apr 30</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD $1,800.00</p>
+<span class="material-symbols-outlined text-tertiary-container text-xs" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Transaction Item -->
+<div class="bg-surface-container-lowest p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-1 h-8 bg-error rounded-full"></div>
+<div>
+<p class="text-sm font-bold text-primary">Strata Fee - ON</p>
+<p class="text-xs text-error font-medium">Overdue • Apr 28</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD $540.22</p>
+<span class="material-symbols-outlined text-error text-xs" data-icon="error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-4 text-center text-sm font-bold text-primary-container border border-outline-variant/20 rounded-xl bg-surface-container-low">
+                View All Financial Activity
+            </button>
+</section>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 rounded-xl px-2 py-1 scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Financials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Maintenance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">More</span>
+</a>
+</nav>
+<!-- Contextual FAB - Collecting Rent / Financial Transaction -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-secondary text-white rounded-full flex items-center justify-center shadow-2xl z-40">
+<span class="material-symbols-outlined text-2xl" data-icon="add">add</span>
+</button>
+</body></html>

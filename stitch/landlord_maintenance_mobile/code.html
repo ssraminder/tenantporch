@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch | Maintenance</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d9dade",
+                    "tertiary-container": "#003312",
+                    "tertiary-fixed-dim": "#4ae176",
+                    "secondary-container": "#fdcd74",
+                    "surface-variant": "#e1e2e6",
+                    "surface-tint": "#4f5e81",
+                    "primary-container": "#1b2a4a",
+                    "primary": "#041534",
+                    "inverse-primary": "#b7c6ee",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#191c1f",
+                    "on-primary-fixed-variant": "#384668",
+                    "tertiary-fixed": "#6bff8f",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#00a94c",
+                    "on-secondary-fixed": "#271900",
+                    "secondary-fixed": "#ffdea6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f2f3f7",
+                    "on-tertiary-fixed": "#002109",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e1e2e6",
+                    "outline": "#75777f",
+                    "outline-variant": "#c5c6cf",
+                    "secondary-fixed-dim": "#eec068",
+                    "surface-container-high": "#e7e8ec",
+                    "primary-fixed": "#d9e2ff",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fd",
+                    "on-background": "#191c1f",
+                    "secondary": "#7b5804",
+                    "tertiary": "#001c07",
+                    "background": "#f8f9fd",
+                    "on-surface-variant": "#45464e",
+                    "surface-container": "#edeef2",
+                    "on-primary-container": "#8392b7",
+                    "inverse-on-surface": "#eff1f5",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "inverse-surface": "#2e3134",
+                    "surface": "#f8f9fd",
+                    "on-tertiary-fixed-variant": "#005321",
+                    "on-primary-fixed": "#0a1a3a",
+                    "on-secondary-container": "#785601",
+                    "primary-fixed-dim": "#b7c6ee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .compliance-ribbon {
+            width: 4px;
+            position: absolute;
+            left: 0;
+            top: 12px;
+            bottom: 12px;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased max-w-[390px] mx-auto min-h-screen pb-24">
+<!-- Top Navigation Bar -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl flex justify-between items-center w-full px-6 py-4 h-16 docked full-width top-0 z-50">
+<div class="text-xl font-manrope font-bold text-blue-950 dark:text-white tracking-tight">TenantPorch</div>
+<div class="flex items-center gap-4">
+<button class="text-blue-900 dark:text-blue-100 hover:text-amber-600 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container overflow-hidden">
+<img alt="User avatar" data-alt="Professional headshot of a property manager in business attire with a warm friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB37vWZ855NgEyjfz-mOParAGrwlcvSy7GAu15b8AmRjsPGUlLuEXwzmZPGO-BdTsRTZzCDmJuL6jfXl86ZroG0GS6R2mxZJoD-qVYOuMJai57X_5UW6w-eKxM8PZ6wh0Dcg5RfVLi3bWt1AfZryhT45TBUVDb14N3S9khMwF5HF73pGENNZZl3uHRLPe6TyF5JbIVmLPbYnWaRrYebg0cDkAOx3MCYpov4PGi7Zgv3iPjkIvxt7_nDLa-SDqGB6vmL586IF5-d_7UA"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="px-5 pt-6 space-y-6">
+<!-- Editorial Header -->
+<div class="space-y-1">
+<h1 class="font-headline text-3xl font-extrabold tracking-tight text-primary">Maintenance</h1>
+<p class="text-on-surface-variant font-medium text-sm">Managing 12 active requests across Ontario</p>
+</div>
+<!-- Status Filter Tabs -->
+<div class="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+<button class="bg-primary text-on-primary px-5 py-2.5 rounded-full font-label text-sm font-semibold whitespace-nowrap">All Tasks</button>
+<button class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container transition-colors">Pending</button>
+<button class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container transition-colors">In Progress</button>
+<button class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container transition-colors">Completed</button>
+</div>
+<!-- Urgent Alert Card (Asymmetric Layout) -->
+<section class="bg-error-container/30 rounded-2xl p-5 relative overflow-hidden">
+<div class="relative z-10 space-y-3">
+<div class="flex items-center gap-2 text-on-error-container">
+<span class="material-symbols-outlined text-xl" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="text-xs font-bold uppercase tracking-wider">Urgent Action Required</span>
+</div>
+<h3 class="font-headline text-xl font-bold text-primary">Burst Pipe: 423 King St.</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">Reported 14 minutes ago by Unit 4B. Emergency plumber dispatched.</p>
+<div class="pt-2">
+<button class="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold text-sm w-full shadow-sm">Review Emergency Detail</button>
+</div>
+</div>
+<div class="absolute -right-8 -top-8 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="plumbing">plumbing</span>
+</div>
+</section>
+<!-- Compliance Ledger (Maintenance List) -->
+<div class="space-y-4">
+<h2 class="font-headline text-lg font-bold text-primary px-1">Active Requests</h2>
+<!-- Maintenance Card 1 (Expanded Detail State) -->
+<div class="bg-surface-container-lowest rounded-2xl p-5 relative transition-all active:scale-95 border border-outline-variant/10">
+<div class="compliance-ribbon bg-secondary"></div>
+<div class="flex justify-between items-start mb-3">
+<div class="space-y-1 pl-2">
+<div class="flex items-center gap-2">
+<span class="bg-secondary-fixed text-on-secondary-fixed text-[10px] font-black px-2 py-0.5 rounded-full uppercase">ON</span>
+<span class="text-on-surface-variant text-xs font-medium">#MT-8821</span>
+</div>
+<h4 class="font-headline text-lg font-bold text-primary">HVAC System Repair</h4>
+</div>
+<div class="text-right">
+<span class="text-xs font-label text-on-surface-variant block">Estimate</span>
+<span class="font-bold text-primary text-lg">CAD $450.00</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-4 mt-4 space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">Tenant</p>
+<p class="text-sm font-bold text-primary">Marcus Thorne (Unit 302)</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="calendar_today">calendar_today</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-medium">Scheduled For</p>
+<p class="text-sm font-bold text-primary">Oct 24, 2023 • 09:00 AM</p>
+</div>
+</div>
+<div class="pt-2 flex gap-3">
+<button class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold text-sm">Approve Quote</button>
+<button class="flex-none aspect-square bg-surface-container-highest flex items-center justify-center rounded-xl px-4">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Maintenance Card 2 (Standard State) -->
+<div class="bg-surface-container-lowest rounded-2xl p-5 relative flex items-center justify-between border border-outline-variant/10">
+<div class="compliance-ribbon bg-tertiary"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="inventory">inventory</span>
+</div>
+<div>
+<h4 class="font-headline text-md font-bold text-primary">Lock Replacement</h4>
+<p class="text-xs text-on-surface-variant">1202 Maple Ave • Assigned</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Maintenance Card 3 (Standard State) -->
+<div class="bg-surface-container-lowest rounded-2xl p-5 relative flex items-center justify-between border border-outline-variant/10">
+<div class="compliance-ribbon bg-secondary"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="water_drop">water_drop</span>
+</div>
+<div>
+<h4 class="font-headline text-md font-bold text-primary">Leaky Faucet</h4>
+<p class="text-xs text-on-surface-variant">88 Bay Street • Pending</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- FAB for New Request (Contextual) -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-secondary shadow-[0_8px_32px_rgba(123,88,4,0.3)] rounded-2xl flex items-center justify-center text-on-secondary z-40 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(4,21,52,0.06)] border-t border-slate-200/10 flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Financials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-2 py-1 scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="build" style="font-variation-settings: 'FILL' 1;">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">Maintenance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase">More</span>
+</a>
+</nav>
+</body></html>

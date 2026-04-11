@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tenant Profile | TenantPorch</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .compliance-ledger-border {
+            border-left: 4px solid #001c07;
+        }
+        .ghost-border {
+            border: 1px solid rgba(197, 198, 207, 0.2);
+        }
+        .active-glow {
+            background: radial-gradient(circle at top left, #1B2A4A, #041534);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface flex overflow-hidden h-screen">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="bg-blue-950 dark:bg-slate-950 h-screen w-64 hidden lg:flex flex-col left-0 top-0 fixed shadow-xl shadow-blue-950/20 py-6 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-2xl font-black text-white italic tracking-tight">TenantPorch</h1>
+<p class="text-blue-200/50 text-[10px] font-headline uppercase tracking-widest mt-1">Canadian Property Mgmt</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">domain</span>
+<span>Properties</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">groups</span>
+<span>Tenants</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">payments</span>
+<span>Financials</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">handyman</span>
+<span>Maintenance</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">description</span>
+<span>Documents</span>
+</div>
+<div class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 flex items-center gap-3 transition-all cursor-pointer font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">mail</span>
+<span>Messages</span>
+</div>
+<!-- Active State Logic: Mapping "Settings" as the current destination for "Tenant Profile" -->
+<div class="bg-blue-900 dark:bg-slate-800 text-white rounded-lg px-4 py-3 mx-2 flex items-center gap-3 translate-x-1 duration-150 font-manrope font-medium text-sm">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</div>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-secondary text-white py-3 rounded-lg font-manrope font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-secondary/20">
+<span class="material-symbols-outlined text-sm">add_home</span>
+                Add Property
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 overflow-y-auto bg-surface-container-low min-h-screen">
+<!-- TopAppBar (Execution from JSON) -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl flex justify-between items-center w-full px-8 py-4 h-16 fixed top-0 z-40 lg:w-[calc(100%-16rem)]">
+<h2 class="text-xl font-manrope font-bold text-blue-950 dark:text-white tracking-tight">Profile Settings</h2>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="text-blue-950 dark:text-white font-bold border-b-2 border-amber-600 transition-colors duration-200 py-1 font-manrope" href="#">Properties</a>
+</nav>
+<div class="flex items-center gap-4 border-l border-outline-variant/20 pl-6">
+<span class="material-symbols-outlined text-blue-900 dark:text-blue-100 hover:text-amber-600 transition-colors cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-blue-900 dark:text-blue-100 hover:text-amber-600 transition-colors cursor-pointer">settings</span>
+<img alt="User avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-highest" data-alt="portrait of a professional young man in a clean studio setting with neutral background lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCenP-iKGJwJ68jhzmZfJpZVGiiLc7kINgiDq46C20UgG_rvb493Jj1aM-A8Ot8s3YT_8RAcBXv9LH7HRANvAKEp-4r2itGAZF1Czh93XYG69xjhzSltZWEiw4Flfbc30PnxVsml6hngbqHQRrhLkASJL_HOCy5WYY6rSWWhwSoo6N2-GZ-pxh_nqTqNtcMyafPqrgI14AtWDmFfbovb0f3QVj_mkgwPYoeTcYvY6l24fn1qbcuMXndQA22HZMP-1IJUStNonzH2DQl"/>
+</div>
+</div>
+</header>
+<!-- Profile Content Grid -->
+<div class="pt-24 pb-12 px-8 max-w-6xl mx-auto">
+<!-- Asymmetric Hero Section -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
+<div class="md:col-span-4 flex flex-col gap-6">
+<!-- Personal Info Sidecard (Read-only) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(4,21,52,0.04)] flex flex-col items-center text-center">
+<div class="relative mb-6">
+<img alt="User profile large" class="w-32 h-32 rounded-xl object-cover shadow-lg" data-alt="high quality portrait of a male tenant smiling warmly against a soft blue architectural backdrop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgiu6t4UhAFhQEgCTeVMuAjk73jtKsGccaGtZkIVqli2cyj9OSwCPwnkWVOj8tanO-vRDdnutUJx2x7E1MXGejlWAhRRWU1VRvmg84rjTn4HL14Zt4dVDdbw22qu3CV4M1IzCQC9vV9TE4sS_00ZOewSX02riyN380CBhC0n7BdqKvJHdm8Hh4sXKDSLeB4OVd-OUmGf12oKy_2lZMaxnbsZ5TOUjy_KtwNkaglA4qTHYvxz9SPmmKAD7yuCL53wZaSc4slDs-bJe3"/>
+<div class="absolute -bottom-2 -right-2 bg-secondary p-2 rounded-lg text-white shadow-lg">
+<span class="material-symbols-outlined text-base">verified</span>
+</div>
+</div>
+<h3 class="font-headline text-2xl font-bold text-primary">Marcus Holloway</h3>
+<p class="text-on-surface-variant font-medium text-sm mt-1">Tenant since Oct 2021</p>
+<div class="mt-8 w-full space-y-4 text-left">
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-1">Current Residence</span>
+<div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-primary-container">apartment</span>
+<span class="text-sm font-semibold text-primary">Unit 402, 185 Spadina Ave.</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant mb-1">Email Address</span>
+<div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg">
+<span class="material-symbols-outlined text-primary-container">mail</span>
+<span class="text-sm font-semibold text-primary">m.holloway@domain.ca</span>
+</div>
+</div>
+<div class="bg-tertiary/5 compliance-ledger-border p-4 mt-4">
+<p class="text-xs font-semibold text-tertiary-container flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+                                    Compliance: ON (Ontario Standard)
+                                </p>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-8 flex flex-col gap-8">
+<!-- Notification Settings -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(4,21,52,0.04)]">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="font-headline text-lg font-bold text-primary">Communication Preferences</h4>
+<p class="text-on-surface-variant text-sm mt-1">Manage how you receive alerts and property updates.</p>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Toggle 1 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">alternate_email</span>
+</div>
+<div>
+<p class="font-semibold text-primary">Email Notifications</p>
+<p class="text-xs text-on-surface-variant">Monthly invoices and maintenance confirmations.</p>
+</div>
+</div>
+<button class="w-12 h-6 bg-secondary-container rounded-full relative flex items-center px-1">
+<div class="w-4 h-4 bg-white rounded-full ml-auto shadow-sm"></div>
+</button>
+</div>
+<!-- Toggle 2 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">sms</span>
+</div>
+<div>
+<p class="font-semibold text-primary">SMS Alerts</p>
+<p class="text-xs text-on-surface-variant">Urgent emergency and maintenance entries.</p>
+</div>
+</div>
+<button class="w-12 h-6 bg-surface-variant rounded-full relative flex items-center px-1">
+<div class="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+</button>
+</div>
+<!-- Toggle 3 -->
+<div class="flex items-center justify-between py-2">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<div>
+<p class="font-semibold text-primary">App Push</p>
+<p class="text-xs text-on-surface-variant">Real-time chat and document signing.</p>
+</div>
+</div>
+<button class="w-12 h-6 bg-secondary-container rounded-full relative flex items-center px-1">
+<div class="w-4 h-4 bg-white rounded-full ml-auto shadow-sm"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- Emergency Contact Form -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(4,21,52,0.04)]">
+<div class="mb-8">
+<h4 class="font-headline text-lg font-bold text-primary">Emergency Contact</h4>
+<p class="text-on-surface-variant text-sm mt-1">Required for provincial safety compliance.</p>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant ml-1">Contact Name</label>
+<input class="bg-surface-container-low ghost-border rounded-lg px-4 py-3 text-sm focus:ring-0 focus:border-secondary transition-all outline-none text-primary font-medium" placeholder="Sarah Holloway" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant ml-1">Relationship</label>
+<input class="bg-surface-container-low ghost-border rounded-lg px-4 py-3 text-sm focus:ring-0 focus:border-secondary transition-all outline-none text-primary font-medium" placeholder="Spouse" type="text"/>
+</div>
+<div class="col-span-2 flex flex-col gap-2">
+<label class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant ml-1">Phone Number</label>
+<input class="bg-surface-container-low ghost-border rounded-lg px-4 py-3 text-sm focus:ring-0 focus:border-secondary transition-all outline-none text-primary font-medium" placeholder="+1 (416) 555-0129" type="tel"/>
+</div>
+</div>
+<div class="mt-8 flex justify-end">
+<button class="px-8 py-3 bg-primary text-white rounded-lg font-manrope font-bold text-sm active-glow hover:opacity-90 transition-all">Save Changes</button>
+</div>
+</section>
+<!-- Password Security -->
+<section class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(4,21,52,0.04)] border-l-4 border-secondary-container">
+<div class="mb-8">
+<h4 class="font-headline text-lg font-bold text-primary">Security &amp; Access</h4>
+<p class="text-on-surface-variant text-sm mt-1">Update your password to keep your lease data secure.</p>
+</div>
+<div class="space-y-4 max-w-md">
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant ml-1">Current Password</label>
+<input class="bg-surface-container-low ghost-border rounded-lg px-4 py-3 text-sm focus:ring-0 focus:border-secondary transition-all outline-none" placeholder="••••••••••••" type="password"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant ml-1">New Password</label>
+<input class="bg-surface-container-low ghost-border rounded-lg px-4 py-3 text-sm focus:ring-0 focus:border-secondary transition-all outline-none" placeholder="Enter new password" type="password"/>
+</div>
+<button class="mt-4 text-secondary font-manrope font-bold text-sm flex items-center gap-2 hover:translate-x-1 transition-transform">
+                                Update Password <span class="material-symbols-outlined text-sm">arrow_forward_ios</span>
+</button>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Execution from JSON - Mobile Only) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-1">
+<span class="material-symbols-outlined">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-1">
+<span class="material-symbols-outlined">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-1">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-1">
+<span class="material-symbols-outlined">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Maintenance</span>
+</div>
+<!-- Active Mapping for "More" or "Profile" equivalent -->
+<div class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-4 py-2 scale-90 duration-200">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</div>
+</nav>
+</body></html>

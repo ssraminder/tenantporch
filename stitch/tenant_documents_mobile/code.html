@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch - Documents</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d9dade",
+                    "tertiary-container": "#003312",
+                    "tertiary-fixed-dim": "#4ae176",
+                    "secondary-container": "#fdcd74",
+                    "surface-variant": "#e1e2e6",
+                    "surface-tint": "#4f5e81",
+                    "primary-container": "#1b2a4a",
+                    "primary": "#041534",
+                    "inverse-primary": "#b7c6ee",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#191c1f",
+                    "on-primary-fixed-variant": "#384668",
+                    "tertiary-fixed": "#6bff8f",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#00a94c",
+                    "on-secondary-fixed": "#271900",
+                    "secondary-fixed": "#ffdea6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f2f3f7",
+                    "on-tertiary-fixed": "#002109",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e1e2e6",
+                    "outline": "#75777f",
+                    "outline-variant": "#c5c6cf",
+                    "secondary-fixed-dim": "#eec068",
+                    "surface-container-high": "#e7e8ec",
+                    "primary-fixed": "#d9e2ff",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fd",
+                    "on-background": "#191c1f",
+                    "secondary": "#7b5804",
+                    "tertiary": "#001c07",
+                    "background": "#f8f9fd",
+                    "on-surface-variant": "#45464e",
+                    "surface-container": "#edeef2",
+                    "on-primary-container": "#8392b7",
+                    "inverse-on-surface": "#eff1f5",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "inverse-surface": "#2e3134",
+                    "surface": "#f8f9fd",
+                    "on-tertiary-fixed-variant": "#005321",
+                    "on-primary-fixed": "#0a1a3a",
+                    "on-secondary-container": "#785601",
+                    "primary-fixed-dim": "#b7c6ee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-slate-50/80 backdrop-blur-xl fixed top-0 z-50 flex justify-between items-center w-full px-6 py-4 h-16">
+<h1 class="text-xl font-manrope font-bold text-blue-950 tracking-tight">TenantPorch</h1>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-blue-900" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-blue-900" data-icon="settings">settings</span>
+</div>
+</header>
+<main class="pt-20 px-6 max-w-[390px] mx-auto">
+<!-- Hero Editorial Section -->
+<section class="mb-8">
+<h2 class="text-3xl font-headline font-extrabold text-primary tracking-tight mb-2">Documents</h2>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed">Centralized access to your Canadian lease agreements and compliance records.</p>
+</section>
+<!-- Compliance Banner (Editorial Estate style) -->
+<div class="bg-surface-container-low p-4 rounded-xl mb-8 flex items-center gap-4">
+<div class="bg-secondary p-2 rounded-lg">
+<span class="material-symbols-outlined text-white" data-icon="gavel" style="font-variation-settings: 'FILL' 1;">gavel</span>
+</div>
+<div>
+<p class="text-[11px] font-label text-secondary uppercase tracking-widest font-bold">Ontario RTA Compliance</p>
+<p class="text-sm font-body font-semibold text-primary">All documents up to date</p>
+</div>
+</div>
+<!-- Accordion Category List -->
+<div class="space-y-4">
+<!-- Category 1: Active Leases -->
+<div class="group">
+<div class="bg-surface-container-high px-5 py-4 rounded-xl flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="description">description</span>
+<span class="font-headline font-semibold text-primary">Active Leases</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Expanded Files List -->
+<div class="mt-2 space-y-2">
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-primary-container/10 flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-primary">Standard Ontario Lease</h4>
+<p class="text-[10px] text-on-surface-variant">Modified Feb 12, 2024 • 1.2 MB</p>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-secondary-fixed transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-primary-container/10 flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-primary">Addendum A - Pets</h4>
+<p class="text-[10px] text-on-surface-variant">Modified Jan 05, 2024 • 450 KB</p>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-secondary-fixed transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Category 2: Insurance & ID -->
+<div class="group">
+<div class="bg-surface-container-low px-5 py-4 rounded-xl flex justify-between items-center opacity-80">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="verified_user">verified_user</span>
+<span class="font-headline font-semibold text-primary">Insurance &amp; ID</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Category 3: Inspection Reports -->
+<div class="group">
+<div class="bg-surface-container-low px-5 py-4 rounded-xl flex justify-between items-center opacity-80">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="fact_check">fact_check</span>
+<span class="font-headline font-semibold text-primary">Inspection Reports</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Category 4: Financial Records -->
+<div class="group">
+<div class="bg-surface-container-low px-5 py-4 rounded-xl flex justify-between items-center opacity-80">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="receipt_long">receipt_long</span>
+<span class="font-headline font-semibold text-primary">Tax Receipts (T5)</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Empty State / Suggestion UI Pattern -->
+<section class="mt-12 p-8 border-2 border-dashed border-outline-variant/30 rounded-3xl flex flex-col items-center text-center">
+<img alt="Upload" class="w-24 h-24 mb-4 rounded-2xl grayscale" data-alt="minimalist abstract 3D shapes representing paperwork organized in a clean white space with soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAD5SLG1fDMydQtHVCzhD-K8h7d7U-T8znPSjKOeVSvXgDGHGnA2v7fYDX0RDr31kujvnUg5wm8cJx1nw0oXbGaB9rSKtBTGkwcUspOX4OMPOX-1h5i3_U8tY1bK2ld3ln3qycK-l8kkPRq10TjLTRmmRAKZqoqyIqRGYevwagX3gKcBc4YZFl9xerfaoTeanNUYintx4z3T7L2xujCQDaEc1ssyklIpT8B_FARfHgs_FQcNrp9pKOdGkgRS1zxL-MW7wZslojvkJ3S"/>
+<h3 class="font-headline font-bold text-primary">Missing something?</h3>
+<p class="text-xs text-on-surface-variant font-body mb-6">Upload a new document or request a digital signature from your tenant.</p>
+<button class="bg-primary text-white px-6 py-3 rounded-full font-headline font-bold text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="upload">upload</span>
+                Upload Document
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden border-t border-slate-200/10">
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Maintenance</span>
+</a>
+<!-- Active Tab: Documents (mapped to 'More' contextually or as a specific sub-state) -->
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 rounded-xl px-2 py-1 scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="description" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</a>
+</nav>
+</body></html>

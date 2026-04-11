@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-x-hidden no-scrollbar">
+<!-- Top Navigation Anchor -->
+<header class="bg-slate-50/80 backdrop-blur-xl docked full-width top-0 z-50 flex justify-between items-center w-full px-6 py-4 h-16">
+<div class="text-xl font-manrope font-bold text-blue-950 tracking-tight">TenantPorch</div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-blue-900" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<img alt="User avatar" data-alt="Close-up portrait of a friendly man with a professional smile, warm natural lighting, high-end photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDj7F6MlZJimPfcozEYldYSgnCWRQEnoqFWurDcJfuSxOqgCNAmygMH6cUbSHP3eIiw5l4PnP1rYioleRtIVv6ddyo3Za3bUNE609DFARLRaBOr7JKNF789jWTNV2fgTXHACxMJ_zRnv8efdQmMak02twtE2BWS72eDE3M9Wl6WDps3N0mXpkDUt4RH3hdaApiOS8dKDXm9LT7Abotkm8DAnAFb02H2igTlVOrT2qcVVOwGyYyhxStE2Jx8C3lQrrf83Rw9iYPIxT83"/>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-32 px-5 space-y-6">
+<!-- Hero Profile Header -->
+<section class="relative space-y-4">
+<div class="flex items-center gap-5">
+<div class="relative">
+<div class="w-20 h-20 rounded-2xl overflow-hidden shadow-sm">
+<img alt="Tenant Portrait" data-alt="Professional headshot of a young adult male, soft daylight, blurred minimalist office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMDjwffM7S8AS2vr_3NryTMLk2wzlgfAXnU1kWQQ_dkQIr47Zi8OeNsMCavZezSJ40XwHAckFu3k8zXOkYPlcKe9xoF_80_aXGezEt83NVKJQxj-DTtTmK6-5BNk-hn5fVXjEGyNzvWfUuw7j4axbDHmC71Q9bCV1lOuLq1ohMK1fIikJNwgj12CCXWkopJTirzGhS6L6BRsb58xouUsfnlDdEuBY9RFW8vMV46e56b36F2FSE05RjQ2gW4B8yEFMCxUKLY4Qz1w0n"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-secondary p-1.5 rounded-lg text-white shadow-lg">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+</div>
+</div>
+<div>
+<h1 class="text-2xl font-headline font-extrabold text-primary tracking-tight">Marcus Thompson</h1>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-tertiary"></span>
+<p class="text-on-surface-variant font-medium text-sm">Active Tenant · ON</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Profile Sections Stack -->
+<div class="space-y-4">
+<!-- Personal Info Card -->
+<section class="bg-surface-container-low rounded-2xl p-5 space-y-5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="person">person</span>
+<h2 class="font-headline font-bold text-lg text-primary">Personal Info</h2>
+</div>
+<div class="space-y-4">
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Legal Name</label>
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 focus:outline-secondary transition-all" type="text" value="Marcus Thompson"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Email Address</label>
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 focus:outline-secondary transition-all" type="email" value="m.thompson@example.ca"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Phone Number</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 focus:outline-secondary transition-all" type="tel" value="+1 (416) 555-0198"/>
+<span class="absolute right-4 top-3 text-xs font-bold text-tertiary">VERIFIED</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Emergency Contact Card -->
+<section class="bg-surface-container-low rounded-2xl p-5 space-y-5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="emergency">emergency</span>
+<h2 class="font-headline font-bold text-lg text-primary">Emergency Contact</h2>
+</div>
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-3">
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Contact Name</label>
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 transition-all" placeholder="Full Name" type="text"/>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Relationship</label>
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 transition-all" placeholder="e.g. Partner" type="text"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-on-surface-variant/70 uppercase tracking-wider px-1">Emergency Phone</label>
+<input class="w-full bg-surface-container-lowest border-none outline outline-1 outline-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-secondary/50 transition-all" placeholder="+1" type="tel"/>
+</div>
+</div>
+</section>
+<!-- Notifications Card -->
+<section class="bg-surface-container-low rounded-2xl p-5 space-y-5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="notifications_active">notifications_active</span>
+<h2 class="font-headline font-bold text-lg text-primary">Notifications</h2>
+</div>
+<div class="space-y-4 divide-y divide-outline-variant/10">
+<div class="flex items-center justify-between py-2">
+<div class="space-y-0.5">
+<p class="font-medium text-sm text-primary">Rent Reminders</p>
+<p class="text-xs text-on-surface-variant">Push notification 3 days before</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between pt-4 pb-2">
+<div class="space-y-0.5">
+<p class="font-medium text-sm text-primary">Maintenance Updates</p>
+<p class="text-xs text-on-surface-variant">Real-time status for tickets</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between pt-4 pb-2">
+<div class="space-y-0.5">
+<p class="font-medium text-sm text-primary">SMS Alerts</p>
+<p class="text-xs text-on-surface-variant">Urgent building announcements</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary text-on-primary font-headline font-bold py-4 rounded-xl shadow-lg shadow-primary/10 active:scale-95 transition-all">
+            Save Changes
+        </button>
+<button class="w-full text-error font-headline font-semibold py-2 text-sm">
+            Sign Out
+        </button>
+</main>
+<!-- Bottom Navigation Bar (Active State: More/Profile context) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Maintenance</span>
+</div>
+<!-- Active Tab: More (Mapping Tenant Profile to "More" or generic profile entry) -->
+<div class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 rounded-xl px-2 py-1 scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</div>
+</nav>
+</body></html>

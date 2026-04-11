@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .compliance-ledger-border {
+            border-left: 4px solid #001c07;
+        }
+        .editorial-asymmetry {
+            padding-left: clamp(2rem, 8vw, 12rem);
+            padding-right: clamp(2rem, 4vw, 6rem);
+        }
+        .glass-pane {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Top Navigation Suppression: Not shown for transactional flow as per instructions -->
+<main class="min-h-screen flex flex-col lg:flex-row editorial-asymmetry py-12 gap-12 lg:gap-24">
+<!-- Left Column: Editorial Content & Lease Summary -->
+<section class="flex-1 flex flex-col justify-center">
+<header class="mb-12">
+<div class="mb-6">
+<span class="text-secondary font-headline font-extrabold text-2xl italic tracking-tight">TenantPorch</span>
+</div>
+<h1 class="font-headline text-5xl font-extrabold text-primary tracking-tight leading-[1.1] mb-6">
+                    You've been invited to join <span class="text-secondary">Maple Ridge Estates</span> on TenantPorch
+                </h1>
+<p class="text-on-surface-variant text-lg max-w-lg leading-relaxed">
+                    Welcome to your new digital home. Manage your lease, automate rent payments, and request maintenance with Canadian precision.
+                </p>
+</header>
+<!-- Lease Summary Card: Tonal Layering -->
+<div class="bg-surface-container-low rounded-xl p-8 max-w-xl relative overflow-hidden">
+<!-- Compliance Ribbon -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary"></div>
+<div class="flex justify-between items-start mb-8">
+<div>
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Lease Destination</p>
+<h3 class="font-headline text-xl font-bold text-primary">8823 West Pender St, Unit 402</h3>
+<p class="text-on-surface-variant text-sm">Vancouver, BC V6C 3E8</p>
+</div>
+<div class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
+                        BC
+                    </div>
+</div>
+<div class="grid grid-cols-2 gap-8 mb-8">
+<div>
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Monthly Rent</p>
+<div class="flex items-baseline gap-1">
+<span class="text-xs font-medium text-on-surface-variant uppercase">CAD</span>
+<span class="text-2xl font-bold text-primary">$3,450.00</span>
+</div>
+</div>
+<div>
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Move-In Date</p>
+<p class="text-lg font-semibold text-primary">Oct 15, 2023</p>
+</div>
+</div>
+<div class="pt-6 border-t border-outline-variant/10 flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<p class="text-sm text-on-surface-variant leading-snug">
+                        Lease agreement has been pre-verified for <span class="font-bold text-primary">BC Residential Tenancy Act</span> compliance.
+                    </p>
+</div>
+</div>
+<div class="mt-12 hidden lg:block">
+<img class="rounded-xl object-cover h-48 w-full grayscale opacity-40 hover:grayscale-0 transition-all duration-700" data-alt="wide shot of a bright modern living room with large windows overlooking a city skyline at midday soft high-end interior design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTTr1_koLTeEx3aUxyAeYYGRNP9ssc2dKsLhzHSCXZ-55XS9-IyhOuF80ONV8T4JvOIO6heX59zGlJFrz45rI8FjXMd0Sf_mTU2di1ycOlWBeqRHnOF-2p9818Ru35fDnQJxdQW1Mm02Y639H8ubsFGKsGLcm1LkVO-AFhMg_anL9djYjukuYAQOJtDdEJPejG228BBFNfLPE5QT8Ly53H2hLUWl25dmr4zAc17p26Vdg4X4edYDSZe51zisjzeqEW3x3GTXdx-rQ8"/>
+</div>
+</section>
+<!-- Right Column: Form Center -->
+<section class="flex-1 flex items-center">
+<div class="w-full max-w-md mx-auto bg-surface-container-lowest p-10 rounded-xl shadow-[0_24px_48px_rgba(4,21,52,0.06)] border border-outline-variant/10">
+<div class="mb-8">
+<h2 class="font-headline text-2xl font-bold text-primary mb-2">Create your account</h2>
+<p class="text-on-surface-variant text-sm">Secure your residence on TenantPorch</p>
+</div>
+<form class="space-y-5">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">First Name</label>
+<input class="w-full bg-surface-container-low border-none ring-1 ring-outline-variant/20 focus:ring-secondary rounded-lg px-4 py-3 text-sm transition-all duration-200 outline-none" placeholder="Julian" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Last Name</label>
+<input class="w-full bg-surface-container-low border-none ring-1 ring-outline-variant/20 focus:ring-secondary rounded-lg px-4 py-3 text-sm transition-all duration-200 outline-none" placeholder="Vandervall" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Email Address</label>
+<input class="w-full bg-surface-container-low border-none ring-1 ring-outline-variant/20 focus:ring-secondary rounded-lg px-4 py-3 text-sm transition-all duration-200 outline-none" placeholder="j.vandervall@outlook.com" type="email"/>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Password</label>
+<input class="w-full bg-surface-container-low border-none ring-1 ring-outline-variant/20 focus:ring-secondary rounded-lg px-4 py-3 text-sm transition-all duration-200 outline-none" placeholder="••••••••••••" type="password"/>
+</div>
+<div class="flex items-start gap-3 py-2">
+<input class="mt-1 rounded border-outline-variant text-secondary focus:ring-secondary h-4 w-4" type="checkbox"/>
+<label class="text-xs text-on-surface-variant leading-relaxed">
+                            I agree to the <a class="text-primary font-semibold underline decoration-secondary/30" href="#">Terms of Service</a> and acknowledge the <a class="text-primary font-semibold underline decoration-secondary/30" href="#">Privacy Policy</a> regarding my CAD residency data.
+                        </label>
+</div>
+<button class="w-full bg-primary hover:bg-primary-container text-white font-headline font-bold py-4 rounded-lg transition-all duration-300 shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group">
+                        Accept &amp; Join
+                        <span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<div class="flex items-center gap-4 py-4">
+<div class="flex-1 h-px bg-outline-variant/20"></div>
+<span class="text-[10px] font-bold uppercase tracking-widest text-outline">or continue with</span>
+<div class="flex-1 h-px bg-outline-variant/20"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 py-3 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-medium">
+<svg class="w-5 h-5" viewbox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path></svg>
+                            Google
+                        </button>
+<button class="flex items-center justify-center gap-3 py-3 border border-outline-variant/30 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-xl">ios</span>
+                            Apple
+                        </button>
+</div>
+</form>
+<p class="mt-8 text-center text-sm text-on-surface-variant">
+                    Already have an account? <a class="text-secondary font-bold hover:underline" href="#">Log in</a>
+</p>
+</div>
+</section>
+</main>
+<!-- Footer: Editorial Signature -->
+<footer class="editorial-asymmetry py-12 border-t border-outline-variant/10">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-8">
+<div class="text-xs font-bold uppercase tracking-widest text-outline">© 2023 TenantPorch Inc.</div>
+<div class="h-4 w-px bg-outline-variant/30"></div>
+<div class="text-[10px] uppercase tracking-widest text-on-surface-variant">Secure Canadian Data Hosting</div>
+</div>
+<div class="flex gap-6">
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Compliance</a>
+<a class="text-xs text-on-surface-variant hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+<!-- Suppressed Nav Shells as per Relevance Check -->
+</body></html>

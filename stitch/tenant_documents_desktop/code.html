@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch | Document Management</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            vertical-align: middle;
+        }
+        .compliance-ledger-border {
+            border-left: 4px solid #001c07;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface flex min-h-screen">
+<!-- SideNavBar (Authority: JSON & Design System) -->
+<aside class="h-screen w-64 hidden lg:flex flex-col left-0 top-0 fixed bg-primary dark:bg-slate-950 shadow-xl shadow-blue-950/20 z-50">
+<div class="px-6 py-8">
+<h1 class="text-2xl font-black text-white italic font-headline">TenantPorch</h1>
+<p class="text-blue-200/50 text-[10px] uppercase tracking-widest font-bold mt-1">Canadian Property Mgmt</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2 py-2">
+<!-- Active State Logic: Documents is current -->
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+                Properties
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                Tenants
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+                Financials
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="handyman">handyman</span>
+                Maintenance
+            </a>
+<a class="bg-blue-900 dark:bg-slate-800 text-white rounded-lg px-4 py-3 mx-2 translate-x-1 duration-150 font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Documents
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+                Messages
+            </a>
+<a class="text-blue-200/70 hover:text-white px-4 py-3 mx-2 transition-all font-headline font-medium text-sm flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="p-4 mt-auto">
+<button class="w-full bg-secondary text-on-secondary py-3 rounded-lg font-headline font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-secondary/20">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Add Property
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 bg-surface min-h-screen">
+<!-- TopAppBar (Authority: JSON) -->
+<header class="flex justify-between items-center w-full px-8 py-4 h-16 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-headline font-bold text-primary tracking-tight">Tenant Documents</h2>
+<div class="hidden md:flex gap-6 ml-8">
+<a class="text-primary font-bold border-b-2 border-secondary font-headline text-sm py-1" href="#">Properties</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-primary-container hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-primary-container hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest">
+<img alt="User avatar" data-alt="close-up portrait of a professional property manager in a modern office with soft bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmkcf5OzBQBYXWO5FX1WusFYVja6m7wOqZTR4U-K-DdlPMbGb86Ecynuvn1xj2aW4GkmA8OlsNUjRVmgn2Q9aNE1lMd5NQVdz9869FRPWPHaJac0ORR1grPUVFgne1mIhRR71bW_TzbG-R6VddigLFdYDnoyUfFmYB6Sk6FeuwocQ0FSAMCSKmhR3sRuqU11ozSL1OEnqdwls6usSDtaJGBqx3VBP_H7tBOHTUxr7OO4CEgi1HIcgrYVKEMzEsmzrczDJ2_b60uCso"/>
+</div>
+</div>
+</header>
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Breadcrumbs & Editorial Header -->
+<div class="mb-12">
+<div class="flex items-center gap-2 text-on-surface-variant text-xs mb-4 uppercase tracking-widest font-label font-semibold">
+<span>Portfolio</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span>1242 Bay St, Toronto</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary">Documents</span>
+</div>
+<h3 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tighter leading-tight max-w-2xl">
+                    Regulatory &amp; Lease <br/><span class="text-secondary italic">Asset Repository</span>
+</h3>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Compliance Ledger (Left Side) -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<div class="bg-surface-container-low rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-headline font-bold text-lg text-primary">Compliance Status</h4>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full text-[10px] font-bold uppercase">Ontario (ON)</span>
+</div>
+<div class="space-y-4">
+<div class="bg-surface-container-lowest p-4 rounded-lg compliance-ledger-border shadow-sm flex items-center justify-between">
+<div>
+<p class="text-xs font-label font-bold text-on-surface-variant uppercase mb-1">Status</p>
+<p class="font-headline font-bold text-primary">Fully Compliant</p>
+</div>
+<span class="material-symbols-outlined text-tertiary text-3xl" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="p-4 border-l-4 border-secondary bg-white rounded-lg shadow-sm">
+<p class="text-xs font-label font-bold text-on-surface-variant uppercase mb-1">Renewal Notice</p>
+<p class="font-headline font-bold text-primary">Due in 42 Days</p>
+</div>
+</div>
+</div>
+<!-- Upload Area (Glassmorphism inspired) -->
+<div class="bg-primary p-1 rounded-xl shadow-2xl">
+<div class="bg-primary-container rounded-lg p-8 border-2 border-dashed border-outline-variant/20 flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 backdrop-blur-md">
+<span class="material-symbols-outlined text-secondary text-3xl" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<h5 class="font-headline font-bold text-white text-lg mb-2">Upload Documents</h5>
+<p class="text-on-primary-container text-sm mb-6 px-4">Insurance, Tenant ID, or supporting Schedule B amendments.</p>
+<button class="w-full bg-secondary-fixed text-on-secondary-fixed py-3 rounded-lg font-headline font-bold text-sm hover:scale-[0.98] transition-transform">
+                                Browse Files
+                            </button>
+</div>
+</div>
+</div>
+<!-- Document Grid (Right Side) -->
+<div class="col-span-12 lg:col-span-8">
+<div class="flex items-center justify-between mb-6">
+<div class="flex gap-4">
+<button class="px-4 py-2 bg-primary text-white rounded-full text-xs font-bold font-label uppercase">All Files</button>
+<button class="px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-full text-xs font-bold font-label uppercase transition-colors">Recent</button>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<input class="bg-transparent border-none text-sm font-medium focus:ring-0" placeholder="Search files..." type="text"/>
+</div>
+</div>
+<div class="space-y-3">
+<!-- Category: Lease -->
+<div class="bg-surface-container-low p-3 px-6 rounded-t-xl text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] flex items-center justify-between">
+<span>Primary Lease Agreements</span>
+<span>2 Items</span>
+</div>
+<div class="bg-white hover:bg-surface-container-lowest transition-all p-5 shadow-sm flex items-center gap-6 group">
+<div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" data-icon="description">description</span>
+</div>
+<div class="flex-1">
+<h6 class="font-headline font-bold text-primary">Standard Ontario Lease V4.pdf</h6>
+<p class="text-xs text-on-surface-variant">Lease • Signed Jul 12, 2023 • 4.2 MB</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span> View
+                                </button>
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Category: Schedules -->
+<div class="bg-surface-container-low p-3 px-6 text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mt-4">
+<span>Schedules &amp; Riders</span>
+</div>
+<div class="bg-white hover:bg-surface-container-lowest transition-all p-5 shadow-sm flex items-center gap-6 group">
+<div class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" data-icon="article">article</span>
+</div>
+<div class="flex-1">
+<h6 class="font-headline font-bold text-primary">Schedule A - Additional Terms.docx</h6>
+<p class="text-xs text-on-surface-variant">Schedule A • Last edited Aug 01, 2023 • 1.1 MB</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span> View
+                                </button>
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Category: Inspections -->
+<div class="bg-surface-container-low p-3 px-6 text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mt-4">
+<span>Inspections &amp; Reports</span>
+</div>
+<div class="bg-white hover:bg-surface-container-lowest transition-all p-5 shadow-sm flex items-center gap-6 group">
+<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" data-icon="content_paste_search">content_paste_search</span>
+</div>
+<div class="flex-1">
+<h6 class="font-headline font-bold text-primary">Move-In Inspection Report.pdf</h6>
+<p class="text-xs text-on-surface-variant">Inspections • Completed Jul 01, 2023 • 8.5 MB</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span> View
+                                </button>
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Financials / Receipts -->
+<div class="bg-surface-container-low p-3 px-6 text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mt-4">
+<span>Bills &amp; Receipts</span>
+</div>
+<div class="bg-white hover:bg-surface-container-lowest transition-all p-5 shadow-sm flex items-center gap-6 group rounded-b-xl">
+<div class="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center text-on-surface-variant group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" data-icon="receipt_long">receipt_long</span>
+</div>
+<div class="flex-1">
+<h6 class="font-headline font-bold text-primary">First Month Rent Receipt.pdf</h6>
+<p class="text-xs text-on-surface-variant">Receipts • CAD $2,850.00 • Jul 15, 2023</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span> View
+                                </button>
+<button class="p-2 hover:bg-surface-container text-primary transition-colors rounded-lg flex items-center gap-1 text-xs font-bold">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Compliance Note -->
+<footer class="mt-16 pt-8 border-t border-surface-container-highest flex flex-col md:flex-row justify-between items-center text-on-surface-variant text-[11px] font-medium tracking-wide uppercase">
+<div class="flex items-center gap-4 mb-4 md:mb-0">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="security">security</span> AES-256 Encrypted Storage</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="gavel">gavel</span> LTB Compliant Records</span>
+</div>
+<p>© 2024 TenantPorch Canadian Asset Management. All Documents Archived for 7 Years.</p>
+</footer>
+</div>
+</main>
+<!-- BottomNavBar (Authority: JSON - Mobile Only) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl flex justify-around items-center h-20 px-4 pb-safe lg:hidden shadow-[0_-4px_24px_rgba(4,21,52,0.06)] border-t border-slate-200/10">
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-2 py-1 scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Documents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</a>
+</nav>
+</body></html>

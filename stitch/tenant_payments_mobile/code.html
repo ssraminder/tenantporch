@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch - Payments</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Manrope & Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#d9dade",
+                    "tertiary-container": "#003312",
+                    "tertiary-fixed-dim": "#4ae176",
+                    "secondary-container": "#fdcd74",
+                    "surface-variant": "#e1e2e6",
+                    "surface-tint": "#4f5e81",
+                    "primary-container": "#1b2a4a",
+                    "primary": "#041534",
+                    "inverse-primary": "#b7c6ee",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#191c1f",
+                    "on-primary-fixed-variant": "#384668",
+                    "tertiary-fixed": "#6bff8f",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#00a94c",
+                    "on-secondary-fixed": "#271900",
+                    "secondary-fixed": "#ffdea6",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f2f3f7",
+                    "on-tertiary-fixed": "#002109",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e1e2e6",
+                    "outline": "#75777f",
+                    "outline-variant": "#c5c6cf",
+                    "secondary-fixed-dim": "#eec068",
+                    "surface-container-high": "#e7e8ec",
+                    "primary-fixed": "#d9e2ff",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fd",
+                    "on-background": "#191c1f",
+                    "secondary": "#7b5804",
+                    "tertiary": "#001c07",
+                    "background": "#f8f9fd",
+                    "on-surface-variant": "#45464e",
+                    "surface-container": "#edeef2",
+                    "on-primary-container": "#8392b7",
+                    "inverse-on-surface": "#eff1f5",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "inverse-surface": "#2e3134",
+                    "surface": "#f8f9fd",
+                    "on-tertiary-fixed-variant": "#005321",
+                    "on-primary-fixed": "#0a1a3a",
+                    "on-secondary-container": "#785601",
+                    "primary-fixed-dim": "#b7c6ee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-bright text-on-surface min-h-screen pb-40">
+<!-- Top Navigation Bar -->
+<nav class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl fixed top-0 z-50 w-full px-6 py-4 h-16 flex justify-between items-center bg-gradient-to-b from-slate-100 to-transparent dark:from-slate-900">
+<span class="text-xl font-manrope font-bold text-blue-950 dark:text-white tracking-tight">TenantPorch</span>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-blue-900 dark:text-blue-100">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="professional headshot of a smiling young adult renter in a minimalist apartment soft natural lighting high quality" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQu5l22kDsfaHBxeUqFbV4D8up5hVDW5yWflCDplRvYrcRxXFfYsFpdyU3oxsTqcAs8VgU9gO9JimhgubLfz3wxXhGTHXOqZzi7zlkAkJpNrVNTef7OwENK7NW9OwTpDh7t1W48nkmqw_TSbgV8Sb28TUSi7a0ChoRuMTASN5SGagM3_1cjUrqimgwUah6TpBFmih1L-ks4GiGNGebhCDovQBk11KFGSN5c2RuG4EZk8ahVjIIk1sIzl2k6v7i3bYLY19Ip9xpRovV"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-20 px-4 max-w-[390px] mx-auto">
+<!-- Page Title -->
+<header class="mb-6">
+<h1 class="text-2xl font-black text-primary tracking-tight">Financials</h1>
+<p class="text-on-surface-variant text-sm font-body">Overview of your CAD $ lease accounts</p>
+</header>
+<!-- Balance Card (The Digital Curator Style) -->
+<section class="relative overflow-hidden rounded-xl bg-primary text-white p-6 mb-8 shadow-xl shadow-primary/20">
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-secondary rounded-full blur-3xl opacity-20"></div>
+<div class="relative z-10">
+<span class="text-xs font-label uppercase tracking-widest text-on-primary-container">Current Balance</span>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-sm font-medium text-secondary-fixed-dim">CAD</span>
+<h2 class="text-4xl font-extrabold tracking-tighter">2,150.00</h2>
+</div>
+<div class="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
+<div>
+<p class="text-[10px] uppercase opacity-60">Due Date</p>
+<p class="text-sm font-semibold">Oct 01, 2023</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] uppercase opacity-60">Status</p>
+<span class="inline-flex items-center gap-1 text-sm font-semibold text-secondary-fixed">
+                            Pending <span class="material-symbols-outlined text-xs">info</span>
+</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Info Asymmetry Layout -->
+<div class="grid grid-cols-2 gap-3 mb-8">
+<div class="bg-surface-container-low p-4 rounded-xl">
+<span class="material-symbols-outlined text-secondary mb-2">account_balance</span>
+<p class="text-[10px] font-label uppercase text-on-surface-variant">Last Payment</p>
+<p class="text-sm font-bold text-primary">CAD 2,150.00</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl">
+<span class="material-symbols-outlined text-tertiary mb-2">verified_user</span>
+<p class="text-[10px] font-label uppercase text-on-surface-variant">Next Auto-Pay</p>
+<p class="text-sm font-bold text-primary">Enabled</p>
+</div>
+</div>
+<!-- History Cards (Compliance Ledger Pattern) -->
+<section class="space-y-4">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-lg font-bold text-primary">Payment History</h3>
+<span class="text-xs text-secondary font-semibold">View All</span>
+</div>
+<!-- History Item 1 -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 flex justify-between items-center shadow-sm">
+<!-- Compliance Ribbon -->
+<div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-tertiary"></div>
+<div class="pl-3">
+<p class="text-sm font-bold text-primary">September Rent</p>
+<p class="text-[11px] text-on-surface-variant">Paid on Sep 01, 2023</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD 2,150.00</p>
+<span class="text-[10px] font-label font-bold uppercase text-tertiary">Successful</span>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 flex justify-between items-center shadow-sm">
+<div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-tertiary"></div>
+<div class="pl-3">
+<p class="text-sm font-bold text-primary">August Rent</p>
+<p class="text-[11px] text-on-surface-variant">Paid on Aug 01, 2023</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD 2,150.00</p>
+<span class="text-[10px] font-label font-bold uppercase text-tertiary">Successful</span>
+</div>
+</div>
+<!-- History Item 3 (Utilities) -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 flex justify-between items-center shadow-sm">
+<div class="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-tertiary"></div>
+<div class="pl-3">
+<p class="text-sm font-bold text-primary">Parking &amp; Utilities</p>
+<p class="text-[11px] text-on-surface-variant">Paid on Jul 15, 2023</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">CAD 145.50</p>
+<span class="text-[10px] font-label font-bold uppercase text-tertiary">Successful</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Pay Now Button -->
+<div class="fixed bottom-24 left-0 right-0 px-6 z-40 lg:hidden">
+<button class="w-full bg-secondary text-on-secondary py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-2xl shadow-secondary/40 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+            Pay Now
+        </button>
+</div>
+<!-- Bottom Navigation Bar (JSON Execution) -->
+<nav class="fixed bottom-0 w-full rounded-t-2xl z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<!-- Properties -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</a>
+<!-- Financials (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-2 py-1 scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</a>
+<!-- Maintenance -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Maintenance</span>
+</a>
+<!-- More -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-800 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</a>
+</nav>
+</body></html>

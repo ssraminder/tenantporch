@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>TenantPorch | Maintenance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .snap-x-mandatory { scroll-snap-type: x mandatory; }
+        .snap-center { scroll-snap-align: center; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-24">
+<!-- Top Navigation Anchor -->
+<nav class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl fixed top-0 z-50 flex justify-between items-center w-full px-6 py-4 h-16">
+<div class="text-xl font-manrope font-bold text-blue-950 dark:text-white tracking-tight">TenantPorch</div>
+<div class="flex gap-4 items-center">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="professional headshot of a smiling man with clean background for user profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBryEYVrbQmuYoPhwafkrOOA3LIO_h5syvsPokFnwvYnr56FHappmHNYMBUyU5NhlFQE1H6rCkDC2QVG5FyxeHzLz0yHfF9OnAwj3mUM0w48W7UGvHIYv4FigDrp3RxiWjTBmwCArtePTgbLQiqdTY0ZZMbkPvQQxvzOH13jDvTlNcgC0xu4BxElQFps181K9s859Cw_eLashf64gUv-VdnQBSwLB4zXpZJ63j9Uk_LflkCCzqe5LEzJAV9Gzo3GblZdjXRHXWADJgr"/>
+</div>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="pt-20 px-5 space-y-6">
+<!-- Header & Stats -->
+<header class="space-y-1">
+<h1 class="text-3xl font-headline font-extrabold text-primary tracking-tight">Maintenance</h1>
+<p class="text-on-surface-variant text-sm font-body">Manage your requests for 428 Bay St.</p>
+</header>
+<!-- Status Filter - Asymmetric Layout -->
+<div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+<button class="px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold whitespace-nowrap shadow-sm">All Requests</button>
+<button class="px-5 py-2.5 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium whitespace-nowrap">Active (2)</button>
+<button class="px-5 py-2.5 rounded-full bg-surface-container-low text-on-surface-variant text-sm font-medium whitespace-nowrap">Completed</button>
+</div>
+<!-- Compliance Ledger Style List -->
+<div class="space-y-4">
+<!-- Active Request Card -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden relative border-l-4 border-secondary flex flex-col transition-all active:scale-95 duration-150">
+<div class="p-5">
+<div class="flex justify-between items-start mb-3">
+<span class="text-xs font-bold font-label uppercase tracking-widest text-secondary">In Progress</span>
+<span class="text-xs text-on-surface-variant font-medium">May 12, 2024</span>
+</div>
+<h3 class="text-lg font-headline font-bold text-primary mb-1">Leaking Kitchen Faucet</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">The faucet in the main kitchen has a steady drip that is increasing in volume. Water pooling under the sink.</p>
+<div class="flex items-center gap-3 pt-4 border-t border-surface-container">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Plumber" class="w-full h-full object-cover" data-alt="professional plumber in uniform working on pipes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvF_1pWmLcJ-WcAq3xuH8LADJWzTxwiIuSn4Zotz1YoulP6zj2g0pHwP1yKnWjOcNA2bE5aW8Jcn96fYyF-vJ_98bgDeDF8bz22vJI1UjlcT_1n4wsC3kgHA4ppS5wYafiUR2wnkS38weaQxxjHB-5iuz-0-DOrVUl0AuCkqv2XdPKX5vHM49prJDqfuwv0i5SRKoRxyJoNphL9L8g3mVlOidCtlL92pH8PUpsR5CCzo94KL2I1odejOKh1kAaWAljjxpgjGBRSoMh"/>
+</div>
+</div>
+<span class="text-xs font-medium text-on-surface">Alex (Pro-Plumbing) assigned</span>
+</div>
+</div>
+</div>
+<!-- Urgent/Action Card -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden relative border-l-4 border-error flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+<div class="p-5">
+<div class="flex justify-between items-start mb-3">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container text-[10px] font-bold uppercase">Urgent</span>
+<span class="text-xs text-on-surface-variant font-medium">Today, 9:15 AM</span>
+</div>
+<h3 class="text-lg font-headline font-bold text-primary mb-1">Heating Outage</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Central heating is not engaging despite thermostat settings. Unit temperature is 16°C.</p>
+<div class="mt-4 bg-surface-container-low p-3 rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-error text-xl" data-icon="forum">forum</span>
+<div>
+<p class="text-xs font-bold text-primary">Landlord Message:</p>
+<p class="text-xs text-on-surface-variant mt-0.5">Technician is en route, ETA 11:30 AM. Please ensure entry path is clear.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Completed Card -->
+<div class="bg-surface-container-low/50 rounded-xl overflow-hidden relative border-l-4 border-tertiary-fixed-dim opacity-75">
+<div class="p-5 text-on-surface-variant">
+<div class="flex justify-between items-start mb-3">
+<span class="text-xs font-bold font-label uppercase tracking-widest text-on-tertiary-container">Resolved</span>
+<span class="text-xs font-medium">Apr 28, 2024</span>
+</div>
+<h3 class="text-base font-headline font-semibold mb-1">Loose Balcony Railing</h3>
+<p class="text-xs line-clamp-1">Corner post on the West balcony was wobbly...</p>
+</div>
+</div>
+</div>
+<!-- Conversation Details Section (Simplified inline for mobile flow) -->
+<section class="mt-10 space-y-6 pb-8">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-headline font-bold text-primary">Active Discussion</h2>
+<button class="text-secondary text-sm font-semibold">View History</button>
+</div>
+<div class="bg-surface-container-low p-4 rounded-2xl space-y-4">
+<!-- User Message -->
+<div class="flex flex-col items-end space-y-1">
+<div class="bg-primary text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm leading-relaxed">
+                        Hi, I noticed the water pressure has also dropped since the leak started.
+                    </div>
+<span class="text-[10px] text-on-surface-variant mr-1">Sent 10:45 AM</span>
+</div>
+<!-- Assigned Pro Message -->
+<div class="flex flex-col items-start space-y-1">
+<div class="flex items-center gap-2 mb-1">
+<img alt="Tech" class="w-5 h-5 rounded-full object-cover" data-alt="close up of a professional maintenance technician portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe_0IaZa0evDq0zElwrsAmmt4Xod6T5uh2T9tCET34T43URRux6xjTD-Lf6n7mgtTz3640JdEQCan5mZwL56Y4CMMp-ENxJJERbMyyibH-XWIeJmFS3Xc3VjaitWL8MduoHHgGRBWReJefNwIvT6FjWnSNTJd3HFzyj2Uwqw-z4M9ARYEHWXdsw-uHwtadz4-Me2EmkvLnQYodpVCqs1NbvbIUJofTM4diVUkmadGQiBGj2umSAltdOOhTZaOx_ZrAFyI8zKg5-ldT"/>
+<span class="text-[10px] font-bold text-primary">Alex (Tech)</span>
+</div>
+<div class="bg-white text-on-surface p-3 rounded-2xl rounded-tl-none max-w-[85%] text-sm leading-relaxed shadow-sm">
+                        Thanks for the heads up. I'll check the main shut-off valve when I arrive. Should be there in 20 mins.
+                    </div>
+<span class="text-[10px] text-on-surface-variant ml-1">Received 10:48 AM</span>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB: Floating Bottom Sheet Trigger -->
+<div class="fixed bottom-24 right-6 z-40">
+<button class="w-14 h-14 bg-secondary rounded-full flex items-center justify-center text-white shadow-[0_12px_30px_rgba(123,88,4,0.3)] active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</div>
+<!-- Simulated Bottom Sheet (New Request Form) - Fixed at Bottom but Peek -->
+<div class="fixed inset-x-0 bottom-0 z-[60] transform translate-y-[85%] bg-surface-container-lowest rounded-t-[32px] shadow-[0_-10px_40px_rgba(4,21,52,0.12)] border-t border-outline-variant/10 px-6 pt-2 pb-10 transition-transform duration-500 ease-in-out">
+<div class="w-12 h-1.5 bg-surface-variant rounded-full mx-auto mb-8"></div>
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-headline font-extrabold text-primary">New Request</h2>
+<button class="p-2 bg-surface-container rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-xs font-bold text-primary uppercase tracking-wider ml-1">Category</label>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-container-low border border-transparent hover:border-secondary transition-all group" type="button">
+<span class="material-symbols-outlined text-secondary mb-2" data-icon="plumbing">plumbing</span>
+<span class="text-xs font-semibold text-primary">Plumbing</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-2xl bg-surface-container-low border border-transparent hover:border-secondary transition-all" type="button">
+<span class="material-symbols-outlined text-secondary mb-2" data-icon="bolt">bolt</span>
+<span class="text-xs font-semibold text-primary">Electrical</span>
+</button>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-primary uppercase tracking-wider ml-1">Description</label>
+<textarea class="w-full rounded-xl bg-surface-container-low border-none focus:ring-2 focus:ring-secondary/50 placeholder:text-on-surface-variant/40 text-sm py-4 px-4" placeholder="Describe what's wrong..." rows="3"></textarea>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-primary uppercase tracking-wider ml-1">Upload Photo</label>
+<div class="w-full h-32 rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-on-surface-variant/60">
+<span class="material-symbols-outlined text-3xl mb-1" data-icon="add_a_photo">add_a_photo</span>
+<span class="text-[10px] font-medium">Tap to capture issue</span>
+</div>
+</div>
+<button class="w-full bg-secondary text-white font-headline font-bold py-4 rounded-xl shadow-lg shadow-secondary/20 flex items-center justify-center gap-2">
+                Submit Request
+                <span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+</button>
+</form>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl fixed bottom-0 w-full rounded-t-2xl z-50 border-t border-slate-200/10 shadow-[0_-4px_24px_rgba(4,21,52,0.06)] flex justify-around items-center h-20 px-4 pb-safe lg:hidden">
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="space_dashboard">space_dashboard</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="home_work">home_work</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Properties</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Financials</span>
+</a>
+<!-- ACTIVE TAB -->
+<a class="flex flex-col items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-xl px-2 py-1 scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">Maintenance</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+<span class="font-inter text-[10px] font-medium tracking-wide uppercase mt-1">More</span>
+</a>
+</nav>
+</body></html>

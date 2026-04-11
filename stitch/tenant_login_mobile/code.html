@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, initial-scale=1.0" name="viewport"/>
+<title>TenantPorch | Secure Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dade",
+                        "tertiary-container": "#003312",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-container": "#fdcd74",
+                        "surface-variant": "#e1e2e6",
+                        "surface-tint": "#4f5e81",
+                        "primary-container": "#1b2a4a",
+                        "primary": "#041534",
+                        "inverse-primary": "#b7c6ee",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1f",
+                        "on-primary-fixed-variant": "#384668",
+                        "tertiary-fixed": "#6bff8f",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#00a94c",
+                        "on-secondary-fixed": "#271900",
+                        "secondary-fixed": "#ffdea6",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f3f7",
+                        "on-tertiary-fixed": "#002109",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e1e2e6",
+                        "outline": "#75777f",
+                        "outline-variant": "#c5c6cf",
+                        "secondary-fixed-dim": "#eec068",
+                        "surface-container-high": "#e7e8ec",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fd",
+                        "on-background": "#191c1f",
+                        "secondary": "#7b5804",
+                        "tertiary": "#001c07",
+                        "background": "#f8f9fd",
+                        "on-surface-variant": "#45464e",
+                        "surface-container": "#edeef2",
+                        "on-primary-container": "#8392b7",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-surface": "#2e3134",
+                        "surface": "#f8f9fd",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "on-primary-fixed": "#0a1a3a",
+                        "on-secondary-container": "#785601",
+                        "primary-fixed-dim": "#b7c6ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center justify-center">
+<div class="w-[390px] min-h-screen bg-surface-bright flex flex-col relative overflow-hidden">
+<!-- Background Editorial Element -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-secondary-fixed opacity-20 blur-[100px] rounded-full"></div>
+<div class="absolute top-1/2 -left-32 w-80 h-80 bg-primary-container opacity-5 blur-[120px] rounded-full"></div>
+<!-- Content Canvas -->
+<main class="flex-grow flex flex-col px-8 pt-20 pb-12 z-10">
+<!-- Logo Section -->
+<div class="mb-12">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-2xl" data-icon="domain">domain</span>
+</div>
+<span class="text-2xl font-black text-primary italic tracking-tight">TenantPorch</span>
+</div>
+<h1 class="text-3xl font-extrabold text-on-surface tracking-tight leading-tight">
+                    Welcome back to <br/><span class="text-secondary">your home.</span>
+</h1>
+<p class="text-on-surface-variant mt-4 font-medium">Canadian Property Management Simplified.</p>
+</div>
+<!-- Login Form -->
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-sm font-semibold text-primary ml-1">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60" data-icon="mail">mail</span>
+<input class="w-full h-14 pl-12 pr-4 bg-surface-container-lowest border-none outline outline-[1px] outline-outline-variant/20 focus:outline-secondary rounded-xl transition-all font-body text-on-surface placeholder:text-on-surface-variant/40" placeholder="name@email.com" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="text-sm font-semibold text-primary">Password</label>
+<a class="text-xs font-bold text-secondary-fixed-dim hover:text-secondary transition-colors" href="#">Forgot?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60" data-icon="lock">lock</span>
+<input class="w-full h-14 pl-12 pr-4 bg-surface-container-lowest border-none outline outline-[1px] outline-outline-variant/20 focus:outline-secondary rounded-xl transition-all font-body text-on-surface placeholder:text-on-surface-variant/40" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<!-- Primary Login Action -->
+<button class="w-full h-14 bg-primary text-on-primary font-bold rounded-xl shadow-xl shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-8" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-xl" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Separation Logic (No Borders) -->
+<div class="flex items-center gap-4 my-10">
+<div class="flex-grow h-[1px] bg-surface-variant"></div>
+<span class="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">or</span>
+<div class="flex-grow h-[1px] bg-surface-variant"></div>
+</div>
+<!-- Alternative Actions -->
+<div class="space-y-4">
+<button class="w-full h-14 bg-secondary-fixed text-on-secondary-fixed font-bold rounded-xl flex items-center justify-center gap-3 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span>Guest Rent Pay</span>
+</button>
+<button class="w-full h-14 bg-surface-container-low text-primary font-bold rounded-xl flex items-center justify-center gap-3 active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+<span>Register Account</span>
+</button>
+</div>
+<!-- Compliance Footer -->
+<div class="mt-auto pt-12 text-center space-y-4">
+<div class="flex justify-center gap-2">
+<span class="px-3 py-1 bg-surface-variant text-[10px] font-bold text-on-surface-variant rounded-full uppercase tracking-tighter">ON</span>
+<span class="px-3 py-1 bg-surface-variant text-[10px] font-bold text-on-surface-variant rounded-full uppercase tracking-tighter">BC</span>
+<span class="px-3 py-1 bg-surface-variant text-[10px] font-bold text-on-surface-variant rounded-full uppercase tracking-tighter">AB</span>
+</div>
+<p class="text-[10px] text-on-surface-variant/60 font-medium px-4">
+                    TenantPorch complies with Canadian Residential Tenancy Acts &amp; PIPEDA. Securely encrypted.
+                </p>
+</div>
+</main>
+<!-- Decorative Image Context (Asymmetric Layout) -->
+<div class="w-full h-24 mt-4 overflow-hidden rounded-t-[40px] relative">
+<img alt="modern architecture" class="w-full h-full object-cover grayscale opacity-40 mix-blend-multiply" data-alt="Modern minimalist Canadian apartment exterior with large windows and clean architectural lines in soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbsv3ElXKLFtXxtb5p838ZNeqvzYmxpEefSckfDmw1ZZYNG6EOW79WAIINz8MXi7oCg-rwud26gD3fnl5FZ9mQHgYF1mZSEOVVd8piAi_okicXVQd0WqVqNBpwcIKf-iEcUzEBmRBc-DoySvcohpVfvI8sBUn4qq4roA7z_JWhe2YE1EixVL9JugD6nE6nt4NwK5vq1gAjzr1nUr8CWtCiOStDKvahSkVDuu3dW3Qs3MtaPj4YkxizrFI0RvW_0k_-mH7dwYdWcZZi"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-bright via-transparent to-transparent"></div>
+</div>
+</div>
+</body></html>
