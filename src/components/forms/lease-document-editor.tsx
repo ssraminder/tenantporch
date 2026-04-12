@@ -28,6 +28,7 @@ interface LeaseDocumentEditorProps {
   hasUnverifiedTenants: boolean;
   recipients?: SigningRecipient[];
   emailLogs?: EmailLogEntry[];
+  signedDocumentUrl?: string | null;
 }
 
 export function LeaseDocumentEditor({
@@ -41,6 +42,7 @@ export function LeaseDocumentEditor({
   hasUnverifiedTenants,
   recipients = [],
   emailLogs = [],
+  signedDocumentUrl,
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -113,11 +115,17 @@ export function LeaseDocumentEditor({
   }
 
   async function handleDownloadPDF() {
+    // If signed PDF exists, open it directly
+    if (signingStatus === "completed" && signedDocumentUrl) {
+      window.open(signedDocumentUrl, "_blank");
+      return;
+    }
+
     if (!content) return;
     setDownloading(true);
     try {
       const { downloadLeasePDF } = await import("@/lib/pdf/generate-lease-pdf");
-      await downloadLeasePDF(content, propertyAddress, true);
+      await downloadLeasePDF(content, propertyAddress, signingStatus !== "completed");
       toast.success("PDF downloaded.");
     } catch (err) {
       console.error(err);

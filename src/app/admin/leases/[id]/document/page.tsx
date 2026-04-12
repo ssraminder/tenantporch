@@ -115,6 +115,21 @@ export default async function LeaseDocumentPage({
     }
   }
 
+  // Fetch signed document URL if completed
+  let signedDocumentUrl: string | null = null;
+  if (signingStatus === "completed") {
+    const { data: signedDoc } = await supabase
+      .from("rp_documents")
+      .select("file_url")
+      .eq("lease_id", leaseId)
+      .eq("category", "lease")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    signedDocumentUrl = signedDoc?.file_url ?? null;
+  }
+
   return (
     <section className="space-y-6">
       <Breadcrumbs
@@ -139,6 +154,7 @@ export default async function LeaseDocumentPage({
         )}
         recipients={recipients}
         emailLogs={emailLogs}
+        signedDocumentUrl={signedDocumentUrl}
       />
     </section>
   );
