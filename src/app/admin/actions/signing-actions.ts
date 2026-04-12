@@ -639,14 +639,18 @@ export async function submitSignature(
           // Send completion emails to all participants
           for (const sp of sigParticipants ?? []) {
             try {
+              const portalUrl =
+                sp.signer_role === "landlord"
+                  ? `${appUrl}/admin/leases/${completedLease.id}/document`
+                  : `${appUrl}/tenant/documents`;
+
               const emailResult = await sendSigningCompletionEmail({
                 to: sp.signer_email,
                 recipientName: sp.signer_name,
                 propertyAddress,
                 landlordName: ownerName,
                 landlordEmail: ownerEmail,
-                documentUrl:
-                  documentUrl || `${appUrl}/tenant/documents`,
+                documentUrl: portalUrl,
                 signerCount: (sigParticipants ?? []).length,
               });
 

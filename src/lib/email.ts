@@ -302,7 +302,7 @@ export async function sendSigningCompletionEmail({
         </p>
         <div style="text-align: center; margin: 32px 0;">
           <a href="${documentUrl}" style="display: inline-block; background: #273f4f; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; text-decoration: none;">
-            Download Signed Lease
+            Download Lease Document
           </a>
         </div>
         <div style="background: #f2f3f7; border-radius: 12px; padding: 16px 20px; margin: 24px 0;">
