@@ -348,3 +348,214 @@ export async function deleteProperty(propertyId: string) {
     };
   }
 }
+
+export async function addPropertyOwner(
+  propertyId: string,
+  email: string,
+  designation: string
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    // Verify ownership
+    const { data: property } = await supabase
+      .from("rp_properties")
+      .select("id, landlord_id")
+      .eq("id", propertyId)
+      .single();
+
+    if (!property || property.landlord_id !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    // Find user by email
+    const { data: targetUser } = await supabase
+      .from("rp_users")
+      .select("id, first_name, last_name, email")
+      .eq("email", email.toLowerCase().trim())
+      .single();
+
+    if (!targetUser) {
+      return {
+        success: false,
+        error: "No user found with that email address. They must have a TenantPorch account first.",
+      };
+    }
+
+    // Check if already an owner
+    const { data: existing } = await supabase
+      .from("rp_property_owners")
+      .select("id")
+      .eq("property_id", propertyId)
+      .eq("user_id", targetUser.id)
+      .single();
+
+    if (existing) {
+      return { success: false, error: "This user is already an owner of this property." };
+    }
+
+    const { error: insertError } = await supabase
+      .from("rp_property_owners")
+      .insert({
+        property_id: propertyId,
+        user_id: targetUser.id,
+        designation,
+        is_primary: false,
+      });
+
+    if (insertError) {
+      return { success: false, error: insertError.message };
+    }
+
+    revalidatePath(`/admin/properties/${propertyId}`);
+    return { success: true, ownerName: `${targetUser.first_name} ${targetUser.last_name}` };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+export async function removePropertyOwner(ownerId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    // Fetch the owner record
+    const { data: ownerRecord } = await supabase
+      .from("rp_property_owners")
+      .select("id, property_id, is_primary")
+      .eq("id", ownerId)
+      .single();
+
+    if (!ownerRecord) {
+      return { success: false, error: "Owner record not found" };
+    }
+
+    if (ownerRecord.is_primary) {
+      return { success: false, error: "Cannot remove the primary owner" };
+    }
+
+    // Verify the current user owns this property
+    const { data: property } = await supabase
+      .from("rp_properties")
+      .select("landlord_id")
+      .eq("id", ownerRecord.property_id)
+      .single();
+
+    if (!property || property.landlord_id !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    const { error: deleteError } = await supabase
+      .from("rp_property_owners")
+      .delete()
+      .eq("id", ownerId);
+
+    if (deleteError) {
+      return { success: false, error: deleteError.message };
+    }
+
+    revalidatePath(`/admin/properties/${ownerRecord.property_id}`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+export async function updateOwnerDesignation(
+  ownerId: string,
+  designation: string
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    const { data: ownerRecord } = await supabase
+      .from("rp_property_owners")
+      .select("id, property_id")
+      .eq("id", ownerId)
+      .single();
+
+    if (!ownerRecord) {
+      return { success: false, error: "Owner record not found" };
+    }
+
+    const { data: property } = await supabase
+      .from("rp_properties")
+      .select("landlord_id")
+      .eq("id", ownerRecord.property_id)
+      .single();
+
+    if (!property || property.landlord_id !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    const { error: updateError } = await supabase
+      .from("rp_property_owners")
+      .update({ designation })
+      .eq("id", ownerId);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    revalidatePath(`/admin/properties/${ownerRecord.property_id}`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}

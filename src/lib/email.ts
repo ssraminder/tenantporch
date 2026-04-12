@@ -180,6 +180,84 @@ export async function sendInviteEmail({
   });
 }
 
+export async function sendSigningEmail({
+  to,
+  signerName,
+  signerRole,
+  propertyAddress,
+  landlordName,
+  signingUrl,
+  expiresAt,
+}: {
+  to: string;
+  signerName: string;
+  signerRole: "tenant" | "landlord";
+  propertyAddress: string;
+  landlordName: string;
+  signingUrl: string;
+  expiresAt: string;
+}) {
+  const isTenant = signerRole === "tenant";
+  const subject = isTenant
+    ? `Action Required: Sign Your Lease for ${propertyAddress}`
+    : `All Tenants Have Signed — Your Signature Needed for ${propertyAddress}`;
+
+  const expiryDate = new Date(expiresAt).toLocaleDateString("en-CA", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html: `
+      <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
+          ${isTenant ? "Your Lease is Ready for Signing" : "All Tenants Have Signed"}
+        </h1>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          Hi ${signerName},
+        </p>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          ${
+            isTenant
+              ? `Your landlord <strong>${landlordName}</strong> has prepared a lease agreement for <strong>${propertyAddress}</strong> that requires your electronic signature.`
+              : `All tenants have signed the lease agreement for <strong>${propertyAddress}</strong>. It&rsquo;s now your turn to review and sign.`
+          }
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${signingUrl}" style="display: inline-block; background: #273f4f; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; text-decoration: none;">
+            Review &amp; Sign Lease
+          </a>
+        </div>
+        <div style="background: #f2f3f7; border-radius: 12px; padding: 16px 20px; margin: 24px 0;">
+          <p style="margin: 0 0 6px; font-size: 13px; color: #45464e; font-weight: 600;">Important Details</p>
+          <p style="margin: 4px 0; font-size: 14px; color: #191c1f;">
+            <strong>Property:</strong> ${propertyAddress}
+          </p>
+          <p style="margin: 4px 0; font-size: 14px; color: #191c1f;">
+            <strong>Signing deadline:</strong> ${expiryDate}
+          </p>
+        </div>
+        <p style="color: #45464e; font-size: 14px; line-height: 1.6;">
+          Click the button above to review the full lease document and provide your electronic signature.
+          No account or login is required &mdash; the link above is your secure, personal signing link.
+        </p>
+        <p style="color: #45464e; font-size: 13px; line-height: 1.6; margin-top: 20px;">
+          This electronic signature process complies with the Alberta <em>Electronic Transactions Act</em>
+          and the <em>Residential Tenancies Act</em>.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e1e2e6; margin: 32px 0 16px;" />
+        <p style="color: #9a9ba3; font-size: 12px;">
+          &mdash; TenantPorch &middot; Your front porch to smarter renting.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendGenericEmail({
   to,
   subject,

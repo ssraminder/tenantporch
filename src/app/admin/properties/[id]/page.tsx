@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { formatCurrency } from "@/lib/currency";
 import { getLeaseDisplayStatus } from "@/lib/lease-utils";
 import { ApplicationLinkCard } from "./application-link-card";
+import { PropertyOwnersSection } from "@/components/forms/property-owners-section";
 
 const METHOD_LABELS: Record<string, { label: string; icon: string }> = {
   card: { label: "Card", icon: "credit_card" },
@@ -86,6 +87,25 @@ export default async function PropertyDetailPage({
     .single();
 
   if (!property || property.landlord_id !== rpUser.id) return <NotFound />;
+
+  // Fetch property owners
+  const { data: ownerData } = await supabase
+    .from("rp_property_owners")
+    .select(
+      "id, user_id, designation, is_primary, rp_users!inner(first_name, last_name, email)"
+    )
+    .eq("property_id", propertyId)
+    .order("is_primary", { ascending: false });
+
+  const propertyOwners = (ownerData ?? []).map((o) => ({
+    id: o.id,
+    user_id: o.user_id,
+    designation: o.designation,
+    is_primary: o.is_primary,
+    first_name: (o.rp_users as any).first_name,
+    last_name: (o.rp_users as any).last_name,
+    email: (o.rp_users as any).email,
+  }));
 
   // Fetch current lease (active or draft, prefer active)
   const { data: leases } = await supabase
@@ -502,6 +522,9 @@ export default async function PropertyDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Property Owners */}
+      <PropertyOwnersSection propertyId={propertyId} owners={propertyOwners} />
 
       {/* Current Lease Card */}
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">

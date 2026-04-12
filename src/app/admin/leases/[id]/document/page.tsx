@@ -58,6 +58,63 @@ export default async function LeaseDocumentPage({
   const signingStatus = (lease.signing_status as string) ?? "draft";
   const isReadOnly = signingStatus === "sent" || signingStatus === "partially_signed" || signingStatus === "completed";
 
+  // Fetch property owners (owners + signing authorities) for recipients
+  const { data: propertyOwners } = await supabase
+    .from("rp_property_owners")
+    .select("designation, rp_users!inner(first_name, last_name, email)")
+    .eq("property_id", lease.property_id)
+    .in("designation", ["owner", "signing_authority"]);
+
+  // Build recipients list for signing preview modal
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const landlordRecipients = propertyOwners && propertyOwners.length > 0
+    ? propertyOwners.map((po: any, i: number) => ({
+        name: `${po.rp_users.first_name} ${po.rp_users.last_name}`,
+        email: po.rp_users.email,
+        role: "landlord" as const,
+        signingOrder: tenants.length + i + 1,
+      }))
+    : [{
+        name: `${rpUser.first_name} ${rpUser.last_name}`,
+        email: rpUser.email,
+        role: "landlord" as const,
+        signingOrder: tenants.length + 1,
+      }];
+
+  const recipients = [
+    ...tenants.map((t: any, i: number) => ({
+      name: `${t.first_name} ${t.last_name}`,
+      email: t.email,
+      role: "tenant" as const,
+      signingOrder: i + 1,
+    })),
+    ...landlordRecipients,
+  ];
+
+  // Fetch email logs if a signing request exists
+  let emailLogs: any[] = [];
+  if (signingStatus !== "draft") {
+    const { data: signingRequest } = await supabase
+      .from("rp_signing_requests")
+      .select("id")
+      .eq("lease_id", leaseId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (signingRequest) {
+      const { data: logs } = await supabase
+        .from("rp_email_logs")
+        .select(
+          "id, recipient_email, recipient_name, email_type, status, sent_at, participant_id, resend_message_id"
+        )
+        .eq("signing_request_id", signingRequest.id)
+        .order("sent_at", { ascending: false });
+
+      emailLogs = logs ?? [];
+    }
+  }
+
   return (
     <section className="space-y-6">
       <Breadcrumbs
@@ -78,8 +135,10 @@ export default async function LeaseDocumentPage({
         propertyAddress={`${property.address_line1}, ${property.city}`}
         tenantCount={tenants.length}
         hasUnverifiedTenants={tenants.some(
-          (t) => t.id_document_status !== "approved"
+          (t: any) => t.id_document_status !== "approved"
         )}
+        recipients={recipients}
+        emailLogs={emailLogs}
       />
     </section>
   );

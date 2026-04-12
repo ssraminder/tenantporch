@@ -4,6 +4,18 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { LeaseDocumentContent, LeaseSection, LeaseClause } from "@/lib/lease-templates/alberta";
+import { SigningEmailPreviewModal, type SigningRecipient } from "./signing-email-preview-modal";
+
+export interface EmailLogEntry {
+  id: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  email_type: string;
+  status: string;
+  sent_at: string;
+  participant_id: string | null;
+  resend_message_id: string | null;
+}
 
 interface LeaseDocumentEditorProps {
   leaseId: string;
@@ -14,6 +26,8 @@ interface LeaseDocumentEditorProps {
   propertyAddress: string;
   tenantCount: number;
   hasUnverifiedTenants: boolean;
+  recipients?: SigningRecipient[];
+  emailLogs?: EmailLogEntry[];
 }
 
 export function LeaseDocumentEditor({
@@ -25,6 +39,8 @@ export function LeaseDocumentEditor({
   propertyAddress,
   tenantCount,
   hasUnverifiedTenants,
+  recipients = [],
+  emailLogs = [],
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -35,6 +51,9 @@ export function LeaseDocumentEditor({
   const [uploading, setUploading] = useState(false);
   const [sendingForSign, setSendingForSign] = useState(false);
   const [cancellingSigning, setCancellingSigning] = useState(false);
+  const [showSigningPreview, setShowSigningPreview] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
 
   function updateClause(sectionId: string, clauseId: string, newText: string) {
     if (!content) return;
@@ -173,6 +192,24 @@ export function LeaseDocumentEditor({
     }
   }
 
+  async function handleRegenerateDocument() {
+    setRegenerating(true);
+    try {
+      const { regenerateLeaseDocument } = await import("@/app/admin/actions/lease-actions");
+      const result = await regenerateLeaseDocument(leaseId);
+      if (result.success) {
+        toast.success("Document regenerated with latest data.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to regenerate.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   if (!content) {
     return (
       <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient-sm text-center">
@@ -265,6 +302,17 @@ export function LeaseDocumentEditor({
           <div className="h-8 w-px bg-outline-variant/20 hidden sm:block" />
 
           <button
+            onClick={handleRegenerateDocument}
+            disabled={regenerating}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {regenerating ? "progress_activity" : "autorenew"}
+            </span>
+            {regenerating ? "Regenerating..." : "Regenerate"}
+          </button>
+
+          <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50"
@@ -283,7 +331,7 @@ export function LeaseDocumentEditor({
           <div className="flex-1" />
 
           <button
-            onClick={handleSendForSignatures}
+            onClick={() => setShowSigningPreview(true)}
             disabled={sendingForSign || hasUnverifiedTenants}
             className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title={hasUnverifiedTenants ? "All tenant IDs must be approved first" : "Send to all parties for electronic signature"}
@@ -295,6 +343,19 @@ export function LeaseDocumentEditor({
           </button>
         </div>
       )}
+
+      {/* Signing Email Preview Modal */}
+      <SigningEmailPreviewModal
+        open={showSigningPreview}
+        onClose={() => setShowSigningPreview(false)}
+        onConfirm={async () => {
+          setShowSigningPreview(false);
+          await handleSendForSignatures();
+        }}
+        sending={sendingForSign}
+        recipients={recipients}
+        propertyAddress={propertyAddress}
+      />
 
       {/* Read-only action bar (when sent/partially signed) */}
       {isReadOnly && signingStatus !== "completed" && (
@@ -347,6 +408,105 @@ export function LeaseDocumentEditor({
             <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
             Download Signed PDF
           </button>
+        </div>
+      )}
+
+      {/* Email Activity Log */}
+      {signingStatus !== "draft" && emailLogs.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-ambient-sm">
+          <h3 className="font-headline font-bold text-primary text-sm mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">mail</span>
+            Email Activity
+          </h3>
+          <div className="space-y-2">
+            {emailLogs.map((log) => (
+              <div
+                key={log.id}
+                className="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-primary text-sm">
+                    {log.email_type === "signing_reminder"
+                      ? "notification_important"
+                      : "send"}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-on-surface truncate">
+                    {log.recipient_name ?? log.recipient_email}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    {new Date(log.sent_at).toLocaleString("en-CA", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                    log.email_type === "signing_reminder"
+                      ? "bg-secondary/10 text-secondary"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {log.email_type === "signing_reminder"
+                    ? "Reminder"
+                    : "Sent"}
+                </span>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                    log.status === "sent"
+                      ? "bg-tertiary/10 text-on-tertiary-fixed-variant"
+                      : log.status === "failed"
+                        ? "bg-error/10 text-error"
+                        : "bg-surface-variant text-on-surface-variant"
+                  }`}
+                >
+                  {log.status}
+                </span>
+                {log.participant_id && (
+                  <button
+                    onClick={async () => {
+                      if (!log.participant_id) return;
+                      setResendingId(log.participant_id);
+                      try {
+                        const { resendParticipantEmail } = await import(
+                          "@/app/admin/actions/signing-actions"
+                        );
+                        const result = await resendParticipantEmail(
+                          log.participant_id
+                        );
+                        if (result.success) {
+                          toast.success(
+                            `Reminder sent to ${log.recipient_name ?? log.recipient_email}`
+                          );
+                          router.refresh();
+                        } else {
+                          toast.error(result.error ?? "Failed to resend.");
+                        }
+                      } catch {
+                        toast.error("Failed to resend email.");
+                      } finally {
+                        setResendingId(null);
+                      }
+                    }}
+                    disabled={resendingId === log.participant_id}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-secondary hover:bg-secondary/10 transition-colors disabled:opacity-50"
+                    title="Resend signing email"
+                  >
+                    <span className="material-symbols-outlined text-xs">
+                      {resendingId === log.participant_id
+                        ? "progress_activity"
+                        : "refresh"}
+                    </span>
+                    Resend
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -459,28 +619,43 @@ export function LeaseDocumentEditor({
               Signatures
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-8">
-                  Landlord
-                </p>
-                <div className="border-b border-on-surface/30 mb-2 h-12" />
-                <p className="text-xs text-on-surface-variant">Signature</p>
-                <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
-                <p className="text-xs text-on-surface-variant">
-                  Printed Name &amp; Date
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-8">
-                  Tenant
-                </p>
-                <div className="border-b border-on-surface/30 mb-2 h-12" />
-                <p className="text-xs text-on-surface-variant">Signature</p>
-                <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
-                <p className="text-xs text-on-surface-variant">
-                  Printed Name &amp; Date
-                </p>
-              </div>
+              {/* Owner/Landlord signature blocks */}
+              {(recipients.filter((r) => r.role === "landlord").length > 0
+                ? recipients.filter((r) => r.role === "landlord")
+                : [{ name: "Landlord", email: "", role: "landlord", signingOrder: 1 }]
+              ).map((owner, i) => (
+                <div key={`owner-${i}`}>
+                  <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-1">
+                    {owner.role === "landlord" ? "Landlord / Owner" : owner.role}
+                  </p>
+                  <p className="text-xs text-on-surface-variant mb-6">{owner.name}</p>
+                  <div className="border-b border-on-surface/30 mb-2 h-12" />
+                  <p className="text-xs text-on-surface-variant">Signature</p>
+                  <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
+                  <p className="text-xs text-on-surface-variant">
+                    Printed Name &amp; Date
+                  </p>
+                </div>
+              ))}
+
+              {/* Tenant signature blocks */}
+              {(recipients.filter((r) => r.role === "tenant").length > 0
+                ? recipients.filter((r) => r.role === "tenant")
+                : [{ name: "Tenant", email: "", role: "tenant", signingOrder: 1 }]
+              ).map((tenant, i) => (
+                <div key={`tenant-${i}`}>
+                  <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-1">
+                    Tenant
+                  </p>
+                  <p className="text-xs text-on-surface-variant mb-6">{tenant.name}</p>
+                  <div className="border-b border-on-surface/30 mb-2 h-12" />
+                  <p className="text-xs text-on-surface-variant">Signature</p>
+                  <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
+                  <p className="text-xs text-on-surface-variant">
+                    Printed Name &amp; Date
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 

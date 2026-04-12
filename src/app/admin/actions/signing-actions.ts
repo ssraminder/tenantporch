@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
+import { sendSigningEmail } from "@/lib/email";
 import crypto from "crypto";
 
 /**
@@ -106,6 +107,29 @@ export async function sendForSignatures(leaseId: string) {
     // Create document hash
     const documentHash = hashDocument(lease.lease_document_content);
 
+    // Fetch property owners with signing authority (owner + signing_authority)
+    const { data: propertyOwners } = await supabase
+      .from("rp_property_owners")
+      .select(
+        "user_id, designation, is_primary, rp_users!inner(first_name, last_name, email)"
+      )
+      .eq("property_id", lease.property_id)
+      .in("designation", ["owner", "signing_authority"]);
+
+    // Build landlord signers: use property owners if available, otherwise fallback to current user
+    const landlordSigners =
+      propertyOwners && propertyOwners.length > 0
+        ? propertyOwners.map((o) => ({
+            name: `${(o.rp_users as any).first_name} ${(o.rp_users as any).last_name}`,
+            email: (o.rp_users as any).email,
+          }))
+        : [
+            {
+              name: `${rpUser.first_name} ${rpUser.last_name}`,
+              email: rpUser.email,
+            },
+          ];
+
     // Create signing request
     const { data: signingRequest, error: srError } = await supabase
       .from("rp_signing_requests")
@@ -128,31 +152,32 @@ export async function sendForSignatures(leaseId: string) {
       };
     }
 
-    // Create participants: landlord first, then tenants
+    // Create participants: tenants first, then landlord/owners
     const participants = [
-      {
-        signing_request_id: signingRequest.id,
-        signer_name: `${rpUser.first_name} ${rpUser.last_name}`,
-        signer_email: rpUser.email,
-        signer_role: "landlord",
-        signing_order: 1,
-        token: generateToken(),
-        status: "pending",
-      },
       ...tenants.map((t: any, i: number) => ({
         signing_request_id: signingRequest.id,
         signer_name: `${t.first_name} ${t.last_name}`,
         signer_email: t.email,
         signer_role: "tenant",
-        signing_order: i + 2,
+        signing_order: i + 1,
+        token: generateToken(),
+        status: "pending",
+      })),
+      ...landlordSigners.map((ls, i) => ({
+        signing_request_id: signingRequest.id,
+        signer_name: ls.name,
+        signer_email: ls.email,
+        signer_role: "landlord",
+        signing_order: tenants.length + i + 1,
         token: generateToken(),
         status: "pending",
       })),
     ];
 
-    const { error: partError } = await supabase
+    const { data: insertedParticipants, error: partError } = await supabase
       .from("rp_signing_participants")
-      .insert(participants);
+      .insert(participants)
+      .select("id, signer_name, signer_email, signer_role, token");
 
     if (partError) {
       return { success: false, error: partError.message };
@@ -178,10 +203,57 @@ export async function sendForSignatures(leaseId: string) {
       },
     });
 
-    // Notify all parties
     const propertyAddress =
       (lease.rp_properties as any)?.address_line1 ?? "your property";
+    const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+    const expiresAt = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
 
+    // Send signing emails to tenants ONLY (landlord signs after all tenants)
+    const tenantParticipants = (insertedParticipants ?? []).filter(
+      (p) => p.signer_role === "tenant"
+    );
+
+    for (const tp of tenantParticipants) {
+      try {
+        const emailResult = await sendSigningEmail({
+          to: tp.signer_email,
+          signerName: tp.signer_name,
+          signerRole: "tenant",
+          propertyAddress,
+          landlordName,
+          signingUrl: `${appUrl}/sign/${tp.token}`,
+          expiresAt,
+        });
+
+        // Update notified_at
+        await supabase
+          .from("rp_signing_participants")
+          .update({ notified_at: new Date().toISOString() })
+          .eq("id", tp.id);
+
+        // Log the email
+        if (emailResult.data?.id) {
+          await supabase.from("rp_email_logs").insert({
+            signing_request_id: signingRequest.id,
+            participant_id: tp.id,
+            recipient_email: tp.signer_email,
+            recipient_name: tp.signer_name,
+            email_type: "signing_request",
+            resend_message_id: emailResult.data.id,
+            status: "sent",
+            subject: `Action Required: Sign Your Lease for ${propertyAddress}`,
+          });
+        }
+      } catch {
+        // Email failure should not break the signing flow
+      }
+    }
+
+    // Create in-app notifications for tenants
     for (const t of tenants) {
       await createNotification(supabase, {
         userId: t.id,
@@ -426,7 +498,9 @@ export async function submitSignature(
     // Check if all participants have signed
     const { data: allParticipants } = await supabase
       .from("rp_signing_participants")
-      .select("id, status")
+      .select(
+        "id, status, signer_role, signer_name, signer_email, token, notified_at"
+      )
       .eq("signing_request_id", signingRequest.id);
 
     const allSigned = (allParticipants ?? []).every(
@@ -470,6 +544,86 @@ export async function submitSignature(
         .from("rp_leases")
         .update({ signing_status: "partially_signed" })
         .eq("id", signingRequest.lease_id);
+
+      // Check if all TENANTS have signed → send landlord signing email
+      const tenantParts = (allParticipants ?? []).filter(
+        (p) => p.signer_role === "tenant"
+      );
+      const landlordParts = (allParticipants ?? []).filter(
+        (p) => p.signer_role === "landlord"
+      );
+      const allTenantsSigned = tenantParts.every(
+        (p) => p.status === "signed"
+      );
+
+      if (allTenantsSigned && landlordParts.length > 0) {
+        // Fetch property address for the email
+        const { data: lease } = await supabase
+          .from("rp_leases")
+          .select("property_id, rp_properties(address_line1)")
+          .eq("id", signingRequest.lease_id)
+          .single();
+
+        const propertyAddress =
+          (lease?.rp_properties as any)?.address_line1 ?? "your property";
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL ||
+          "https://tenantporch.vercel.app";
+
+        for (const lp of landlordParts) {
+          if (lp.status === "pending" && !lp.notified_at) {
+            try {
+              const emailResult = await sendSigningEmail({
+                to: lp.signer_email,
+                signerName: lp.signer_name,
+                signerRole: "landlord",
+                propertyAddress,
+                landlordName: lp.signer_name,
+                signingUrl: `${appUrl}/sign/${lp.token}`,
+                expiresAt:
+                  signingRequest.expires_at ?? new Date().toISOString(),
+              });
+
+              await supabase
+                .from("rp_signing_participants")
+                .update({ notified_at: new Date().toISOString() })
+                .eq("id", lp.id);
+
+              if (emailResult.data?.id) {
+                await supabase.from("rp_email_logs").insert({
+                  signing_request_id: signingRequest.id,
+                  participant_id: lp.id,
+                  recipient_email: lp.signer_email,
+                  recipient_name: lp.signer_name,
+                  email_type: "signing_request",
+                  resend_message_id: emailResult.data.id,
+                  status: "sent",
+                  subject: `All Tenants Have Signed — Your Signature Needed for ${propertyAddress}`,
+                });
+              }
+            } catch {
+              // Email failure should not break the signing flow
+            }
+
+            // In-app notification for landlord
+            const { data: landlordRpUser } = await supabase
+              .from("rp_users")
+              .select("id")
+              .eq("email", lp.signer_email)
+              .single();
+
+            if (landlordRpUser) {
+              await createNotification(supabase, {
+                userId: landlordRpUser.id,
+                title: "All Tenants Have Signed",
+                body: `All tenants have signed the lease for ${propertyAddress}. It's your turn to sign.`,
+                type: "lease",
+                urgency: "high",
+              });
+            }
+          }
+        }
+      }
     }
 
     revalidatePath(`/admin/leases/${signingRequest.lease_id}/document`);
@@ -565,6 +719,116 @@ export async function cancelSigning(leaseId: string) {
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
     revalidatePath(`/admin/properties/${lease.property_id}`);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Resend a signing email to a specific participant.
+ */
+export async function resendParticipantEmail(participantId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id, first_name, last_name")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Fetch participant with signing request
+    const { data: participant } = await supabase
+      .from("rp_signing_participants")
+      .select(
+        "id, signing_request_id, signer_name, signer_email, signer_role, token, status"
+      )
+      .eq("id", participantId)
+      .single();
+
+    if (!participant) {
+      return { success: false, error: "Participant not found" };
+    }
+
+    if (participant.status === "signed") {
+      return { success: false, error: "This participant has already signed" };
+    }
+
+    // Verify ownership via signing request → lease → property
+    const { data: signingRequest } = await supabase
+      .from("rp_signing_requests")
+      .select("id, lease_id, expires_at, rp_leases(property_id, rp_properties(landlord_id, address_line1))")
+      .eq("id", participant.signing_request_id)
+      .single();
+
+    if (!signingRequest) {
+      return { success: false, error: "Signing request not found" };
+    }
+
+    const landlordId = (signingRequest.rp_leases as any)?.rp_properties
+      ?.landlord_id;
+    if (landlordId !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    const propertyAddress =
+      (signingRequest.rp_leases as any)?.rp_properties?.address_line1 ??
+      "your property";
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+    const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
+
+    const emailResult = await sendSigningEmail({
+      to: participant.signer_email,
+      signerName: participant.signer_name,
+      signerRole: participant.signer_role as "tenant" | "landlord",
+      propertyAddress,
+      landlordName,
+      signingUrl: `${appUrl}/sign/${participant.token}`,
+      expiresAt: signingRequest.expires_at ?? new Date().toISOString(),
+    });
+
+    // Update reminder_sent_at
+    await supabase
+      .from("rp_signing_participants")
+      .update({ reminder_sent_at: new Date().toISOString() })
+      .eq("id", participant.id);
+
+    // Log the email
+    if (emailResult.data?.id) {
+      await supabase.from("rp_email_logs").insert({
+        signing_request_id: signingRequest.id,
+        participant_id: participant.id,
+        recipient_email: participant.signer_email,
+        recipient_name: participant.signer_name,
+        email_type: "signing_reminder",
+        resend_message_id: emailResult.data.id,
+        status: "sent",
+        subject: `Reminder: Sign Your Lease for ${propertyAddress}`,
+      });
+    }
+
+    revalidatePath(
+      `/admin/leases/${(signingRequest.rp_leases as any)?.id ?? signingRequest.lease_id}/document`
+    );
 
     return { success: true };
   } catch (error) {

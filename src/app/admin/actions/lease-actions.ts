@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
-import { generateAlbertaLeaseContent } from "@/lib/lease-templates/alberta";
+import { generateAlbertaLeaseContent, type OwnerData } from "@/lib/lease-templates/alberta";
 
 export async function createLease(formData: FormData) {
   try {
@@ -141,9 +141,27 @@ export async function createLease(formData: FormData) {
       .select("user_id, rp_users!inner(first_name, last_name, email, phone, id_type, id_number, id_place_of_issue, id_expiry_date, id_name_on_document)")
       .eq("lease_id", lease.id);
 
+    // Fetch property owners for lease document
+    const { data: propertyOwners } = await supabase
+      .from("rp_property_owners")
+      .select("designation, rp_users!inner(first_name, last_name, email, phone)")
+      .eq("property_id", propertyId)
+      .in("designation", ["owner", "signing_authority"]);
+
     if (fullProperty && landlordUser) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tenantUsers = (leaseTenants ?? []).map((lt) => lt.rp_users as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ownersData = propertyOwners && propertyOwners.length > 0
+        ? propertyOwners.map((po: any) => ({
+            first_name: po.rp_users.first_name,
+            last_name: po.rp_users.last_name,
+            email: po.rp_users.email,
+            phone: po.rp_users.phone,
+            designation: po.designation,
+          }))
+        : undefined;
+
       const documentContent = generateAlbertaLeaseContent(
         {
           lease_type: leaseType || "fixed",
@@ -164,7 +182,8 @@ export async function createLease(formData: FormData) {
         },
         fullProperty,
         landlordUser,
-        tenantUsers
+        tenantUsers,
+        ownersData
       );
 
       await supabase
@@ -539,6 +558,124 @@ export async function saveLeaseDocument(
     if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) {
       return { success: false, error: "Not authorized" };
     }
+
+    const { error: updateError } = await supabase
+      .from("rp_leases")
+      .update({ lease_document_content: documentContent })
+      .eq("id", leaseId);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+export async function regenerateLeaseDocument(leaseId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id, first_name, last_name, email, phone")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Fetch lease with property
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, property_id, lease_type, start_date, end_date, monthly_rent, currency_code, security_deposit, deposit_paid_date, utility_split_percent, internet_included, pad_enabled, pets_allowed, smoking_allowed, max_occupants, late_fee_type, late_fee_amount, signing_status, rp_properties!inner(landlord_id, address_line1, address_line2, city, province_state, postal_code, unit_description, parking_type, parking_spots, laundry_type, storage_included, yard_access, has_separate_entrance)"
+      )
+      .eq("id", leaseId)
+      .single();
+
+    if (!lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const property = lease.rp_properties as any;
+    if (property.landlord_id !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    if (lease.signing_status && lease.signing_status !== "draft") {
+      return { success: false, error: "Cannot regenerate a document that is already sent for signing." };
+    }
+
+    // Fetch tenants
+    const { data: leaseTenants } = await supabase
+      .from("rp_lease_tenants")
+      .select(
+        "rp_users!inner(first_name, last_name, email, phone, id_type, id_number, id_place_of_issue, id_expiry_date, id_name_on_document)"
+      )
+      .eq("lease_id", leaseId);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tenantUsers = (leaseTenants ?? []).map((lt) => lt.rp_users as any);
+
+    // Fetch property owners
+    const { data: propertyOwners } = await supabase
+      .from("rp_property_owners")
+      .select("designation, rp_users!inner(first_name, last_name, email, phone)")
+      .eq("property_id", lease.property_id)
+      .in("designation", ["owner", "signing_authority"]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ownersData: OwnerData[] | undefined =
+      propertyOwners && propertyOwners.length > 0
+        ? propertyOwners.map((po: any) => ({
+            first_name: po.rp_users.first_name,
+            last_name: po.rp_users.last_name,
+            email: po.rp_users.email,
+            phone: po.rp_users.phone,
+            designation: po.designation,
+          }))
+        : undefined;
+
+    const documentContent = generateAlbertaLeaseContent(
+      {
+        lease_type: lease.lease_type,
+        start_date: lease.start_date,
+        end_date: lease.end_date,
+        monthly_rent: lease.monthly_rent,
+        currency_code: lease.currency_code,
+        security_deposit: lease.security_deposit,
+        deposit_paid_date: lease.deposit_paid_date,
+        utility_split_percent: lease.utility_split_percent,
+        internet_included: lease.internet_included,
+        pad_enabled: lease.pad_enabled,
+        pets_allowed: lease.pets_allowed,
+        smoking_allowed: lease.smoking_allowed,
+        max_occupants: lease.max_occupants,
+        late_fee_type: lease.late_fee_type,
+        late_fee_amount: lease.late_fee_amount,
+      },
+      property,
+      rpUser,
+      tenantUsers,
+      ownersData
+    );
 
     const { error: updateError } = await supabase
       .from("rp_leases")

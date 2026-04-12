@@ -68,6 +68,16 @@ interface PersonData {
   id_name_on_document?: string | null;
 }
 
+export interface OwnerData extends PersonData {
+  designation: string;
+}
+
+const DESIGNATION_LABELS: Record<string, string> = {
+  owner: "Owner",
+  property_manager: "Property Manager",
+  signing_authority: "Signing Authority",
+};
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "________________";
   const d = new Date(dateStr + "T00:00:00");
@@ -90,11 +100,21 @@ export function generateAlbertaLeaseContent(
   lease: LeaseData,
   property: PropertyData,
   landlord: PersonData,
-  tenants: PersonData[]
+  tenants: PersonData[],
+  owners?: OwnerData[]
 ): LeaseDocumentContent {
   const fullAddress = `${property.address_line1}${property.address_line2 ? `, ${property.address_line2}` : ""}, ${property.city}, ${property.province_state} ${property.postal_code}`;
   const tenantNames = tenants.map((t) => `${t.first_name} ${t.last_name}`).join(", ");
   const leaseTypeLabel = lease.lease_type === "fixed" ? "Fixed Term" : "Month-to-Month (Periodic)";
+
+  // Build landlord/owner section text
+  const ownersList = owners && owners.length > 0 ? owners : [{ ...landlord, designation: "owner" }];
+  const ownersText = ownersList
+    .map(
+      (o) =>
+        `• ${o.first_name} ${o.last_name} (${DESIGNATION_LABELS[o.designation] ?? o.designation})\n  Email: ${o.email}${o.phone ? `  |  Phone: ${o.phone}` : ""}`
+    )
+    .join("\n");
 
   const sections: LeaseSection[] = [
     {
@@ -103,12 +123,12 @@ export function generateAlbertaLeaseContent(
       clauses: [
         {
           id: "parties-landlord",
-          text: `This Residential Tenancy Agreement ("Agreement") is entered into between:\n\nLandlord: ${landlord.first_name} ${landlord.last_name}\nEmail: ${landlord.email}${landlord.phone ? `\nPhone: ${landlord.phone}` : ""}`,
+          text: `This Residential Tenancy Agreement ("Agreement") is entered into between:\n\nLandlord / Owner(s):\n${ownersText}`,
           editable: true,
         },
         {
           id: "parties-tenant",
-          text: `Tenant(s): ${tenantNames}${tenants.map((t) => `\n  ${t.first_name} ${t.last_name} — ${t.email}${t.phone ? `, ${t.phone}` : ""}`).join("")}`,
+          text: `Tenant(s):\n\n${"Name".padEnd(25)} ${"Email".padEnd(30)} Phone\n${"─".repeat(80)}\n${tenants.map((t) => `${(t.first_name + " " + t.last_name).padEnd(25)} ${t.email.padEnd(30)} ${t.phone ?? "—"}`).join("\n")}`,
           editable: true,
         },
       ],
@@ -342,7 +362,7 @@ export function generateAlbertaLeaseContent(
       title: "Schedule B — Tenant Identification",
       clauses: tenants.map((t, i) => ({
         id: `schedule-b-tenant-${i}`,
-        text: `Tenant ${i + 1}: ${t.first_name} ${t.last_name}\nID Type: ${t.id_type ? ID_TYPE_LABELS[t.id_type] ?? t.id_type : "Not provided"}\nID Number: ${t.id_number ?? "Not provided"}\nName on Document: ${t.id_name_on_document ?? "Not provided"}${t.id_place_of_issue ? `\nPlace of Issue: ${t.id_place_of_issue}` : ""}${t.id_expiry_date ? `\nExpiry Date: ${formatDate(t.id_expiry_date)}` : ""}`,
+        text: `Tenant ${i + 1}: ${t.first_name} ${t.last_name}\n${"─".repeat(40)}\n• Name:              ${t.first_name} ${t.last_name}\n• Email:             ${t.email}\n• Phone:             ${t.phone ?? "—"}\n• ID Type:           ${t.id_type ? ID_TYPE_LABELS[t.id_type] ?? t.id_type : "Not provided"}\n• ID Number:         ${t.id_number ?? "Not provided"}\n• Name on Document:  ${t.id_name_on_document ?? "Not provided"}\n• Place of Issue:    ${t.id_place_of_issue ?? "Not provided"}\n• Expiry Date:       ${t.id_expiry_date ? formatDate(t.id_expiry_date) : "Not provided"}`,
         editable: false,
       })),
     },
