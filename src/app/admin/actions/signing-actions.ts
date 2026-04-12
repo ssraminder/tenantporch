@@ -463,12 +463,16 @@ export async function submitSignature(
       return { success: false, error: "This signing link has expired" };
     }
 
+    // Map client method names to DB enum values
+    const methodMap: Record<string, string> = { type: "typed", draw: "drawn", upload: "uploaded" };
+    const dbMethod = methodMap[signatureData.method] ?? signatureData.method;
+
     // Update participant with signature
     const { error: updateError } = await supabase
       .from("rp_signing_participants")
       .update({
         status: "signed",
-        signature_method: signatureData.method,
+        signature_method: dbMethod,
         signed_name: signatureData.signedName,
         signature_image_url: signatureData.signatureImageUrl ?? null,
         signed_at: new Date().toISOString(),
