@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -116,22 +116,16 @@ function SignupForm() {
         return;
       }
 
-      // Send OTP
-      const supabase = createClient();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            role: "landlord",
-          },
-          shouldCreateUser: true,
-        },
+      // Send OTP via custom API (uses Resend)
+      const otpRes = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, firstName }),
       });
+      const otpData = await otpRes.json();
 
-      if (otpError) {
-        setError(otpError.message);
+      if (!otpRes.ok) {
+        setError(otpData.error ?? "Failed to send verification code");
         setLoading(false);
         return;
       }
@@ -151,15 +145,15 @@ function SignupForm() {
     setError("");
 
     try {
-      const supabase = createClient();
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email,
-        token: otpCode,
-        type: "email",
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: otpCode }),
       });
+      const data = await res.json();
 
-      if (verifyError) {
-        setError(verifyError.message);
+      if (!res.ok) {
+        setError(data.error ?? "Verification failed");
         setLoading(false);
         return;
       }
@@ -174,20 +168,14 @@ function SignupForm() {
 
   async function handleResendOtp() {
     setError("");
-    const supabase = createClient();
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          role: "landlord",
-        },
-        shouldCreateUser: true,
-      },
+    const res = await fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, firstName }),
     });
-    if (otpError) {
-      setError(otpError.message);
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Failed to resend code");
     } else {
       setError("");
       setOtpCode("");
@@ -207,13 +195,29 @@ function SignupForm() {
     }
 
     try {
+      // Create the user account via admin API
+      const res = await fetch("/api/auth/complete-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, firstName, lastName }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Failed to create account");
+        setLoading(false);
+        return;
+      }
+
+      // Sign in with the new credentials
       const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password,
       });
 
-      if (updateError) {
-        setError(updateError.message);
+      if (signInError) {
+        setError(signInError.message);
         setLoading(false);
         return;
       }
