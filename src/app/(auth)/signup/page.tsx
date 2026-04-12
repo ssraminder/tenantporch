@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/shared/logo";
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
 
 const PLAN_HIGHLIGHTS: Record<string, string[]> = {
   free: [
@@ -45,7 +53,7 @@ type PlanData = {
   overage_rate: number;
 };
 
-export default function SignupPage() {
+function SignupForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const preselectedPlan = searchParams.get("plan");

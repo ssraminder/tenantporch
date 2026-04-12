@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,14 @@ const PLAN_NAMES: Record<string, string> = {
 };
 
 export default function SignupThankYouPage() {
+  return (
+    <Suspense>
+      <ThankYouContent />
+    </Suspense>
+  );
+}
+
+function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const planSlug = searchParams.get("plan") ?? "";
