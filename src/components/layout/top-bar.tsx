@@ -18,9 +18,10 @@ interface TopBarProps {
     email: string;
     avatarUrl?: string;
   } | null;
+  role?: "tenant" | "landlord";
 }
 
-export function TopBar({ user }: TopBarProps) {
+export function TopBar({ user, role = "tenant" }: TopBarProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -37,7 +38,7 @@ export function TopBar({ user }: TopBarProps) {
   return (
     <header className="flex justify-between items-center w-full px-6 py-4 h-16 bg-surface-bright fixed top-0 z-50 shadow-ambient-sm lg:hidden">
       <div className="flex items-center gap-4">
-        <Logo height={24} />
+        <Logo height={24} type={role === "landlord" ? "landlord" : "tenant"} />
       </div>
 
       <div className="flex items-center gap-6">

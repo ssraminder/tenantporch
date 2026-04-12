@@ -35,7 +35,7 @@ export default async function TenantLayout({
 
   const { data: rpUser } = await supabase
     .from("rp_users")
-    .select("first_name, last_name, email, avatar_url, role, must_change_password")
+    .select("id, first_name, last_name, email, avatar_url, role, must_change_password")
     .eq("auth_id", user.id)
     .single();
 
@@ -44,11 +44,28 @@ export default async function TenantLayout({
   // Force password change for auto-created accounts
   if (rpUser.must_change_password) redirect("/tenant/change-password");
 
+  // Fetch tenant's property address for sidebar
+  let propertyAddress: string | null = null;
+  const { data: leaseLink } = await supabase
+    .from("rp_lease_tenants")
+    .select("rp_leases!inner(rp_properties!inner(address_line1, city))")
+    .eq("user_id", rpUser.id)
+    .limit(1)
+    .single();
+
+  if (leaseLink) {
+    const props = (leaseLink as any).rp_leases?.rp_properties;
+    if (props) {
+      propertyAddress = `${props.address_line1}, ${props.city}`;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       <Sidebar
         items={tenantNav}
         role="tenant"
+        propertyAddress={propertyAddress}
         user={
           rpUser
             ? {
@@ -61,6 +78,7 @@ export default async function TenantLayout({
         }
       />
       <TopBar
+        role="tenant"
         user={
           rpUser
             ? {

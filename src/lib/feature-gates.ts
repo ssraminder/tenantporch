@@ -56,7 +56,7 @@ export const FEATURE_GATES: Record<string, FeatureGateInfo> = {
       "Editable clauses and custom terms",
       "PDF generation with professional formatting",
     ],
-    minPlanSlug: "starter",
+    minPlanSlug: "growth",
     addonSlug: null,
     addonName: null,
     addonPrice: null,
@@ -64,13 +64,13 @@ export const FEATURE_GATES: Record<string, FeatureGateInfo> = {
   unlimited_signing: {
     name: "Unlimited E-Signatures",
     description:
-      "Sign unlimited leases and addendums electronically. Free plan allows 1 signature per year.",
+      "Sign unlimited leases and addendums electronically.",
     benefits: [
       "Unlimited lease and addendum signing",
       "Type, draw, or upload signature methods",
       "SHA-256 tamper-proof audit trail",
     ],
-    minPlanSlug: "starter",
+    minPlanSlug: "free",
     addonSlug: null,
     addonName: null,
     addonPrice: null,

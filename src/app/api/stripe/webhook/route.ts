@@ -128,6 +128,19 @@ export async function POST(req: NextRequest) {
           break;
         }
 
+        // ── Plan upgrade/signup checkout ──
+        if (session.metadata?.type === "plan_upgrade") {
+          const landlordProfileId = session.metadata.landlord_profile_id;
+          const planId = session.metadata.plan_id;
+          if (landlordProfileId && planId) {
+            await supabase
+              .from("rp_landlord_profiles")
+              .update({ plan_id: planId, subscription_status: "active" })
+              .eq("id", landlordProfileId);
+          }
+          break;
+        }
+
         // ── Rent payment checkout ──
         const paymentId = session.metadata?.payment_id;
         const tenantUserId = session.metadata?.tenant_user_id;

@@ -29,8 +29,8 @@ export function Testimonials() {
             key={t.name}
             className="bg-surface-container-low p-8 md:p-10 rounded-xl relative"
           >
-            <span className="material-symbols-outlined absolute -top-4 -left-4 text-6xl text-secondary/10">
-              format_quote
+            <span className="absolute -top-5 left-4 text-8xl md:text-9xl font-headline font-bold text-secondary/10 leading-none select-none" aria-hidden="true">
+              &ldquo;
             </span>
             <p className="text-base md:text-lg text-on-surface-variant leading-relaxed mb-6">
               {t.quote}

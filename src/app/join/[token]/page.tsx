@@ -49,7 +49,7 @@ export default async function JoinPage({
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Logo height={32} />
+          <Logo height={44} />
         </div>
 
         {/* Card */}
@@ -117,7 +117,7 @@ function InvalidInvite({
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <Logo height={32} />
+          <Logo height={44} />
         </div>
 
         <div className="bg-surface-container-lowest rounded-3xl shadow-ambient-sm p-8 text-center">

@@ -14,6 +14,7 @@ const adminNav: NavItem[] = [
   { label: "Maintenance", href: "/admin/maintenance", icon: "handyman" },
   { label: "Documents", href: "/admin/documents", icon: "description" },
   { label: "Messages", href: "/admin/messages", icon: "mail" },
+  { label: "Plan", href: "/admin/plan", icon: "workspace_premium" },
   { label: "Settings", href: "/admin/settings", icon: "settings" },
 ];
 
@@ -124,6 +125,7 @@ export default async function AdminLayout({
         }
       />
       <TopBar
+        role="landlord"
         user={
           rpUser
             ? {

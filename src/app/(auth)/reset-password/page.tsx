@@ -72,9 +72,11 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient">
+      <div className="flex justify-center mb-6">
+        <Logo height={44} />
+      </div>
       <div className="text-center mb-8">
-        <Logo height={36} />
-        <h1 className="font-headline text-xl font-bold text-primary mt-4">
+        <h1 className="font-headline text-xl font-bold text-primary">
           Set new password
         </h1>
         <p className="text-on-surface-variant mt-2 text-sm">

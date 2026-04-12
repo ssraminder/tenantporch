@@ -74,7 +74,7 @@ function calcPlanCost(plan: Plan, count: number): number | null {
 
 function getCTA(slug: string): { label: string; href: string } {
   if (slug === "free") return { label: "Start Free", href: "/signup" };
-  return { label: "Get Started", href: "/signup" };
+  return { label: "Get Started", href: `/signup?plan=${slug}` };
 }
 
 export function PricingSlider({ plans }: { plans: Plan[] }) {
@@ -95,16 +95,11 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
   }, [displayPlans, propertyCount]);
 
   const bestValueSlug = useMemo(() => {
-    let cheapest: { slug: string; cost: number } | null = null;
-    for (const p of displayPlans) {
-      const cost = planCosts[p.slug];
-      if (cost === null) continue;
-      if (!cheapest || cost < cheapest.cost) {
-        cheapest = { slug: p.slug, cost };
-      }
-    }
-    return cheapest?.slug ?? null;
-  }, [displayPlans, planCosts]);
+    if (propertyCount >= 50) return null;
+    if (propertyCount >= 10) return "pro";
+    if (propertyCount >= 3) return "growth";
+    return "starter";
+  }, [propertyCount]);
 
   return (
     <section id="pricing" className="py-20 md:py-24 bg-surface-container-low px-6">
@@ -129,7 +124,7 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
               <input
                 type="range"
                 min={1}
-                max={50}
+                max={55}
                 value={propertyCount}
                 onChange={(e) => setPropertyCount(Number(e.target.value))}
                 className="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-secondary
@@ -139,42 +134,53 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
                   [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-secondary [&::-moz-range-thumb]:border-0"
               />
               <span className="text-2xl font-bold text-primary min-w-[3ch] text-right font-headline">
-                {propertyCount}
+                {propertyCount >= 50 ? "50+" : propertyCount}
               </span>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
-              <div>
-                <p className="text-xs text-on-surface-variant">Best value</p>
-                <p className="text-lg font-bold text-primary">
-                  {displayPlans.find((p) => p.slug === bestValueSlug)?.name ?? "Free"}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-on-surface-variant">Estimated monthly</p>
-                <p className="text-2xl font-bold text-secondary font-headline">
-                  {bestValueSlug
-                    ? `$${(planCosts[bestValueSlug] ?? 0).toFixed(0)}`
-                    : "$0"}
-                </p>
-                {bestValueSlug && bestValueSlug !== "free" && (
-                  <p className="text-xs text-on-surface-variant">
-                    {(() => {
-                      const p = displayPlans.find((pp) => pp.slug === bestValueSlug);
-                      if (!p) return "";
-                      const overage = Math.max(0, propertyCount - p.included_properties);
-                      if (overage > 0) return `$${p.base_price} base + ${overage} × $${p.overage_rate}`;
-                      return `$${p.base_price} base — ${p.included_properties - propertyCount} properties headroom`;
-                    })()}
-                  </p>
-                )}
-              </div>
+              {bestValueSlug ? (
+                <>
+                  <div>
+                    <p className="text-xs text-on-surface-variant">Recommended</p>
+                    <p className="text-lg font-bold text-primary">
+                      {displayPlans.find((p) => p.slug === bestValueSlug)?.name ?? "Starter"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-on-surface-variant">Estimated monthly</p>
+                    <p className="text-2xl font-bold text-secondary font-headline">
+                      ${(planCosts[bestValueSlug] ?? 0).toFixed(0)}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      {(() => {
+                        const p = displayPlans.find((pp) => pp.slug === bestValueSlug);
+                        if (!p) return "";
+                        const overage = Math.max(0, propertyCount - p.included_properties);
+                        if (overage > 0) return `$${p.base_price} base + ${overage} × $${p.overage_rate}`;
+                        return `$${p.base_price} base — ${p.included_properties - propertyCount} properties headroom`;
+                      })()}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full text-center">
+                  <p className="text-xs text-on-surface-variant mb-1">50+ properties</p>
+                  <p className="text-lg font-bold text-primary">Custom pricing available</p>
+                  <a
+                    href="mailto:hello@tenantporch.com"
+                    className="text-sm font-semibold text-secondary hover:underline"
+                  >
+                    Get in touch &rarr;
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Plan cards — horizontal scroll on mobile */}
-        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-4 md:gap-6">
           {displayPlans.map((plan) => {
             const cost = planCosts[plan.slug];
             const isBestValue = plan.slug === bestValueSlug;
@@ -186,7 +192,7 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
             return (
               <div
                 key={plan.id}
-                className={`snap-center shrink-0 w-[280px] md:w-auto p-7 md:p-8 rounded-xl flex flex-col transition-all duration-300 ${
+                className={`p-7 md:p-8 rounded-xl flex flex-col transition-all duration-300 ${
                   isBestValue
                     ? "bg-primary text-on-primary shadow-2xl shadow-primary/20 scale-[1.02] relative z-10 border-2 border-secondary"
                     : isAvailable
@@ -196,7 +202,7 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
               >
                 {isBestValue && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase whitespace-nowrap">
-                    Best Value
+                    Recommended
                   </div>
                 )}
 
@@ -236,14 +242,12 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
                   )}
 
                   {/* Cost at current slider value */}
-                  {isAvailable && plan.slug !== "free" && (
-                    <div className={`mt-3 px-3 py-2 rounded-lg text-sm font-semibold ${
-                      isBestValue ? "bg-white/10" : "bg-surface-container-low"
-                    }`}>
-                      <span className={isBestValue ? "text-secondary-fixed" : "text-secondary"}>
+                  {isAvailable && isBestValue && plan.slug !== "free" && (
+                    <div className="mt-3 px-3 py-2 rounded-lg text-sm font-semibold bg-white/10">
+                      <span className="text-secondary-fixed">
                         ${cost?.toFixed(0)}
                       </span>
-                      <span className={`text-xs font-normal ml-1 ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                      <span className="text-xs font-normal ml-1 text-inverse-primary/70">
                         /mo for {propertyCount} {propertyCount === 1 ? "property" : "properties"}
                         {overage > 0 && ` (${overage} overage)`}
                       </span>
@@ -261,12 +265,12 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
                   {highlights.map((feature) => (
                     <li
                       key={feature}
-                      className={`flex items-start gap-2.5 text-sm ${isBestValue ? "text-on-primary" : "text-on-surface"}`}
+                      className={`flex items-start gap-2.5 text-sm leading-5 ${isBestValue ? "text-on-primary" : "text-on-surface"}`}
                     >
-                      <span className={`material-symbols-outlined text-base mt-0.5 ${isBestValue ? "text-secondary-fixed" : "text-tertiary-fixed-dim"}`}>
+                      <span className={`material-symbols-outlined text-[18px] shrink-0 ${isBestValue ? "text-secondary-fixed" : "text-tertiary-fixed-dim"}`}>
                         check_circle
                       </span>
-                      {feature}
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>

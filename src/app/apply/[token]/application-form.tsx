@@ -1243,7 +1243,7 @@ export function ApplicationForm({
         <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
           {/* Logo / Brand */}
           <div className="flex items-center gap-2.5 mb-5">
-            <Logo height={26} variant="light" />
+            <Logo height={26} background="dark" />
           </div>
 
           {/* Property Card */}

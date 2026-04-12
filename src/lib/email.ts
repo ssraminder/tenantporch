@@ -3,6 +3,8 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const DEFAULT_FROM = "TenantPorch <noreply@tenantporch.com>";
+const EMAIL_LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branding/logo-tenant-lightbg.png`;
+const EMAIL_LOGO_IMG = `<img src="${EMAIL_LOGO_URL}" alt="TenantPorch" height="36" style="height:36px;width:auto;margin-bottom:24px;" />`;
 
 function buildFrom(ownerName?: string): string {
   if (ownerName) return `${ownerName} - TenantPorch <noreply@tenantporch.com>`;
@@ -30,6 +32,7 @@ export async function sendWelcomeEmail({
     subject: "Welcome to TenantPorch — Your tenant portal is ready",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
         <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
           Welcome to TenantPorch
         </h1>
@@ -94,6 +97,7 @@ export async function sendDepositReturnEmail({
     subject: "Your Security Deposit Return Statement",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
         <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
           Security Deposit Return Statement
         </h1>
@@ -149,6 +153,7 @@ export async function sendInviteEmail({
     subject: "You're invited to TenantPorch — Set up your account",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
         <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
           You're Invited to TenantPorch
         </h1>
@@ -222,6 +227,7 @@ export async function sendSigningEmail({
     subject,
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
         <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
           ${isTenant ? "Your Lease is Ready for Signing" : "All Tenants Have Signed"}
         </h1>
@@ -290,6 +296,7 @@ export async function sendSigningCompletionEmail({
     subject: `Lease Agreement Fully Signed — ${propertyAddress}`,
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
         <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
           Lease Agreement Signed
         </h1>

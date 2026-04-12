@@ -24,6 +24,7 @@ interface SidebarProps {
   role: "tenant" | "landlord";
   planName?: string | null;
   planSlug?: string | null;
+  propertyAddress?: string | null;
   user?: {
     firstName: string;
     lastName: string;
@@ -32,7 +33,7 @@ interface SidebarProps {
   } | null;
 }
 
-export function Sidebar({ items, role, planName, planSlug, user }: SidebarProps) {
+export function Sidebar({ items, role, planName, planSlug, propertyAddress, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -51,10 +52,12 @@ export function Sidebar({ items, role, planName, planSlug, user }: SidebarProps)
     <aside className="fixed h-screen flex flex-col gap-2 py-6 bg-primary w-64 hidden lg:flex left-0 top-0 z-40 shadow-ambient-lg">
       {/* Logo */}
       <div className="px-6 mb-8">
-        <Logo height={28} variant="light" />
-        <p className="font-headline font-medium text-sm text-inverse-primary/70 mt-1">
-          {role === "landlord" ? "Property Management" : "Tenant Portal"}
-        </p>
+        <Logo height={28} type={role === "landlord" ? "landlord" : "tenant"} background="dark" />
+        {role === "tenant" && propertyAddress && (
+          <p className="font-headline font-medium text-xs text-inverse-primary/50 mt-1.5 truncate">
+            {propertyAddress}
+          </p>
+        )}
       </div>
 
       {/* Navigation */}

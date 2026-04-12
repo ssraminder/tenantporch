@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { planSlug } = await request.json();
+    const { planSlug, successUrl, cancelUrl } = await request.json();
     if (!planSlug) {
       return NextResponse.json(
         { error: "Plan slug is required" },
@@ -99,8 +99,12 @@ export async function POST(request: Request) {
         customer: customerId,
         mode: "subscription",
         line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?upgrade=success&plan=${plan.slug}`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?upgrade=cancelled`,
+        success_url: successUrl
+          ? `${process.env.NEXT_PUBLIC_APP_URL}${successUrl}?plan=${plan.slug}`
+          : `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?upgrade=success&plan=${plan.slug}`,
+        cancel_url: cancelUrl
+          ? `${process.env.NEXT_PUBLIC_APP_URL}${cancelUrl}`
+          : `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?upgrade=cancelled`,
         metadata: {
           landlord_profile_id: profile.id,
           plan_id: plan.id,

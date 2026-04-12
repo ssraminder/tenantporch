@@ -89,7 +89,7 @@ export default function ChangePasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Logo height={32} />
+          <Logo height={44} />
         </div>
 
         {/* Card */}

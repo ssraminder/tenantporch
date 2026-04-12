@@ -88,9 +88,9 @@ const config: Config = {
       },
       fontFamily: {
         headline: ["Manrope", "sans-serif"],
-        body: ["Inter", "sans-serif"],
-        label: ["Inter", "sans-serif"],
-        sans: ["Inter", "sans-serif"],
+        body: ["DM Sans", "sans-serif"],
+        label: ["DM Sans", "sans-serif"],
+        sans: ["DM Sans", "sans-serif"],
       },
       boxShadow: {
         "ambient-sm": "0 2px 24px rgba(39, 63, 79, 0.06)",

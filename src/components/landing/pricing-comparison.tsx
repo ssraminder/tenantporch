@@ -23,6 +23,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   ai: "AI & Automation",
 };
 
+// Map feature flag slugs to their add-on price when not included in plan
+const FEATURE_ADDON_PRICE: Record<string, number> = {
+  sms_notifications: 3,
+  ai_lease_assistant: 5,
+  api_access: 10,
+  bulk_operations: 8,
+  advanced_analytics: 8,
+  t776_export: 5,
+  card_payments: 3,
+};
+
 function planIncludesFeature(plan: Plan, featureMinPlan: string): boolean {
   if (plan.slug === "enterprise") return true;
   const planIdx = PLAN_ORDER.indexOf(plan.slug);
@@ -41,7 +52,12 @@ export function PricingComparison({
   const categories = Array.from(new Set(features.map((f) => f.category)));
 
   return (
-    <div className="overflow-x-auto -mx-6 px-6">
+    <div>
+      <p className="text-xs text-on-surface-variant mb-3 flex items-center gap-1.5 md:hidden">
+        <span className="material-symbols-outlined text-sm">swipe</span>
+        Swipe to compare plans
+      </p>
+      <div className="overflow-x-auto -mx-6 px-6">
       <table className="w-full min-w-[700px] border-collapse">
         <thead>
           <tr>
@@ -97,15 +113,22 @@ export function PricingComparison({
                       plan,
                       feature.min_plan_slug
                     );
+                    const addonPrice = FEATURE_ADDON_PRICE[feature.slug];
                     return (
                       <td key={plan.id} className="py-3.5 px-3 text-center">
                         {included ? (
                           <span className="material-symbols-outlined text-tertiary-fixed-dim text-xl">
                             check_circle
                           </span>
+                        ) : addonPrice ? (
+                          <span className="text-xs font-semibold text-secondary whitespace-nowrap">
+                            +${addonPrice}/mo
+                          </span>
                         ) : (
-                          <span className="material-symbols-outlined text-outline-variant/40 text-xl">
-                            remove
+                          <span className="text-[10px] font-semibold text-on-surface-variant/50 uppercase tracking-wider">
+                            {feature.min_plan_slug
+                              ? `${feature.min_plan_slug}+`
+                              : "—"}
                           </span>
                         )}
                       </td>
@@ -117,6 +140,7 @@ export function PricingComparison({
           );
         })}
       </table>
+      </div>
     </div>
   );
 }

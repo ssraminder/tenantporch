@@ -97,11 +97,8 @@ function LoginForm() {
 
   return (
     <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient">
-      <div className="text-center mb-8">
-        <Logo height={36} />
-        <p className="text-on-surface-variant mt-2 text-sm">
-          Your front porch to smarter renting.
-        </p>
+      <div className="flex justify-center mb-8">
+        <Logo height={44} />
       </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
