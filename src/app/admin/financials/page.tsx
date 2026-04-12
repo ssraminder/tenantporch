@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { PaymentMethodBadge } from "@/components/shared/payment-method-badge";
 import { DateDisplay } from "@/components/shared/date-display";
+import { PaymentList } from "./payment-filters";
+import { GatedSection } from "@/components/shared/gated-section";
 
 const TABS = [
   { label: "Overview", href: "/admin/financials", icon: "monitoring" },
@@ -11,11 +11,7 @@ const TABS = [
   { label: "Deposits", href: "/admin/financials/deposits", icon: "savings" },
 ];
 
-export default async function AdminFinancials({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
+export default async function AdminFinancials() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -185,8 +181,8 @@ export default async function AdminFinancials({
     );
     return {
       id: r.id,
-      tenantName: overdueTenantMap[r.lease_id] ?? "Unknown",
-      address: propertyMap[propId]?.address_line1 ?? "Unknown",
+      tenantName: overdueTenantMap[r.lease_id] ?? "—",
+      address: propertyMap[propId]?.address_line1 ?? "—",
       amountDue: Number(r.amount_due ?? 0),
       amountPaid: Number(r.amount_paid ?? 0),
       dueDate: r.due_date,
@@ -195,15 +191,32 @@ export default async function AdminFinancials({
     };
   });
 
-  // ─── Pagination for Payment History ───
-  const currentPage = Math.max(1, parseInt(searchParams.page ?? "1", 10));
-  const perPage = 15;
-  const totalPages = Math.max(1, Math.ceil(allPayments.length / perPage));
-  const clampedPage = Math.min(currentPage, totalPages);
-  const paginatedPayments = allPayments.slice(
-    (clampedPage - 1) * perPage,
-    clampedPage * perPage
-  );
+  // ─── Enrich payments with tenant name and property address for client filtering ───
+  const enrichedPayments = allPayments.map((p) => {
+    const tenant = p.rp_users as any;
+    const tenantName = tenant?.first_name
+      ? `${tenant.first_name ?? ""} ${tenant.last_name ?? ""}`.trim()
+      : "—";
+    const propId = leasePropertyMap[p.lease_id];
+    const address = propertyMap[propId]?.address_line1 ?? "Unknown";
+
+    return {
+      id: p.id,
+      lease_id: p.lease_id,
+      tenant_id: p.tenant_id,
+      amount: p.amount,
+      surcharge_percent: p.surcharge_percent,
+      surcharge_amount: p.surcharge_amount,
+      total_charged: p.total_charged,
+      currency_code: p.currency_code,
+      payment_method: p.payment_method,
+      payment_for_month: p.payment_for_month,
+      status: p.status,
+      created_at: p.created_at,
+      tenantName,
+      propertyAddress: address,
+    };
+  });
 
   // ─── Summary Cards ───
   const summaryCards = [
@@ -356,7 +369,8 @@ export default async function AdminFinancials({
         </div>
       </div>
 
-      {/* ─── Revenue by Property ─── */}
+      {/* ─── Revenue by Property (gated: Starter+) ─── */}
+      <GatedSection featureKey="financial_reports" label="Financial Reports">
       <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
         <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">domain</span>
@@ -410,182 +424,10 @@ export default async function AdminFinancials({
         )}
       </div>
 
-      {/* ─── Payment History Table ─── */}
-      <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
-        <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">
-              receipt_long
-            </span>
-            <h3 className="font-headline font-bold text-lg">Payment History</h3>
-          </div>
-          <span className="text-xs text-on-surface-variant font-medium">
-            {allPayments.length} {allPayments.length === 1 ? "payment" : "payments"}
-          </span>
-        </div>
+      </GatedSection>
 
-        {allPayments.length === 0 ? (
-          <div className="px-8 py-12 text-center">
-            <span className="material-symbols-outlined text-outline-variant text-4xl mb-3 block">
-              payments
-            </span>
-            <p className="text-sm text-on-surface-variant">
-              No payments recorded yet
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Mobile: card layout */}
-            <div className="block md:hidden divide-y divide-outline-variant/10">
-              {paginatedPayments.map((payment) => {
-                const tenant = payment.rp_users as any;
-                const tenantName = tenant
-                  ? `${tenant.first_name ?? ""} ${tenant.last_name ?? ""}`.trim()
-                  : "Unknown";
-                const propId = leasePropertyMap[payment.lease_id];
-                const address = propertyMap[propId]?.address_line1 ?? "Unknown";
-
-                return (
-                  <div
-                    key={payment.id}
-                    className="px-6 py-4 space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-primary">
-                          {tenantName}
-                        </p>
-                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
-                          <span className="material-symbols-outlined text-xs">location_on</span>
-                          {address}
-                        </p>
-                      </div>
-                      <StatusBadge status={payment.status} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-primary">
-                          {formatCurrency(
-                            Number(payment.total_charged ?? payment.amount ?? 0),
-                            payment.currency_code ?? "CAD"
-                          )}
-                        </span>
-                        <PaymentMethodBadge method={payment.payment_method ?? "etransfer"} />
-                      </div>
-                      <DateDisplay
-                        date={payment.created_at}
-                        format="short"
-                        className="text-xs text-on-surface-variant"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Desktop: table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
-                    <th className="px-6 md:px-8 py-3">Date</th>
-                    <th className="px-4 py-3">Tenant</th>
-                    <th className="px-4 py-3">Property</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3 text-right">Surcharge</th>
-                    <th className="px-4 py-3 text-right">Total</th>
-                    <th className="px-4 py-3">Method</th>
-                    <th className="px-4 py-3 pr-6 md:pr-8">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/10">
-                  {paginatedPayments.map((payment) => {
-                    const tenant = payment.rp_users as any;
-                    const tenantName = tenant
-                      ? `${tenant.first_name ?? ""} ${tenant.last_name ?? ""}`.trim()
-                      : "Unknown";
-                    const propId = leasePropertyMap[payment.lease_id];
-                    const address = propertyMap[propId]?.address_line1 ?? "Unknown";
-                    const currency = payment.currency_code ?? "CAD";
-
-                    return (
-                      <tr
-                        key={payment.id}
-                        className="hover:bg-surface-container-low transition-colors"
-                      >
-                        <td className="px-6 md:px-8 py-4 text-sm text-on-surface whitespace-nowrap">
-                          <DateDisplay date={payment.created_at} format="short" />
-                        </td>
-                        <td className="px-4 py-4 text-sm font-medium text-primary">
-                          {tenantName}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-on-surface-variant truncate max-w-[200px]">
-                          {address}
-                        </td>
-                        <td className="px-4 py-4 text-sm font-bold text-on-surface text-right">
-                          {formatCurrency(Number(payment.amount ?? 0), currency)}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-on-surface-variant text-right">
-                          {Number(payment.surcharge_amount ?? 0) > 0
-                            ? formatCurrency(Number(payment.surcharge_amount), currency)
-                            : "--"}
-                        </td>
-                        <td className="px-4 py-4 text-sm font-bold text-primary text-right">
-                          {formatCurrency(
-                            Number(payment.total_charged ?? payment.amount ?? 0),
-                            currency
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <PaymentMethodBadge
-                            method={payment.payment_method ?? "etransfer"}
-                          />
-                        </td>
-                        <td className="px-4 py-4 pr-6 md:pr-8">
-                          <StatusBadge status={payment.status} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 md:px-8 py-4 bg-surface-container-low flex items-center justify-between">
-                <p className="text-xs text-on-surface-variant">
-                  Page {clampedPage} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  {clampedPage > 1 && (
-                    <Link
-                      href={`/admin/financials?page=${clampedPage - 1}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant text-xs font-semibold hover:bg-surface-container-highest transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        chevron_left
-                      </span>
-                      Previous
-                    </Link>
-                  )}
-                  {clampedPage < totalPages && (
-                    <Link
-                      href={`/admin/financials?page=${clampedPage + 1}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container hover:text-on-primary-container transition-colors"
-                    >
-                      Next
-                      <span className="material-symbols-outlined text-sm">
-                        chevron_right
-                      </span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* ─── Payment History (client component with search & filters) ─── */}
+      <PaymentList payments={enrichedPayments} />
 
       {/* ─── Overdue Rents ─── */}
       {overdueRows.length > 0 && (

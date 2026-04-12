@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
+import { MaintenancePhotosSection } from "@/components/shared/maintenance-photos-section";
 
 const STATUS_TIMELINE = [
   { key: "submitted", label: "Submitted", icon: "check" },
@@ -148,65 +149,32 @@ export default async function MaintenanceDetailPage({
             </p>
           </div>
 
-          {/* Photo Gallery */}
-          {(photos ?? []).length > 0 && (
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-ambient-sm">
-              <h3 className="font-headline font-bold text-primary mb-4">
-                Photos
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {(photos ?? []).map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="aspect-square bg-surface-container-high rounded-lg overflow-hidden group relative"
-                  >
-                    <img
-                      src={photo.photo_url}
-                      alt={photo.caption ?? "Maintenance photo"}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="material-symbols-outlined text-white">
-                        zoom_in
-                      </span>
-                    </div>
-                    {photo.caption && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                        <p className="text-[10px] text-white font-medium">
-                          {photo.caption}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Photos: gallery + upload */}
+          <MaintenancePhotosSection
+            requestId={id}
+            initialPhotos={(photos ?? []).map((p) => ({
+              id: p.id,
+              photo_url: p.photo_url,
+              caption: p.caption,
+              created_at: p.created_at,
+            }))}
+          />
 
-          {/* Message Input */}
-          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-ambient-sm">
-            <h3 className="font-headline font-bold text-primary mb-4">
-              Add Update
-            </h3>
-            <div className="relative">
-              <textarea
-                className="w-full bg-surface-container-low border-none rounded-2xl p-4 pr-16 text-sm focus:ring-2 focus:ring-secondary/50 min-h-[80px] resize-none"
-                placeholder="Type a message or update..."
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <button className="text-on-surface-variant hover:text-primary p-2">
-                  <span className="material-symbols-outlined">attach_file</span>
-                </button>
-                <button className="bg-secondary text-on-secondary p-2 rounded-xl shadow-md hover:scale-105 transition-transform">
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    send
-                  </span>
-                </button>
-              </div>
+          {/* Contact landlord prompt */}
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-ambient-sm flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary-fixed/20 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">chat</span>
             </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-on-surface mb-0.5">Need to provide an update?</p>
+              <p className="text-xs text-on-surface-variant">Send your landlord a message about this request.</p>
+            </div>
+            <Link
+              href="/tenant/messages/new"
+              className="px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
+            >
+              Message
+            </Link>
           </div>
         </div>
 

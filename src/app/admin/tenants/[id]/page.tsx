@@ -2,8 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { formatCurrency } from "@/lib/currency";
 import { getLeaseDisplayStatus } from "@/lib/lease-utils";
+import { IdVerificationForm } from "@/components/forms/id-verification-form";
 
 const METHOD_LABELS: Record<string, { label: string; icon: string }> = {
   card: { label: "Card", icon: "credit_card" },
@@ -43,7 +45,7 @@ export default async function TenantDetailPage({
   const { data: tenant } = await supabase
     .from("rp_users")
     .select(
-      "id, first_name, last_name, email, phone, role, avatar_url, created_at"
+      "id, first_name, last_name, email, phone, role, avatar_url, created_at, id_type, id_number, id_place_of_issue, id_expiry_date, id_name_on_document, id_document_url, id_document_status, id_uploaded_at, id_reviewed_at"
     )
     .eq("id", tenantId)
     .single();
@@ -175,19 +177,68 @@ export default async function TenantDetailPage({
     documents = docData ?? [];
   }
 
+  // Compute active addendum rent for current lease
+  let activeAddendumRent = 0;
+  if (currentLease) {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const { data: addendumData } = await supabase
+      .from("rp_addendums")
+      .select("additional_rent_amount, effective_from, effective_to")
+      .eq("lease_id", currentLease.id)
+      .eq("status", "signed")
+      .lte("effective_from", todayStr);
+
+    activeAddendumRent = (addendumData ?? [])
+      .filter((a) => !a.effective_to || a.effective_to >= todayStr)
+      .reduce((sum, a) => sum + Number(a.additional_rent_amount ?? 0), 0);
+  }
+
+  const effectiveRent = currentLease
+    ? Number(currentLease.monthly_rent) + activeAddendumRent
+    : 0;
+
   const initials = `${tenant.first_name?.[0]?.toUpperCase() ?? ""}${tenant.last_name?.[0]?.toUpperCase() ?? ""}`;
   const currency = currentLease?.currency_code ?? "CAD";
 
   return (
     <section className="space-y-8">
-      {/* Back Link */}
-      <Link
-        href="/admin/tenants"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Tenants
-      </Link>
+      {/* Breadcrumb */}
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
+          { label: "Tenants", href: "/admin/tenants", icon: "group" },
+          { label: `${tenant.first_name} ${tenant.last_name}` },
+        ]}
+      />
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <Link
+          href={`/admin/messages/new?tenant=${tenantId}`}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">chat</span>
+          Send Message
+        </Link>
+        {currentLease && (
+          <Link
+            href={`/admin/payments/new?tenant=${tenantId}&lease=${currentLease.id}`}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">payments</span>
+            Record Payment
+          </Link>
+        )}
+        {currentProperty && (
+          <Link
+            href={`/admin/properties/${currentProperty.id}`}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">apartment</span>
+            View Property
+          </Link>
+        )}
+      </div>
 
       {/* Profile Header */}
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
@@ -243,6 +294,23 @@ export default async function TenantDetailPage({
           </div>
         </div>
       </div>
+
+      {/* ID Verification */}
+      <IdVerificationForm
+        tenantId={tenantId}
+        mode="admin"
+        currentData={{
+          id_type: tenant.id_type,
+          id_number: tenant.id_number,
+          id_place_of_issue: tenant.id_place_of_issue,
+          id_expiry_date: tenant.id_expiry_date,
+          id_name_on_document: tenant.id_name_on_document,
+          id_document_url: tenant.id_document_url,
+          id_document_status: tenant.id_document_status,
+          id_uploaded_at: tenant.id_uploaded_at,
+          id_reviewed_at: tenant.id_reviewed_at,
+        }}
+      />
 
       {/* Lease Info Card */}
       {currentLease && currentProperty && leaseDisplayStatus && (
@@ -314,8 +382,13 @@ export default async function TenantDetailPage({
                 Monthly Rent
               </p>
               <p className="text-sm font-bold text-primary">
-                {formatCurrency(currentLease.monthly_rent, currency)}
+                {formatCurrency(effectiveRent, currency)}
               </p>
+              {activeAddendumRent > 0 && (
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Base {formatCurrency(currentLease.monthly_rent, currency)} + {formatCurrency(activeAddendumRent, currency)} addendum
+                </p>
+              )}
             </div>
 
             {/* Security Deposit */}

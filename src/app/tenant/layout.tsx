@@ -35,15 +35,31 @@ export default async function TenantLayout({
 
   const { data: rpUser } = await supabase
     .from("rp_users")
-    .select("first_name, last_name, email, avatar_url, role")
+    .select("first_name, last_name, email, avatar_url, role, must_change_password")
     .eq("auth_id", user.id)
     .single();
 
   if (!rpUser || rpUser.role === "landlord") redirect("/admin/dashboard");
 
+  // Force password change for auto-created accounts
+  if (rpUser.must_change_password) redirect("/tenant/change-password");
+
   return (
     <div className="min-h-screen bg-surface">
-      <Sidebar items={tenantNav} role="tenant" />
+      <Sidebar
+        items={tenantNav}
+        role="tenant"
+        user={
+          rpUser
+            ? {
+                firstName: rpUser.first_name,
+                lastName: rpUser.last_name,
+                email: rpUser.email,
+                avatarUrl: rpUser.avatar_url,
+              }
+            : null
+        }
+      />
       <TopBar
         user={
           rpUser
@@ -56,7 +72,7 @@ export default async function TenantLayout({
             : null
         }
       />
-      <main className="lg:ml-64 pt-24 pb-24 lg:pb-8 px-4 md:px-8 min-h-screen">
+      <main className="lg:ml-64 pt-24 lg:pt-8 pb-24 lg:pb-8 px-4 md:px-8 min-h-screen">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>
       <BottomTabs items={tenantTabs} />

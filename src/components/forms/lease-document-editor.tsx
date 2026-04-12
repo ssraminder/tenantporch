@@ -1,0 +1,568 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { LeaseDocumentContent, LeaseSection, LeaseClause } from "@/lib/lease-templates/alberta";
+
+interface LeaseDocumentEditorProps {
+  leaseId: string;
+  propertyId: string;
+  documentContent: LeaseDocumentContent | null;
+  signingStatus: string;
+  isReadOnly: boolean;
+  propertyAddress: string;
+  tenantCount: number;
+  hasUnverifiedTenants: boolean;
+}
+
+export function LeaseDocumentEditor({
+  leaseId,
+  propertyId,
+  documentContent,
+  signingStatus,
+  isReadOnly,
+  propertyAddress,
+  tenantCount,
+  hasUnverifiedTenants,
+}: LeaseDocumentEditorProps) {
+  const router = useRouter();
+  const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
+  const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [additionalTermText, setAdditionalTermText] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [sendingForSign, setSendingForSign] = useState(false);
+  const [cancellingSigning, setCancellingSigning] = useState(false);
+
+  function updateClause(sectionId: string, clauseId: string, newText: string) {
+    if (!content) return;
+    setContent({
+      ...content,
+      sections: content.sections.map((s) =>
+        s.id === sectionId
+          ? {
+              ...s,
+              clauses: s.clauses.map((c) =>
+                c.id === clauseId ? { ...c, text: newText } : c
+              ),
+            }
+          : s
+      ),
+    });
+  }
+
+  function addAdditionalTerm() {
+    if (!content || !additionalTermText.trim()) return;
+    const newTerm: LeaseClause = {
+      id: `additional-${Date.now()}`,
+      text: additionalTermText.trim(),
+      editable: true,
+    };
+    setContent({
+      ...content,
+      additionalTerms: [...content.additionalTerms, newTerm],
+    });
+    setAdditionalTermText("");
+  }
+
+  function removeAdditionalTerm(clauseId: string) {
+    if (!content) return;
+    setContent({
+      ...content,
+      additionalTerms: content.additionalTerms.filter((c) => c.id !== clauseId),
+    });
+  }
+
+  async function handleSave() {
+    if (!content) return;
+    setSaving(true);
+    try {
+      const { saveLeaseDocument } = await import("@/app/admin/actions/lease-actions");
+      const result = await saveLeaseDocument(leaseId, content);
+      if (result.success) {
+        toast.success("Document saved.");
+      } else {
+        toast.error(result.error ?? "Failed to save.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDownloadPDF() {
+    if (!content) return;
+    setDownloading(true);
+    try {
+      const { downloadLeasePDF } = await import("@/lib/pdf/generate-lease-pdf");
+      await downloadLeasePDF(content, propertyAddress, true);
+      toast.success("PDF downloaded.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  async function handleUploadDocument(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { uploadLeaseDocument } = await import("@/app/admin/actions/lease-actions");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("lease_id", leaseId);
+      const result = await uploadLeaseDocument(formData);
+      if (result.success) {
+        toast.success("Document uploaded. This replaces the generated template.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to upload.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function handleSendForSignatures() {
+    if (hasUnverifiedTenants) {
+      toast.error("All tenant IDs must be approved before sending for signatures.");
+      return;
+    }
+    setSendingForSign(true);
+    try {
+      const { sendForSignatures } = await import("@/app/admin/actions/signing-actions");
+      const result = await sendForSignatures(leaseId);
+      if (result.success) {
+        toast.success("Lease sent for signatures. All parties have been notified.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to send for signatures.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setSendingForSign(false);
+    }
+  }
+
+  async function handleCancelSigning() {
+    setCancellingSigning(true);
+    try {
+      const { cancelSigning } = await import("@/app/admin/actions/signing-actions");
+      const result = await cancelSigning(leaseId);
+      if (result.success) {
+        toast.success("Signing cancelled. Lease is back in draft mode.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to cancel signing.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setCancellingSigning(false);
+    }
+  }
+
+  if (!content) {
+    return (
+      <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient-sm text-center">
+        <span className="material-symbols-outlined text-5xl text-outline-variant mb-4 block">
+          description
+        </span>
+        <h2 className="font-headline text-xl font-bold text-primary mb-2">
+          No Document Generated
+        </h2>
+        <p className="text-sm text-on-surface-variant mb-6">
+          This lease does not have a document yet. The document is generated automatically when you create a lease with tenants assigned.
+        </p>
+        <button
+          onClick={() => router.push(`/admin/properties/${propertyId}`)}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-all"
+        >
+          <span className="material-symbols-outlined text-sm">arrow_back</span>
+          Back to Property
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Status Bar */}
+      <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-ambient-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary text-2xl">description</span>
+            <div>
+              <h1 className="font-headline font-extrabold text-xl text-primary">
+                Lease Agreement
+              </h1>
+              <p className="text-sm text-on-surface-variant">
+                {propertyAddress} &middot; {tenantCount} tenant{tenantCount !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <SigningStatusBadge status={signingStatus} />
+          </div>
+        </div>
+
+        {/* Warning banners */}
+        {hasUnverifiedTenants && (
+          <div className="mt-4 flex items-center gap-3 p-3 bg-error-container/30 rounded-xl">
+            <span className="material-symbols-outlined text-on-error-container">warning</span>
+            <p className="text-sm text-on-error-container">
+              One or more tenants have unverified IDs. Signing cannot proceed until all tenant IDs are approved.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Action Bar */}
+      {!isReadOnly && (
+        <div className="sticky top-0 z-30 bg-surface-container-lowest rounded-2xl p-4 shadow-ambient-sm flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {saving ? "progress_activity" : "save"}
+            </span>
+            {saving ? "Saving..." : "Save Draft"}
+          </button>
+
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface text-sm font-bold hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {downloading ? "progress_activity" : "picture_as_pdf"}
+            </span>
+            {downloading ? "Generating..." : "Download Draft PDF"}
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface text-sm font-bold hover:bg-surface-container-highest transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm">print</span>
+            Print
+          </button>
+
+          <div className="h-8 w-px bg-outline-variant/20 hidden sm:block" />
+
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">upload_file</span>
+            {uploading ? "Uploading..." : "Upload Own Document"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf"
+            onChange={handleUploadDocument}
+            className="hidden"
+          />
+
+          <div className="flex-1" />
+
+          <button
+            onClick={handleSendForSignatures}
+            disabled={sendingForSign || hasUnverifiedTenants}
+            className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title={hasUnverifiedTenants ? "All tenant IDs must be approved first" : "Send to all parties for electronic signature"}
+          >
+            <span className="material-symbols-outlined text-sm">
+              {sendingForSign ? "progress_activity" : "send"}
+            </span>
+            {sendingForSign ? "Sending..." : "Send for Signatures"}
+          </button>
+        </div>
+      )}
+
+      {/* Read-only action bar (when sent/partially signed) */}
+      {isReadOnly && signingStatus !== "completed" && (
+        <div className="sticky top-0 z-30 bg-surface-container-lowest rounded-2xl p-4 shadow-ambient-sm flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface text-sm font-bold hover:bg-surface-container-highest transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {downloading ? "progress_activity" : "picture_as_pdf"}
+            </span>
+            Download PDF
+          </button>
+
+          <div className="flex-1" />
+
+          <button
+            onClick={handleCancelSigning}
+            disabled={cancellingSigning}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-error/30 text-error text-sm font-bold hover:bg-error-container/20 transition-colors disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {cancellingSigning ? "progress_activity" : "cancel"}
+            </span>
+            {cancellingSigning ? "Cancelling..." : "Cancel Signing"}
+          </button>
+        </div>
+      )}
+
+      {/* Completed action bar */}
+      {signingStatus === "completed" && (
+        <div className="bg-tertiary-fixed/10 rounded-2xl p-5 flex items-center gap-4">
+          <span className="material-symbols-outlined text-2xl text-on-tertiary-fixed-variant">
+            verified
+          </span>
+          <div className="flex-1">
+            <p className="font-headline font-bold text-on-tertiary-fixed-variant">
+              Lease Fully Signed
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              All parties have signed this lease agreement.
+            </p>
+          </div>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+            Download Signed PDF
+          </button>
+        </div>
+      )}
+
+      {/* Document Body — Paper look */}
+      <div className="bg-white rounded-3xl shadow-ambient-sm overflow-hidden print:shadow-none print:rounded-none">
+        {/* Document Header */}
+        <div className="px-8 md:px-16 pt-12 pb-8 border-b border-outline-variant/10 text-center">
+          <h2 className="font-headline text-2xl font-extrabold text-primary tracking-tight mb-1">
+            RESIDENTIAL TENANCY AGREEMENT
+          </h2>
+          <p className="text-sm text-on-surface-variant font-medium">
+            Province of Alberta &middot; {content.templateVersion}
+          </p>
+        </div>
+
+        {/* Sections */}
+        <div className="px-8 md:px-16 py-8 space-y-8">
+          {content.sections.map((section) => (
+            <DocumentSection
+              key={section.id}
+              section={section}
+              isReadOnly={isReadOnly}
+              onUpdateClause={(clauseId, text) =>
+                updateClause(section.id, clauseId, text)
+              }
+            />
+          ))}
+
+          {/* Additional Terms */}
+          <div>
+            <h3 className="text-lg font-headline font-bold text-primary mb-4">
+              13. Additional Terms
+            </h3>
+            {content.additionalTerms.length === 0 && isReadOnly ? (
+              <p className="text-sm text-on-surface-variant italic">
+                No additional terms.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {content.additionalTerms.map((clause, i) => (
+                  <div
+                    key={clause.id}
+                    className="flex items-start gap-3 group"
+                  >
+                    <span className="text-sm text-on-surface-variant font-mono mt-1 flex-shrink-0">
+                      {i + 1}.
+                    </span>
+                    {isReadOnly ? (
+                      <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap flex-1">
+                        {clause.text}
+                      </p>
+                    ) : (
+                      <>
+                        <textarea
+                          value={clause.text}
+                          onChange={(e) => {
+                            setContent({
+                              ...content,
+                              additionalTerms: content.additionalTerms.map((c) =>
+                                c.id === clause.id
+                                  ? { ...c, text: e.target.value }
+                                  : c
+                              ),
+                            });
+                          }}
+                          rows={2}
+                          className="flex-1 text-sm text-on-surface leading-relaxed bg-transparent border border-outline-variant/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                        />
+                        <button
+                          onClick={() => removeAdditionalTerm(clause.id)}
+                          className="text-error opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            delete
+                          </span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!isReadOnly && (
+              <div className="mt-4 flex items-end gap-3">
+                <div className="flex-1">
+                  <textarea
+                    value={additionalTermText}
+                    onChange={(e) => setAdditionalTermText(e.target.value)}
+                    placeholder="Type an additional term or clause..."
+                    rows={2}
+                    className="w-full text-sm text-on-surface bg-surface-container-low rounded-xl px-4 py-3 placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                  />
+                </div>
+                <button
+                  onClick={addAdditionalTerm}
+                  disabled={!additionalTermText.trim()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-secondary text-on-secondary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 flex-shrink-0"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Add Clause
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Signature Blocks */}
+          <div className="mt-12 pt-8 border-t border-outline-variant/20">
+            <h3 className="text-lg font-headline font-bold text-primary mb-6">
+              Signatures
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-8">
+                  Landlord
+                </p>
+                <div className="border-b border-on-surface/30 mb-2 h-12" />
+                <p className="text-xs text-on-surface-variant">Signature</p>
+                <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
+                <p className="text-xs text-on-surface-variant">
+                  Printed Name &amp; Date
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-8">
+                  Tenant
+                </p>
+                <div className="border-b border-on-surface/30 mb-2 h-12" />
+                <p className="text-xs text-on-surface-variant">Signature</p>
+                <div className="border-b border-on-surface/30 mb-2 h-8 mt-4" />
+                <p className="text-xs text-on-surface-variant">
+                  Printed Name &amp; Date
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center">
+            <p className="text-xs text-on-surface-variant/60">
+              Generated by TenantPorch &middot; Alberta Standard Residential
+              Tenancy Agreement &middot; {content.templateVersion}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocumentSection({
+  section,
+  isReadOnly,
+  onUpdateClause,
+}: {
+  section: LeaseSection;
+  isReadOnly: boolean;
+  onUpdateClause: (clauseId: string, text: string) => void;
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-headline font-bold text-primary mb-4">
+        {section.title}
+      </h3>
+      <div className="space-y-4">
+        {section.clauses.map((clause) => (
+          <ClauseBlock
+            key={clause.id}
+            clause={clause}
+            isReadOnly={isReadOnly || !clause.editable}
+            onUpdate={(text) => onUpdateClause(clause.id, text)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ClauseBlock({
+  clause,
+  isReadOnly,
+  onUpdate,
+}: {
+  clause: LeaseClause;
+  isReadOnly: boolean;
+  onUpdate: (text: string) => void;
+}) {
+  if (isReadOnly) {
+    return (
+      <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+        {clause.text}
+      </p>
+    );
+  }
+
+  return (
+    <textarea
+      value={clause.text}
+      onChange={(e) => onUpdate(e.target.value)}
+      rows={Math.max(2, clause.text.split("\n").length + 1)}
+      className="w-full text-sm text-on-surface leading-relaxed bg-transparent border border-outline-variant/15 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 hover:border-outline-variant/30 transition-colors resize-y"
+    />
+  );
+}
+
+function SigningStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, { bg: string; text: string; label: string }> = {
+    draft: { bg: "bg-surface-variant", text: "text-on-surface-variant", label: "Draft" },
+    sent: { bg: "bg-secondary-fixed/30", text: "text-on-secondary-fixed-variant", label: "Sent for Signing" },
+    partially_signed: { bg: "bg-secondary-fixed/30", text: "text-on-secondary-fixed-variant", label: "Partially Signed" },
+    completed: { bg: "bg-tertiary-fixed/30", text: "text-on-tertiary-fixed-variant", label: "Fully Signed" },
+  };
+  const s = styles[status] ?? styles.draft;
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${s.bg} ${s.text}`}>
+      {s.label}
+    </span>
+  );
+}

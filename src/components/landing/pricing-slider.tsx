@@ -2,96 +2,79 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/currency";
 
 export type Plan = {
   id: string;
   slug: string;
   name: string;
+  base_price: number;
+  included_properties: number;
+  overage_rate: number;
   per_unit_price: number;
   min_properties: number;
   max_properties: number;
+  max_properties_hard: number | null;
   features: string[];
   card_surcharge_percent: number;
+  free_id_verifications_per_month: number;
+  includes_all_addons: boolean;
 };
 
-const FEATURE_LABELS: Record<string, string> = {
-  tenant_portal: "Tenant Portal",
-  etransfer_tracking: "E-Transfer Tracking",
-  ab_lease_template: "Alberta Lease Template",
-  document_storage: "Document Storage",
-  maintenance_requests: "Maintenance Requests",
-  rent_reminders: "Rent Reminders",
-  late_fee_tracking: "Late Fee Tracking",
-  inspections: "Inspections",
-  inventory_tracking: "Inventory Tracking",
-  card_payments: "Card Payments (Stripe)",
-  utility_splitting: "Utility Bill Splitting",
-  financial_reports: "Financial Reports",
-  multi_property_dashboard: "Multi-Property Dashboard",
-  lease_builder: "Custom Lease Builder",
-  esigning: "E-Signing",
-  t776_export: "CRA T776 Export",
-  sms_notifications: "SMS Notifications",
-  tenant_screening: "Tenant Screening",
-  rent_guarantee: "Rent Guarantee",
-  listing_syndication: "Listing Syndication",
-  api_access: "API Access",
-  bulk_operations: "Bulk Operations",
-  advanced_analytics: "Advanced Analytics",
-  priority_support: "Priority Support",
+export type PlanAddon = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  setup_fee: number;
+  min_plan_slug: string;
+  category: string;
 };
 
-function getPlanHighlights(slug: string): string[] {
-  switch (slug) {
-    case "free":
-      return [
-        "Essential Rent Tracking",
-        "Document Storage (1 GB)",
-        "Maintenance Requests",
-      ];
-    case "starter":
-      return [
-        "Everything in Free",
-        "Card Payments (Stripe)",
-        "Custom Lease Builder",
-        "Financial Reports",
-      ];
-    case "growth":
-      return [
-        "Everything in Starter",
-        "Tenant Screening",
-        "CRA T776 Export",
-        "SMS Notifications",
-      ];
-    case "pro":
-      return [
-        "Everything in Growth",
-        "API Access",
-        "Advanced Analytics",
-        "Priority Support",
-      ];
-    case "enterprise":
-      return [
-        "Everything in Pro",
-        "Custom Integrations",
-        "Dedicated Account Manager",
-        "White-Label Options",
-      ];
-    default:
-      return [];
-  }
+const PLAN_HIGHLIGHTS: Record<string, string[]> = {
+  free: [
+    "1 property included",
+    "Tenant portal & messaging",
+    "e-Transfer rent tracking",
+    "Alberta lease template",
+    "Maintenance requests",
+    "1 e-signature per year",
+  ],
+  starter: [
+    "3 properties included",
+    "PAD auto-debit ($10/txn)",
+    "Unlimited e-signatures",
+    "Custom lease builder",
+    "Utility bill splitting",
+    "Financial reports",
+  ],
+  growth: [
+    "10 properties included",
+    "CRA T776 tax export",
+    "Lease renewal workflow",
+    "Contractor dispatch",
+    "NOI dashboard",
+    "1 free ID verification/mo",
+  ],
+  pro: [
+    "20 properties included",
+    "All add-ons included",
+    "API access & webhooks",
+    "Bulk operations",
+    "Advanced analytics",
+    "2 free ID verifications/mo",
+  ],
+};
+
+function calcPlanCost(plan: Plan, count: number): number | null {
+  if (plan.slug === "free" && count > (plan.max_properties_hard ?? 1)) return null;
+  if (plan.slug === "enterprise") return null;
+  return plan.base_price + Math.max(0, count - plan.included_properties) * plan.overage_rate;
 }
 
-function getPlanCTA(slug: string): { label: string; href: string } {
-  switch (slug) {
-    case "free":
-      return { label: "Start Free", href: "/signup" };
-    case "enterprise":
-      return { label: "Contact Sales", href: "#" };
-    default:
-      return { label: "Get Started", href: "/signup" };
-  }
+function getCTA(slug: string): { label: string; href: string } {
+  if (slug === "free") return { label: "Start Free", href: "/signup" };
+  return { label: "Get Started", href: "/signup" };
 }
 
 export function PricingSlider({ plans }: { plans: Plan[] }) {
@@ -102,19 +85,26 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
     [plans]
   );
 
-  const enterprisePlan = plans.find((p) => p.slug === "enterprise");
+  // Calculate costs and find best value
+  const planCosts = useMemo(() => {
+    const costs: Record<string, number | null> = {};
+    for (const p of displayPlans) {
+      costs[p.slug] = calcPlanCost(p, propertyCount);
+    }
+    return costs;
+  }, [displayPlans, propertyCount]);
 
-  const matchingPlan = useMemo(() => {
-    return (
-      plans.find(
-        (p) =>
-          propertyCount >= p.min_properties &&
-          propertyCount <= p.max_properties
-      ) ?? plans[0]
-    );
-  }, [plans, propertyCount]);
-
-  const monthlyTotal = matchingPlan.per_unit_price * propertyCount;
+  const bestValueSlug = useMemo(() => {
+    let cheapest: { slug: string; cost: number } | null = null;
+    for (const p of displayPlans) {
+      const cost = planCosts[p.slug];
+      if (cost === null) continue;
+      if (!cheapest || cost < cheapest.cost) {
+        cheapest = { slug: p.slug, cost };
+      }
+    }
+    return cheapest?.slug ?? null;
+  }, [displayPlans, planCosts]);
 
   return (
     <section id="pricing" className="py-20 md:py-24 bg-surface-container-low px-6">
@@ -124,9 +114,8 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-primary mb-4">
             Pricing that scales with you
           </h2>
-          <p className="text-on-surface-variant max-w-md mx-auto">
-            Simple, transparent per-unit pricing. Your first property is always
-            free.
+          <p className="text-on-surface-variant max-w-lg mx-auto">
+            Flat base price with included properties. Only pay overage when you grow beyond your plan.
           </p>
         </div>
 
@@ -156,25 +145,27 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
 
             <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
               <div>
-                <p className="text-xs text-on-surface-variant">
-                  Recommended plan
-                </p>
+                <p className="text-xs text-on-surface-variant">Best value</p>
                 <p className="text-lg font-bold text-primary">
-                  {matchingPlan.name}
+                  {displayPlans.find((p) => p.slug === bestValueSlug)?.name ?? "Free"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-on-surface-variant">
-                  Estimated monthly
-                </p>
+                <p className="text-xs text-on-surface-variant">Estimated monthly</p>
                 <p className="text-2xl font-bold text-secondary font-headline">
-                  {matchingPlan.slug === "enterprise"
-                    ? "Custom"
-                    : formatCurrency(monthlyTotal)}
+                  {bestValueSlug
+                    ? `$${(planCosts[bestValueSlug] ?? 0).toFixed(0)}`
+                    : "$0"}
                 </p>
-                {matchingPlan.per_unit_price > 0 && (
+                {bestValueSlug && bestValueSlug !== "free" && (
                   <p className="text-xs text-on-surface-variant">
-                    {formatCurrency(matchingPlan.per_unit_price)}/unit/mo
+                    {(() => {
+                      const p = displayPlans.find((pp) => pp.slug === bestValueSlug);
+                      if (!p) return "";
+                      const overage = Math.max(0, propertyCount - p.included_properties);
+                      if (overage > 0) return `$${p.base_price} base + ${overage} × $${p.overage_rate}`;
+                      return `$${p.base_price} base — ${p.included_properties - propertyCount} properties headroom`;
+                    })()}
                   </p>
                 )}
               </div>
@@ -182,71 +173,97 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
           </div>
         </div>
 
-        {/* Plan cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Plan cards — horizontal scroll on mobile */}
+        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {displayPlans.map((plan) => {
-            const isMatch = plan.slug === matchingPlan.slug;
-            const highlights = getPlanHighlights(plan.slug);
-            const cta = getPlanCTA(plan.slug);
+            const cost = planCosts[plan.slug];
+            const isBestValue = plan.slug === bestValueSlug;
+            const isAvailable = cost !== null;
+            const highlights = PLAN_HIGHLIGHTS[plan.slug] ?? [];
+            const cta = getCTA(plan.slug);
+            const overage = Math.max(0, propertyCount - plan.included_properties);
 
             return (
               <div
                 key={plan.id}
-                className={`p-7 md:p-8 rounded-xl flex flex-col transition-all duration-300 ${
-                  isMatch
+                className={`snap-center shrink-0 w-[280px] md:w-auto p-7 md:p-8 rounded-xl flex flex-col transition-all duration-300 ${
+                  isBestValue
                     ? "bg-primary text-on-primary shadow-2xl shadow-primary/20 scale-[1.02] relative z-10 border-2 border-secondary"
-                    : "bg-surface-container-lowest border border-outline-variant/10"
+                    : isAvailable
+                      ? "bg-surface-container-lowest border border-outline-variant/10"
+                      : "bg-surface-container-low border border-outline-variant/10 opacity-60"
                 }`}
               >
-                {isMatch && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
-                    Recommended
+                {isBestValue && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase whitespace-nowrap">
+                    Best Value
                   </div>
                 )}
 
-                <div className="mb-6 md:mb-8">
-                  <h3
-                    className={`text-xl font-bold mb-2 ${isMatch ? "text-on-primary" : "text-primary"}`}
-                  >
+                <div className="mb-6">
+                  <h3 className={`text-xl font-bold mb-3 ${isBestValue ? "text-on-primary" : "text-primary"}`}>
                     {plan.name}
                   </h3>
-                  <div className="flex items-baseline gap-1">
-                    <span
-                      className={`text-sm font-medium ${isMatch ? "text-inverse-primary/70" : "text-on-surface-variant"}`}
-                    >
-                      CAD $
-                    </span>
-                    <span
-                      className={`text-4xl font-black ${isMatch ? "text-on-primary" : "text-primary"}`}
-                    >
-                      {plan.per_unit_price}
-                    </span>
-                    {plan.per_unit_price > 0 && (
-                      <span
-                        className={`text-sm ${isMatch ? "text-inverse-primary/70" : "text-on-surface-variant"}`}
-                      >
-                        /unit/mo
+
+                  {/* Price display */}
+                  {plan.slug === "free" ? (
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-4xl font-black ${isBestValue ? "text-on-primary" : "text-primary"}`}>
+                        $0
                       </span>
-                    )}
-                  </div>
-                  <p
-                    className={`text-sm mt-2 ${isMatch ? "text-inverse-primary/70" : "text-on-surface-variant"}`}
-                  >
-                    {plan.slug === "free"
-                      ? "1 property"
-                      : `${plan.min_properties}–${plan.max_properties} properties`}
-                  </p>
+                      <span className={`text-sm ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                        /mo
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-sm font-medium ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                          $
+                        </span>
+                        <span className={`text-4xl font-black ${isBestValue ? "text-on-primary" : "text-primary"}`}>
+                          {plan.base_price}
+                        </span>
+                        <span className={`text-sm ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                          /mo
+                        </span>
+                      </div>
+                      <p className={`text-xs mt-1 ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                        {plan.included_properties} properties included
+                        {plan.overage_rate > 0 && ` · +$${plan.overage_rate}/extra`}
+                      </p>
+                    </>
+                  )}
+
+                  {/* Cost at current slider value */}
+                  {isAvailable && plan.slug !== "free" && (
+                    <div className={`mt-3 px-3 py-2 rounded-lg text-sm font-semibold ${
+                      isBestValue ? "bg-white/10" : "bg-surface-container-low"
+                    }`}>
+                      <span className={isBestValue ? "text-secondary-fixed" : "text-secondary"}>
+                        ${cost?.toFixed(0)}
+                      </span>
+                      <span className={`text-xs font-normal ml-1 ${isBestValue ? "text-inverse-primary/70" : "text-on-surface-variant"}`}>
+                        /mo for {propertyCount} {propertyCount === 1 ? "property" : "properties"}
+                        {overage > 0 && ` (${overage} overage)`}
+                      </span>
+                    </div>
+                  )}
+
+                  {!isAvailable && (
+                    <p className="mt-3 text-xs text-on-surface-variant">
+                      Limited to {plan.max_properties_hard ?? 1} property
+                    </p>
+                  )}
                 </div>
 
-                <ul className="space-y-3 md:space-y-4 mb-8 md:mb-10 flex-grow">
+                <ul className="space-y-3 mb-8 flex-grow">
                   {highlights.map((feature) => (
                     <li
                       key={feature}
-                      className={`flex items-center gap-3 text-sm ${isMatch ? "text-on-primary" : "text-on-surface"}`}
+                      className={`flex items-start gap-2.5 text-sm ${isBestValue ? "text-on-primary" : "text-on-surface"}`}
                     >
-                      <span
-                        className={`material-symbols-outlined text-lg ${isMatch ? "text-secondary-fixed" : "text-tertiary-fixed-dim"}`}
-                      >
+                      <span className={`material-symbols-outlined text-base mt-0.5 ${isBestValue ? "text-secondary-fixed" : "text-tertiary-fixed-dim"}`}>
                         check_circle
                       </span>
                       {feature}
@@ -257,12 +274,14 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
                 <Link
                   href={cta.href}
                   className={`block w-full py-3 text-center font-bold rounded-lg transition-all ${
-                    isMatch
+                    isBestValue
                       ? "bg-secondary text-on-secondary hover:opacity-90"
-                      : "border border-primary text-primary hover:bg-primary/5"
+                      : isAvailable
+                        ? "border border-primary text-primary hover:bg-primary/5"
+                        : "border border-outline-variant text-outline cursor-not-allowed pointer-events-none"
                   }`}
                 >
-                  {cta.label}
+                  {isAvailable ? cta.label : "Unavailable"}
                 </Link>
               </div>
             );
@@ -270,25 +289,22 @@ export function PricingSlider({ plans }: { plans: Plan[] }) {
         </div>
 
         {/* Enterprise banner */}
-        {enterprisePlan && (
-          <div className="mt-8 md:mt-10 bg-surface-container-lowest rounded-xl p-6 md:p-8 border border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-            <div>
-              <h3 className="text-xl font-bold text-primary mb-1">
-                Enterprise
-              </h3>
-              <p className="text-on-surface-variant">
-                50+ units? Get custom volume pricing, dedicated support, and
-                white-label options.
-              </p>
-            </div>
-            <a
-              href="#"
-              className="shrink-0 px-8 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors"
-            >
-              Contact Sales
-            </a>
+        <div className="mt-8 md:mt-10 bg-surface-container-lowest rounded-xl p-6 md:p-8 border border-outline-variant/10 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div>
+            <h3 className="text-xl font-bold text-primary mb-1">
+              50+ properties?
+            </h3>
+            <p className="text-on-surface-variant">
+              Custom volume pricing, dedicated support, and white-label options for property managers.
+            </p>
           </div>
-        )}
+          <a
+            href="mailto:hello@tenantporch.com"
+            className="shrink-0 px-8 py-3 border border-primary text-primary font-bold rounded-lg hover:bg-primary/5 transition-colors"
+          >
+            Contact Us
+          </a>
+        </div>
       </div>
     </section>
   );

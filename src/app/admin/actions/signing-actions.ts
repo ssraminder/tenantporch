@@ -1,0 +1,577 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications";
+import crypto from "crypto";
+
+/**
+ * Generate a SHA-256 hash of the lease document content.
+ */
+function hashDocument(content: unknown): string {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(content))
+    .digest("hex");
+}
+
+/**
+ * Generate a cryptographically secure token for signing links.
+ */
+function generateToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+/**
+ * Send a lease for electronic signatures.
+ * Creates signing request + participants, notifies all parties.
+ */
+export async function sendForSignatures(leaseId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id, first_name, last_name, email")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Fetch lease with property ownership check
+    const { data: lease, error: leaseError } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, property_id, signing_status, lease_document_content, rp_properties(landlord_id, address_line1)"
+      )
+      .eq("id", leaseId)
+      .single();
+
+    if (leaseError || !lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    const landlordId = (lease.rp_properties as any)?.landlord_id;
+    if (landlordId !== rpUser.id) {
+      return { success: false, error: "You do not own this property" };
+    }
+
+    if (lease.signing_status !== "draft") {
+      return {
+        success: false,
+        error: "Lease has already been sent for signatures",
+      };
+    }
+
+    if (!lease.lease_document_content) {
+      return { success: false, error: "No lease document to sign" };
+    }
+
+    // Check all tenants have approved IDs
+    const { data: leaseTenants } = await supabase
+      .from("rp_lease_tenants")
+      .select(
+        "user_id, role, rp_users(id, first_name, last_name, email, id_document_status)"
+      )
+      .eq("lease_id", leaseId);
+
+    const tenants = (leaseTenants ?? [])
+      .filter((lt) => lt.role !== "occupant")
+      .map((lt) => lt.rp_users as any)
+      .filter(Boolean);
+
+    const unverified = tenants.filter(
+      (t) => t.id_document_status !== "approved"
+    );
+    if (unverified.length > 0) {
+      const names = unverified
+        .map((t: any) => `${t.first_name} ${t.last_name}`)
+        .join(", ");
+      return {
+        success: false,
+        error: `The following tenants need approved ID before signing: ${names}`,
+      };
+    }
+
+    // Create document hash
+    const documentHash = hashDocument(lease.lease_document_content);
+
+    // Create signing request
+    const { data: signingRequest, error: srError } = await supabase
+      .from("rp_signing_requests")
+      .insert({
+        lease_id: leaseId,
+        document_hash: documentHash,
+        status: "sent",
+        created_by: rpUser.id,
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (srError || !signingRequest) {
+      return {
+        success: false,
+        error: srError?.message ?? "Failed to create signing request",
+      };
+    }
+
+    // Create participants: landlord first, then tenants
+    const participants = [
+      {
+        signing_request_id: signingRequest.id,
+        signer_name: `${rpUser.first_name} ${rpUser.last_name}`,
+        signer_email: rpUser.email,
+        signer_role: "landlord",
+        signing_order: 1,
+        token: generateToken(),
+        status: "pending",
+      },
+      ...tenants.map((t: any, i: number) => ({
+        signing_request_id: signingRequest.id,
+        signer_name: `${t.first_name} ${t.last_name}`,
+        signer_email: t.email,
+        signer_role: "tenant",
+        signing_order: i + 2,
+        token: generateToken(),
+        status: "pending",
+      })),
+    ];
+
+    const { error: partError } = await supabase
+      .from("rp_signing_participants")
+      .insert(participants);
+
+    if (partError) {
+      return { success: false, error: partError.message };
+    }
+
+    // Update lease signing_status
+    await supabase
+      .from("rp_leases")
+      .update({
+        signing_status: "sent",
+        sent_for_signing_at: new Date().toISOString(),
+      })
+      .eq("id", leaseId);
+
+    // Audit log
+    await supabase.from("rp_signing_audit_log").insert({
+      signing_request_id: signingRequest.id,
+      action: "signing_request_created",
+      metadata: {
+        lease_id: leaseId,
+        participant_count: participants.length,
+        created_by: rpUser.id,
+      },
+    });
+
+    // Notify all parties
+    const propertyAddress =
+      (lease.rp_properties as any)?.address_line1 ?? "your property";
+
+    for (const t of tenants) {
+      await createNotification(supabase, {
+        userId: t.id,
+        title: "Lease Ready for Signing",
+        body: `Your lease for ${propertyAddress} is ready for electronic signature. Check your email for the signing link.`,
+        type: "lease",
+        urgency: "high",
+      });
+    }
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    revalidatePath(`/admin/properties/${lease.property_id}`);
+
+    return { success: true, signingRequestId: signingRequest.id };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Look up a signing participant by token (used on the public signing page).
+ */
+export async function getSigningData(token: string) {
+  try {
+    const supabase = await createClient();
+
+    // Find participant by token
+    const { data: participant, error: pError } = await supabase
+      .from("rp_signing_participants")
+      .select(
+        "id, signing_request_id, signer_name, signer_email, signer_role, signing_order, status, signed_at, token"
+      )
+      .eq("token", token)
+      .single();
+
+    if (pError || !participant) {
+      return { success: false, error: "Invalid signing link" };
+    }
+
+    if (participant.status === "signed") {
+      return { success: false, error: "already_signed" };
+    }
+
+    // Get signing request + lease
+    const { data: signingRequest } = await supabase
+      .from("rp_signing_requests")
+      .select(
+        "id, lease_id, status, expires_at, document_hash"
+      )
+      .eq("id", participant.signing_request_id)
+      .single();
+
+    if (!signingRequest) {
+      return { success: false, error: "Signing request not found" };
+    }
+
+    // Check expiry
+    if (
+      signingRequest.expires_at &&
+      new Date(signingRequest.expires_at) < new Date()
+    ) {
+      return { success: false, error: "This signing link has expired" };
+    }
+
+    if (
+      signingRequest.status === "completed" ||
+      signingRequest.status === "cancelled"
+    ) {
+      return {
+        success: false,
+        error:
+          signingRequest.status === "completed"
+            ? "already_signed"
+            : "This signing request has been cancelled",
+      };
+    }
+
+    // Fetch lease document content
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, lease_document_content, monthly_rent, currency_code, start_date, end_date, lease_type, property_id"
+      )
+      .eq("id", signingRequest.lease_id)
+      .single();
+
+    if (!lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    // Fetch property
+    const { data: property } = await supabase
+      .from("rp_properties")
+      .select("address_line1, city, province_state, postal_code")
+      .eq("id", lease.property_id)
+      .single();
+
+    // Fetch all participants for progress display
+    const { data: allParticipants } = await supabase
+      .from("rp_signing_participants")
+      .select(
+        "id, signer_name, signer_role, signing_order, status, signed_at"
+      )
+      .eq("signing_request_id", signingRequest.id)
+      .order("signing_order");
+
+    return {
+      success: true,
+      participant: {
+        id: participant.id,
+        signerName: participant.signer_name,
+        signerEmail: participant.signer_email,
+        signerRole: participant.signer_role,
+        signingOrder: participant.signing_order,
+      },
+      lease: {
+        documentContent: lease.lease_document_content,
+        monthlyRent: lease.monthly_rent,
+        currencyCode: lease.currency_code,
+        startDate: lease.start_date,
+        endDate: lease.end_date,
+        leaseType: lease.lease_type,
+      },
+      property: property
+        ? {
+            address: [
+              property.address_line1,
+              property.city,
+              property.province_state,
+              property.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", "),
+          }
+        : null,
+      signingRequest: {
+        id: signingRequest.id,
+        expiresAt: signingRequest.expires_at,
+      },
+      participants: (allParticipants ?? []).map((p) => ({
+        id: p.id,
+        signerName: p.signer_name,
+        signerRole: p.signer_role,
+        signingOrder: p.signing_order,
+        status: p.status,
+        signedAt: p.signed_at,
+      })),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Submit a signature for a lease.
+ */
+export async function submitSignature(
+  token: string,
+  signatureData: {
+    method: "type" | "draw" | "upload";
+    signedName: string;
+    signatureImageUrl?: string;
+  },
+  clientInfo?: { ipAddress?: string; userAgent?: string }
+) {
+  try {
+    const supabase = await createClient();
+
+    // Find participant
+    const { data: participant, error: pError } = await supabase
+      .from("rp_signing_participants")
+      .select("id, signing_request_id, signer_name, status, signer_role")
+      .eq("token", token)
+      .single();
+
+    if (pError || !participant) {
+      return { success: false, error: "Invalid signing token" };
+    }
+
+    if (participant.status === "signed") {
+      return { success: false, error: "You have already signed this document" };
+    }
+
+    // Get signing request
+    const { data: signingRequest } = await supabase
+      .from("rp_signing_requests")
+      .select("id, lease_id, status, expires_at")
+      .eq("id", participant.signing_request_id)
+      .single();
+
+    if (!signingRequest) {
+      return { success: false, error: "Signing request not found" };
+    }
+
+    if (
+      signingRequest.expires_at &&
+      new Date(signingRequest.expires_at) < new Date()
+    ) {
+      return { success: false, error: "This signing link has expired" };
+    }
+
+    // Update participant with signature
+    const { error: updateError } = await supabase
+      .from("rp_signing_participants")
+      .update({
+        status: "signed",
+        signature_method: signatureData.method,
+        signed_name: signatureData.signedName,
+        signature_image_url: signatureData.signatureImageUrl ?? null,
+        signed_at: new Date().toISOString(),
+        ip_address: clientInfo?.ipAddress ?? null,
+        user_agent: clientInfo?.userAgent ?? null,
+      })
+      .eq("id", participant.id);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    // Audit log
+    await supabase.from("rp_signing_audit_log").insert({
+      signing_request_id: signingRequest.id,
+      participant_id: participant.id,
+      action: "signature_submitted",
+      ip_address: clientInfo?.ipAddress ?? null,
+      user_agent: clientInfo?.userAgent ?? null,
+      metadata: {
+        method: signatureData.method,
+        signed_name: signatureData.signedName,
+        signer_role: participant.signer_role,
+      },
+    });
+
+    // Check if all participants have signed
+    const { data: allParticipants } = await supabase
+      .from("rp_signing_participants")
+      .select("id, status")
+      .eq("signing_request_id", signingRequest.id);
+
+    const allSigned = (allParticipants ?? []).every(
+      (p) => p.status === "signed"
+    );
+    const someSigned = (allParticipants ?? []).some(
+      (p) => p.status === "signed"
+    );
+
+    if (allSigned) {
+      // All parties signed — complete the signing request
+      await supabase
+        .from("rp_signing_requests")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", signingRequest.id);
+
+      await supabase
+        .from("rp_leases")
+        .update({ signing_status: "completed" })
+        .eq("id", signingRequest.lease_id);
+
+      await supabase.from("rp_signing_audit_log").insert({
+        signing_request_id: signingRequest.id,
+        action: "signing_completed",
+        metadata: {
+          total_participants: allParticipants?.length,
+          lease_id: signingRequest.lease_id,
+        },
+      });
+    } else if (someSigned) {
+      // Update to partially signed
+      await supabase
+        .from("rp_signing_requests")
+        .update({ status: "partially_signed" })
+        .eq("id", signingRequest.id);
+
+      await supabase
+        .from("rp_leases")
+        .update({ signing_status: "partially_signed" })
+        .eq("id", signingRequest.lease_id);
+    }
+
+    revalidatePath(`/admin/leases/${signingRequest.lease_id}/document`);
+
+    return {
+      success: true,
+      allSigned,
+      message: allSigned
+        ? "All parties have signed. The lease is now fully executed."
+        : "Your signature has been recorded. Waiting for other parties.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Cancel an active signing request (landlord only).
+ */
+export async function cancelSigning(leaseId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Verify ownership
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, property_id, rp_properties(landlord_id)")
+      .eq("id", leaseId)
+      .single();
+
+    if (!lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) {
+      return { success: false, error: "You do not own this property" };
+    }
+
+    // Find active signing request
+    const { data: signingRequest } = await supabase
+      .from("rp_signing_requests")
+      .select("id")
+      .eq("lease_id", leaseId)
+      .in("status", ["sent", "partially_signed", "draft"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!signingRequest) {
+      return { success: false, error: "No active signing request found" };
+    }
+
+    // Cancel the request
+    await supabase
+      .from("rp_signing_requests")
+      .update({ status: "cancelled" })
+      .eq("id", signingRequest.id);
+
+    // Reset lease status
+    await supabase
+      .from("rp_leases")
+      .update({ signing_status: "draft", sent_for_signing_at: null })
+      .eq("id", leaseId);
+
+    // Audit log
+    await supabase.from("rp_signing_audit_log").insert({
+      signing_request_id: signingRequest.id,
+      action: "signing_cancelled",
+      metadata: { cancelled_by: rpUser.id, lease_id: leaseId },
+    });
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    revalidatePath(`/admin/properties/${lease.property_id}`);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}

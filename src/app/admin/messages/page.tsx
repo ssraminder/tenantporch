@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
 import Link from "next/link";
+import { AdminMessageList } from "./message-list";
 
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   rent_due: { icon: "payments", color: "bg-secondary" },
@@ -14,13 +14,6 @@ const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   general: { icon: "info", color: "bg-outline" },
   screening_complete: { icon: "verified", color: "bg-tertiary" },
   message: { icon: "mail", color: "bg-primary" },
-};
-
-const DELIVERY_METHOD: Record<string, { label: string; icon: string }> = {
-  portal: { label: "Portal", icon: "language" },
-  email: { label: "Email", icon: "email" },
-  mail: { label: "Mail", icon: "local_post_office" },
-  personal: { label: "In Person", icon: "person" },
 };
 
 export default async function AdminMessages() {
@@ -41,34 +34,78 @@ export default async function AdminMessages() {
   const { data: sentMessages } = await supabase
     .from("rp_messages")
     .select(
-      "id, property_id, sender_id, recipient_id, subject, body, is_read, is_formal_notice, notice_type, delivery_method, deemed_received_at, created_at"
+      "id, property_id, sender_id, recipient_id, subject, body, is_read, is_formal_notice, notice_type, delivery_method, parent_message_id, created_at"
     )
     .eq("sender_id", rpUser.id)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   const { data: receivedMessages } = await supabase
     .from("rp_messages")
     .select(
-      "id, property_id, sender_id, recipient_id, subject, body, is_read, is_formal_notice, notice_type, delivery_method, deemed_received_at, created_at"
+      "id, property_id, sender_id, recipient_id, subject, body, is_read, is_formal_notice, notice_type, delivery_method, parent_message_id, created_at"
     )
     .eq("recipient_id", rpUser.id)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
-  // Merge and deduplicate, sort by created_at desc
+  // Merge and deduplicate, sort by created_at asc for threading
   const allMessagesMap = new Map<string, any>();
   for (const msg of [...(sentMessages ?? []), ...(receivedMessages ?? [])]) {
     allMessagesMap.set(msg.id, msg);
   }
-  const messages = Array.from(allMessagesMap.values()).sort(
+  const allMessages = Array.from(allMessagesMap.values()).sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
+
+  // ─── Group messages into threads ───
+  const threadMap = new Map<string, any[]>();
+  const rootMessages: any[] = [];
+
+  for (const msg of allMessages) {
+    if (!msg.parent_message_id) {
+      rootMessages.push(msg);
+      if (!threadMap.has(msg.id)) {
+        threadMap.set(msg.id, []);
+      }
+    } else {
+      const parentId = msg.parent_message_id;
+      if (!threadMap.has(parentId)) {
+        threadMap.set(parentId, []);
+      }
+      threadMap.get(parentId)!.push(msg);
+    }
+  }
+
+  const threads = rootMessages
+    .map((root) => {
+      const replies = threadMap.get(root.id) ?? [];
+      const allInThread = [root, ...replies];
+      const latestMessage = allInThread[allInThread.length - 1];
+      const hasUnread = allInThread.some(
+        (m) => !m.is_read && m.recipient_id === rpUser.id
+      );
+      const unreadReplyCount = replies.filter(
+        (m) => !m.is_read && m.recipient_id === rpUser.id
+      ).length;
+      return {
+        root,
+        replies,
+        latestMessage,
+        hasUnread,
+        unreadReplyCount,
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.latestMessage.created_at).getTime() -
+        new Date(a.latestMessage.created_at).getTime()
+    );
 
   // ─── Batch-fetch user names for all sender/recipient IDs ───
   const userIds = new Set<string>();
-  for (const msg of messages) {
+  for (const msg of allMessages) {
     if (msg.sender_id) userIds.add(msg.sender_id);
     if (msg.recipient_id) userIds.add(msg.recipient_id);
   }
@@ -87,7 +124,7 @@ export default async function AdminMessages() {
 
   // ─── Batch-fetch property addresses ───
   const propertyIds = new Set<string>();
-  for (const msg of messages) {
+  for (const msg of allMessages) {
     if (msg.property_id) propertyIds.add(msg.property_id);
   }
 
@@ -104,9 +141,7 @@ export default async function AdminMessages() {
   }
 
   // ─── Unread count ───
-  const unreadCount = messages.filter(
-    (m) => !m.is_read && m.recipient_id === rpUser.id
-  ).length;
+  const unreadCount = threads.filter((t) => t.hasUnread).length;
 
   // ─── Notifications ───
   const { data: notifications } = await supabase
@@ -134,161 +169,25 @@ export default async function AdminMessages() {
             </span>
           )}
         </div>
-        <button
-          type="button"
+        <Link
+          href="/admin/messages/new"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-ambient-sm hover:bg-primary-container hover:text-on-primary-container transition-colors"
         >
           <span className="material-symbols-outlined text-lg">edit</span>
           New Message
-        </button>
+        </Link>
       </div>
 
       {/* ─── Main Content Grid ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* ─── Message List ─── */}
-        <div className="lg:col-span-8 bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
-          <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">mail</span>
-            <h3 className="font-headline font-bold text-lg">All Messages</h3>
-            <span className="text-xs text-on-surface-variant ml-auto">
-              {messages.length} {messages.length === 1 ? "message" : "messages"}
-            </span>
-          </div>
-
-          {messages.length === 0 ? (
-            <div className="px-8 py-16 text-center">
-              <span className="material-symbols-outlined text-outline-variant text-5xl mb-4 block">
-                forum
-              </span>
-              <h3 className="font-headline font-bold text-on-surface mb-2">
-                No messages yet
-              </h3>
-              <p className="text-sm text-on-surface-variant max-w-sm mx-auto">
-                Messages between you and your tenants will appear here. Start a
-                conversation by sending a new message.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-outline-variant/10">
-              {messages.map((msg) => {
-                const isSent = msg.sender_id === rpUser.id;
-                const otherUserId = isSent
-                  ? msg.recipient_id
-                  : msg.sender_id;
-                const otherUser = otherUserId
-                  ? usersById[otherUserId]
-                  : null;
-                const otherName = otherUser
-                  ? `${otherUser.first_name} ${otherUser.last_name}`
-                  : "Unknown User";
-                const isUnread = !msg.is_read && msg.recipient_id === rpUser.id;
-                const bodyPreview =
-                  msg.body && msg.body.length > 100
-                    ? msg.body.substring(0, 100) + "..."
-                    : msg.body ?? "";
-                const delivery =
-                  DELIVERY_METHOD[msg.delivery_method] ?? DELIVERY_METHOD.portal;
-                const propertyAddress = msg.property_id
-                  ? propertiesById[msg.property_id]
-                  : null;
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex items-start gap-4 px-6 md:px-8 py-5 hover:bg-surface-container-low transition-colors ${
-                      isUnread ? "bg-primary-fixed/5" : ""
-                    }`}
-                  >
-                    {/* Unread indicator */}
-                    <div className="flex-shrink-0 pt-2">
-                      {isUnread ? (
-                        <span className="block w-2.5 h-2.5 rounded-full bg-secondary" />
-                      ) : (
-                        <span className="block w-2.5 h-2.5 rounded-full bg-transparent" />
-                      )}
-                    </div>
-
-                    {/* Message content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`text-sm font-semibold ${
-                            isUnread ? "text-primary" : "text-on-surface"
-                          } truncate`}
-                        >
-                          {isSent ? `To: ${otherName}` : otherName}
-                        </span>
-                        {isSent && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full">
-                            <span className="material-symbols-outlined text-[10px]">
-                              send
-                            </span>
-                            Sent
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Subject */}
-                      <p
-                        className={`text-sm truncate ${
-                          isUnread
-                            ? "font-semibold text-on-surface"
-                            : "text-on-surface-variant"
-                        }`}
-                      >
-                        {msg.subject || bodyPreview || "No subject"}
-                      </p>
-
-                      {/* Body preview (only if subject exists) */}
-                      {msg.subject && bodyPreview && (
-                        <p className="text-xs text-on-surface-variant mt-0.5 truncate">
-                          {bodyPreview}
-                        </p>
-                      )}
-
-                      {/* Badges row */}
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        {msg.is_formal_notice && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-error-container text-on-error-container">
-                            <span className="material-symbols-outlined text-[10px]">
-                              gavel
-                            </span>
-                            Formal Notice
-                          </span>
-                        )}
-                        {msg.notice_type && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-fixed/30 text-on-secondary-fixed-variant">
-                            {msg.notice_type.replace(/_/g, " ")}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-surface-container-high text-on-surface-variant">
-                          <span className="material-symbols-outlined text-[10px]">
-                            {delivery.icon}
-                          </span>
-                          {delivery.label}
-                        </span>
-                        {propertyAddress && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-on-surface-variant">
-                            <span className="material-symbols-outlined text-[10px]">
-                              location_on
-                            </span>
-                            {propertyAddress}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Date */}
-                    <div className="flex-shrink-0 text-right">
-                      <span className="text-xs text-on-surface-variant whitespace-nowrap">
-                        <DateDisplay date={msg.created_at} format="relative" />
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        <div className="lg:col-span-8">
+          <AdminMessageList
+            threads={threads}
+            currentUserId={rpUser.id}
+            usersById={usersById}
+            propertiesById={propertiesById}
+          />
         </div>
 
         {/* ─── Notifications Sidebar ─── */}

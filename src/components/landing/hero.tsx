@@ -85,8 +85,8 @@ export function Hero() {
                         height: `${h}%`,
                         backgroundColor:
                           i === 11
-                            ? "var(--color-secondary, #7b5804)"
-                            : "var(--color-primary-container, #1b2a4a)",
+                            ? "var(--color-secondary, #E8732C)"
+                            : "var(--color-primary-container, #3a5568)",
                       }}
                     />
                   )

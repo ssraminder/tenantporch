@@ -55,8 +55,8 @@ export function PricingComparison({
               >
                 <div>{plan.name}</div>
                 <div className="text-xs font-medium text-on-surface-variant mt-1">
-                  {plan.per_unit_price > 0
-                    ? `$${plan.per_unit_price}/unit/mo`
+                  {plan.base_price > 0
+                    ? `$${plan.base_price}/mo`
                     : "Free"}
                 </div>
               </th>
@@ -64,58 +64,58 @@ export function PricingComparison({
           </tr>
         </thead>
         {categories.map((category) => {
-            const categoryFeatures = features.filter(
-              (f) => f.category === category
-            );
-            if (categoryFeatures.length === 0) return null;
+          const categoryFeatures = features.filter(
+            (f) => f.category === category
+          );
+          if (categoryFeatures.length === 0) return null;
 
-            return (
-              <tbody key={category}>
-                <tr>
-                  <td
-                    colSpan={displayPlans.length + 1}
-                    className="pt-8 pb-3 text-xs font-bold text-secondary uppercase tracking-widest sticky left-0 bg-surface z-10"
-                  >
-                    {CATEGORY_LABELS[category] ?? category}
+          return (
+            <tbody key={category}>
+              <tr>
+                <td
+                  colSpan={displayPlans.length + 1}
+                  className="pt-8 pb-3 text-xs font-bold text-secondary uppercase tracking-widest sticky left-0 bg-surface z-10"
+                >
+                  {CATEGORY_LABELS[category] ?? category}
+                </td>
+              </tr>
+              {categoryFeatures.map((feature) => (
+                <tr
+                  key={feature.id}
+                  className="border-t border-outline-variant/10"
+                >
+                  <td className="py-3.5 pr-4 sticky left-0 bg-surface z-10">
+                    <p className="text-sm text-on-surface font-medium">
+                      {feature.name}
+                    </p>
+                    <p className="text-xs text-on-surface-variant">
+                      {feature.description}
+                    </p>
                   </td>
+                  {displayPlans.map((plan) => {
+                    const included = planIncludesFeature(
+                      plan,
+                      feature.min_plan_slug
+                    );
+                    return (
+                      <td key={plan.id} className="py-3.5 px-3 text-center">
+                        {included ? (
+                          <span className="material-symbols-outlined text-tertiary-fixed-dim text-xl">
+                            check_circle
+                          </span>
+                        ) : (
+                          <span className="material-symbols-outlined text-outline-variant/40 text-xl">
+                            remove
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
-                {categoryFeatures.map((feature) => (
-                  <tr
-                    key={feature.id}
-                    className="border-t border-outline-variant/10"
-                  >
-                    <td className="py-3.5 pr-4 sticky left-0 bg-surface z-10">
-                      <p className="text-sm text-on-surface font-medium">
-                        {feature.name}
-                      </p>
-                      <p className="text-xs text-on-surface-variant">
-                        {feature.description}
-                      </p>
-                    </td>
-                    {displayPlans.map((plan) => {
-                      const included = planIncludesFeature(
-                        plan,
-                        feature.min_plan_slug
-                      );
-                      return (
-                        <td key={plan.id} className="py-3.5 px-3 text-center">
-                          {included ? (
-                            <span className="material-symbols-outlined text-tertiary-fixed-dim text-xl">
-                              check_circle
-                            </span>
-                          ) : (
-                            <span className="material-symbols-outlined text-outline-variant/40 text-xl">
-                              remove
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            );
-          })}
+              ))}
+            </tbody>
+          );
+        })}
       </table>
     </div>
   );

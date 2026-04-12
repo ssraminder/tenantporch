@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/shared/logo";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -34,12 +35,9 @@ export function TopBar({ user }: TopBarProps) {
     : "?";
 
   return (
-    <header className="flex justify-between items-center w-full px-6 py-4 h-16 bg-surface-bright/80 backdrop-blur-xl fixed top-0 z-50 lg:pl-72">
+    <header className="flex justify-between items-center w-full px-6 py-4 h-16 bg-surface-bright fixed top-0 z-50 shadow-ambient-sm lg:hidden">
       <div className="flex items-center gap-4">
-        {/* Mobile logo */}
-        <h1 className="text-xl font-black text-primary italic font-headline lg:hidden">
-          TenantPorch
-        </h1>
+        <Logo height={24} />
       </div>
 
       <div className="flex items-center gap-6">

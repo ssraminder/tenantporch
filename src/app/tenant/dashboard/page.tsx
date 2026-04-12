@@ -58,6 +58,7 @@ export default async function TenantDashboard() {
   let lease = null;
   let property = null;
   let currentRent = null;
+  let activeAddendumRent = 0;
 
   if (leaseLink) {
     const { data: leaseData } = await supabase
@@ -85,6 +86,19 @@ export default async function TenantDashboard() {
         .limit(1)
         .single();
       currentRent = rentData;
+
+      // Fetch active addendum rent
+      const todayStr = new Date().toISOString().split("T")[0];
+      const { data: addendumData } = await supabase
+        .from("rp_addendums")
+        .select("additional_rent_amount, effective_from, effective_to")
+        .eq("lease_id", lease.id)
+        .eq("status", "signed")
+        .lte("effective_from", todayStr);
+
+      activeAddendumRent = (addendumData ?? [])
+        .filter((a) => !a.effective_to || a.effective_to >= todayStr)
+        .reduce((sum, a) => sum + Number(a.additional_rent_amount ?? 0), 0);
     }
   }
 
@@ -136,10 +150,11 @@ export default async function TenantDashboard() {
     leaseDisplayStatus?.key === "upcoming_lease" ||
     leaseDisplayStatus?.key === "draft";
 
-  // Amount: for upcoming/draft use monthly_rent; for active use rent schedule; for ended show 0
+  // Amount: base monthly_rent + any active addendum adjustments; for ended show 0
+  const baseMonthlyRent = Number(lease?.monthly_rent ?? 0);
   const rentDisplayAmount = isLeaseEnded
     ? 0
-    : Number(currentRent?.amount_due ?? lease?.monthly_rent ?? 0);
+    : baseMonthlyRent + activeAddendumRent;
 
   // Rent status label
   const rentStatusLabel = isLeaseEnded
@@ -235,6 +250,11 @@ export default async function TenantDashboard() {
                     {formatCurrency(rentDisplayAmount, currency)}
                   </span>
                 </div>
+                {activeAddendumRent > 0 && (
+                  <p className="text-xs text-on-surface-variant mb-1">
+                    Includes {formatCurrency(activeAddendumRent, currency)} addendum
+                  </p>
+                )}
                 {isLeaseUpcoming && currentRent ? (
                   <p className="text-sm text-on-surface-variant font-medium mt-1">
                     First rent due:{" "}

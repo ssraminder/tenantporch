@@ -34,6 +34,11 @@ const STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-primary-fixed/30 text-on-primary-fixed-variant",
   open: "bg-secondary-fixed/30 text-on-secondary-fixed-variant",
 
+  // Application statuses
+  approved: "bg-tertiary-fixed/30 text-on-tertiary-fixed-variant",
+  declined: "bg-error-container text-on-error-container",
+  reviewing: "bg-primary-fixed/30 text-on-primary-fixed-variant",
+
   // Message / notification statuses
   read: "bg-surface-variant text-on-surface-variant",
   unread: "bg-secondary-fixed/30 text-on-secondary-fixed-variant",

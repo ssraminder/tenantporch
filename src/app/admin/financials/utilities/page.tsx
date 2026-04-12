@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { DateDisplay } from "@/components/shared/date-display";
+import { GatedSection } from "@/components/shared/gated-section";
 
 const TABS = [
   { label: "Overview", href: "/admin/financials", icon: "monitoring" },
@@ -125,6 +126,9 @@ export default async function UtilitiesPage() {
         </nav>
       </div>
 
+      {/* ─── Gated: Utility Splitting requires Starter+ ─── */}
+      <GatedSection featureKey="utility_splitting" label="Utility Splitting">
+
       {/* ─── Info Banner ─── */}
       <div className="bg-primary-fixed/20 rounded-2xl p-5 md:p-6 flex gap-4">
         <div className="w-10 h-10 rounded-xl bg-primary-fixed/40 flex items-center justify-center flex-shrink-0">
@@ -138,9 +142,9 @@ export default async function UtilitiesPage() {
           </h4>
           <p className="text-sm text-on-primary-fixed-variant/80 leading-relaxed">
             Utility costs are split between landlord and tenant based on the
-            percentage set in each lease. The tenant&apos;s share is calculated from
-            total utility bills uploaded as documents. Adjust the split percentage
-            in the lease settings for each property.
+            percentage set in each lease. Upload utility bills as documents to
+            keep records. Adjust the split percentage in the lease settings for
+            each property.
           </p>
         </div>
       </div>
@@ -171,11 +175,7 @@ export default async function UtilitiesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {utilitySplitCards.map((card) => {
-              const tenantShare = (card.monthlyRent * card.splitPercent) / 100;
-              const landlordShare = card.monthlyRent - tenantShare;
-
-              return (
+            {utilitySplitCards.map((card) => (
                 <div
                   key={card.leaseId}
                   className="bg-surface-container-lowest rounded-2xl shadow-ambient-sm overflow-hidden"
@@ -219,40 +219,25 @@ export default async function UtilitiesPage() {
                       </div>
                     </div>
 
-                    {/* Financial breakdown */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between py-2">
-                        <span className="text-xs text-on-surface-variant flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">payments</span>
-                          Monthly Rent
-                        </span>
-                        <span className="text-sm font-bold text-primary">
-                          {formatCurrency(card.monthlyRent, card.currency)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-2 bg-surface-container-low rounded-lg px-3">
-                        <span className="text-xs text-on-surface-variant flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">person</span>
-                          Tenant Allocation
-                        </span>
-                        <span className="text-sm font-bold text-secondary">
-                          {formatCurrency(tenantShare, card.currency)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-2 bg-surface-container-low rounded-lg px-3">
-                        <span className="text-xs text-on-surface-variant flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">home</span>
-                          Landlord Allocation
-                        </span>
-                        <span className="text-sm font-bold text-tertiary">
-                          {formatCurrency(landlordShare, card.currency)}
-                        </span>
-                      </div>
+                    {/* Rent info (separate from utility split) */}
+                    <div className="flex items-center justify-between py-2 border-t border-outline-variant/10">
+                      <span className="text-xs text-on-surface-variant flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">payments</span>
+                        Monthly Rent
+                      </span>
+                      <span className="text-sm font-bold text-primary">
+                        {formatCurrency(card.monthlyRent, card.currency)}
+                      </span>
                     </div>
+
+                    {/* Hint */}
+                    <p className="text-xs text-on-surface-variant/70 leading-relaxed">
+                      Upload utility bills as documents to track actual costs.
+                      The split percentage applies to utility expenses, not rent.
+                    </p>
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
         )}
       </div>
@@ -322,6 +307,8 @@ export default async function UtilitiesPage() {
           </div>
         )}
       </div>
+
+      </GatedSection>
     </section>
   );
 }

@@ -196,9 +196,10 @@ export default async function AdminMaintenance() {
                           CATEGORY_ICONS[req.category] ?? CATEGORY_ICONS.general;
 
                         return (
-                          <div
+                          <Link
                             key={req.id}
-                            className="bg-surface-container-lowest rounded-2xl shadow-ambient-sm hover:shadow-ambient transition-shadow overflow-hidden"
+                            href={`/admin/maintenance/${req.id}`}
+                            className="block bg-surface-container-lowest rounded-2xl shadow-ambient-sm hover:shadow-ambient-md transition-shadow overflow-hidden"
                           >
                             {/* Urgency accent bar */}
                             <div
@@ -293,7 +294,7 @@ export default async function AdminMaintenance() {
                                   )}
                               </div>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })
                     )}

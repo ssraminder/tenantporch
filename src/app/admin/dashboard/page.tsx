@@ -3,6 +3,9 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
+import { getLeaseDisplayStatus } from "@/lib/lease-utils";
+import { RevenueChart } from "./revenue-chart";
+import { ActivityLog, type ActivityItem } from "./activity-log";
 
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   rent_due: { icon: "payments", color: "bg-secondary" },
@@ -31,6 +34,8 @@ const METHOD_LABELS: Record<string, { label: string; icon: string }> = {
   cheque: { label: "Cheque", icon: "receipt" },
 };
 
+import { DashboardFeatureCards } from "./feature-cards";
+
 export default async function AdminDashboard() {
   const supabase = await createClient();
   const {
@@ -48,23 +53,29 @@ export default async function AdminDashboard() {
 
   const { data: landlordProfile } = await supabase
     .from("rp_landlord_profiles")
-    .select("company_name, subscription_status, plan_id, rp_plans(name)")
+    .select("company_name, subscription_status, plan_id, rp_plans(name, slug)")
     .eq("user_id", rpUser.id)
     .single();
 
   const companyName = landlordProfile?.company_name ?? null;
-  const subscriptionStatus = landlordProfile?.subscription_status ?? "inactive";
   const planName =
     (landlordProfile?.rp_plans as any)?.name ?? "No plan";
+  const planSlug: string =
+    (landlordProfile?.rp_plans as any)?.slug ?? "free";
 
   // ─── Fetch properties ───
   const { data: properties } = await supabase
     .from("rp_properties")
-    .select("id")
+    .select("id, address_line1, city")
     .eq("landlord_id", rpUser.id);
 
   const propertyIds = (properties ?? []).map((p) => p.id);
   const propertyCount = propertyIds.length;
+  const propertyMap: Record<string, { address_line1: string; city: string }> =
+    {};
+  for (const p of properties ?? []) {
+    propertyMap[p.id] = { address_line1: p.address_line1, city: p.city };
+  }
 
   // ─── Active Leases count ───
   let activeLeaseCount = 0;
@@ -168,7 +179,7 @@ export default async function AdminDashboard() {
       const { data: payments } = await supabase
         .from("rp_payments")
         .select(
-          "id, amount, status, payment_method, created_at, currency_code, rp_users!rp_payments_tenant_id_fkey(first_name, last_name)"
+          "id, amount, status, payment_method, created_at, currency_code, rp_leases!inner(rp_properties(address_line1))"
         )
         .in("lease_id", leaseIds)
         .order("created_at", { ascending: false })
@@ -194,6 +205,112 @@ export default async function AdminDashboard() {
     maintenanceRequests = requests ?? [];
   }
 
+  // ─── Tenants (up to 5) ───
+  let tenantRows: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    propertyAddress: string;
+    leaseStatusKey: string;
+  }[] = [];
+
+  if (propertyIds.length > 0) {
+    const { data: allLeases } = await supabase
+      .from("rp_leases")
+      .select("id, property_id, start_date, end_date, status")
+      .in("property_id", propertyIds);
+
+    const allLeaseIds = (allLeases ?? []).map((l) => l.id);
+    const leaseMap: Record<
+      string,
+      { id: string; property_id: string; start_date: string; end_date: string | null; status: string }
+    > = {};
+    for (const l of allLeases ?? []) {
+      leaseMap[l.id] = l;
+    }
+
+    if (allLeaseIds.length > 0) {
+      const { data: ltData } = await supabase
+        .from("rp_lease_tenants")
+        .select(
+          "id, lease_id, user_id, rp_users!inner(id, first_name, last_name, email)"
+        )
+        .in("lease_id", allLeaseIds);
+
+      // De-duplicate by user_id — keep the first occurrence (most recent lease)
+      const seen = new Set<string>();
+      for (const lt of ltData ?? []) {
+        const tenantUser = lt.rp_users as any;
+        if (!tenantUser || seen.has(tenantUser.id)) continue;
+        seen.add(tenantUser.id);
+
+        const lease = leaseMap[lt.lease_id];
+        const prop = lease ? propertyMap[lease.property_id] : null;
+        const displayStatus = lease
+          ? getLeaseDisplayStatus(lease)
+          : { label: "Unknown", key: "unknown" };
+
+        tenantRows.push({
+          userId: tenantUser.id,
+          firstName: tenantUser.first_name ?? "",
+          lastName: tenantUser.last_name ?? "",
+          email: tenantUser.email ?? "",
+          propertyAddress: prop
+            ? `${prop.address_line1}, ${prop.city}`
+            : "No property",
+          leaseStatusKey: displayStatus.key,
+        });
+
+        if (tenantRows.length >= 5) break;
+      }
+    }
+  }
+
+  // ─── Security Deposits Summary ───
+  let totalDepositsHeld = 0;
+  let depositCount = 0;
+  let depositRows: {
+    leaseId: string;
+    address: string;
+    amount: number;
+    paidDate: string | null;
+    currency: string;
+  }[] = [];
+
+  if (propertyIds.length > 0) {
+    const { data: depositLeases } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, property_id, security_deposit, deposit_paid_date, currency_code, status"
+      )
+      .in("property_id", propertyIds)
+      .gt("security_deposit", 0)
+      .order("start_date", { ascending: false });
+
+    const activeDeposits = (depositLeases ?? []).filter(
+      (l) => l.status === "active" && l.deposit_paid_date
+    );
+    totalDepositsHeld = activeDeposits.reduce(
+      (sum, l) => sum + Number(l.security_deposit ?? 0),
+      0
+    );
+    depositCount = activeDeposits.length;
+
+    depositRows = activeDeposits.slice(0, 5).map((lease) => {
+      const prop = propertyMap[lease.property_id];
+      return {
+        leaseId: lease.id,
+        address: prop
+          ? `${prop.address_line1}, ${prop.city}`
+          : "Unknown",
+        amount: Number(lease.security_deposit ?? 0),
+        paidDate: lease.deposit_paid_date,
+        currency: lease.currency_code ?? "CAD",
+      };
+    });
+  }
+
   // ─── Recent Notifications (last 5) ───
   const { data: notifications } = await supabase
     .from("rp_notifications")
@@ -201,6 +318,70 @@ export default async function AdminDashboard() {
     .eq("user_id", rpUser.id)
     .order("created_at", { ascending: false })
     .limit(5);
+
+  // ─── Revenue Trend (last 12 months) ───
+  let revenueTrendData: { month: string; revenue: number; count: number }[] =
+    [];
+  if (propertyIds.length > 0) {
+    const { data: trendLeases } = await supabase
+      .from("rp_leases")
+      .select("id")
+      .in("property_id", propertyIds);
+
+    const trendLeaseIds = (trendLeases ?? []).map((l) => l.id);
+
+    if (trendLeaseIds.length > 0) {
+      const twelveMonthsAgo = new Date(
+        now.getFullYear(),
+        now.getMonth() - 11,
+        1
+      );
+      const trendStart = twelveMonthsAgo.toISOString().split("T")[0];
+
+      const { data: allPayments } = await supabase
+        .from("rp_payments")
+        .select("amount, created_at")
+        .in("lease_id", trendLeaseIds)
+        .eq("status", "confirmed")
+        .gte("created_at", `${trendStart}T00:00:00`)
+        .order("created_at", { ascending: true });
+
+      // Build a map for every month in the 12-month window
+      const monthMap = new Map<
+        string,
+        { revenue: number; count: number }
+      >();
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+        const key = d.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+        monthMap.set(key, { revenue: 0, count: 0 });
+      }
+
+      for (const p of allPayments ?? []) {
+        const payDate = new Date(p.created_at);
+        const key = payDate.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+        const entry = monthMap.get(key);
+        if (entry) {
+          entry.revenue += Number(p.amount ?? 0);
+          entry.count += 1;
+        }
+      }
+
+      revenueTrendData = Array.from(monthMap.entries()).map(
+        ([month, data]) => ({
+          month,
+          revenue: data.revenue,
+          count: data.count,
+        })
+      );
+    }
+  }
 
   // ─── Stats data ───
   const stats = [
@@ -230,6 +411,62 @@ export default async function AdminDashboard() {
     },
   ];
 
+  // ─── Compute unified Activity Log ───
+  const activityItems: ActivityItem[] = [];
+
+  // Add recent payments to activity log
+  for (const payment of recentPayments) {
+    const tenant = payment.rp_users as any;
+    const tenantName = tenant
+      ? `${tenant.first_name} ${tenant.last_name}`
+      : "Unknown tenant";
+    activityItems.push({
+      id: `payment-${payment.id}`,
+      type: "payment",
+      title: `Payment received from ${tenantName}`,
+      description: `${formatCurrency(Number(payment.amount ?? 0), payment.currency_code ?? "CAD")} — ${payment.status}`,
+      timestamp: payment.created_at,
+      icon: "payments",
+      color: "bg-tertiary",
+    });
+  }
+
+  // Add maintenance requests to activity log
+  for (const req of maintenanceRequests) {
+    const statusLabel =
+      req.status === "in_progress"
+        ? "In Progress"
+        : req.status.charAt(0).toUpperCase() + req.status.slice(1);
+    activityItems.push({
+      id: `maintenance-${req.id}`,
+      type: "maintenance",
+      title: `Maintenance request: ${req.title}`,
+      description: `${statusLabel} — ${req.urgency} urgency`,
+      timestamp: req.created_at,
+      icon: "handyman",
+      color: "bg-secondary",
+    });
+  }
+
+  // Add notifications to activity log
+  for (const notif of notifications ?? []) {
+    const config = NOTIF_ICON[notif.type] ?? NOTIF_ICON.general;
+    activityItems.push({
+      id: `notif-${notif.id}`,
+      type: "message",
+      title: notif.title,
+      description: notif.body ?? "",
+      timestamp: notif.created_at,
+      icon: config.icon,
+      color: config.color,
+    });
+  }
+
+  // Sort all activity items by timestamp, most recent first
+  activityItems.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
     <section className="space-y-8">
       {/* ─── Welcome Hero ─── */}
@@ -237,12 +474,6 @@ export default async function AdminDashboard() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-container to-primary opacity-80" />
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container/30 rounded-full -mr-32 -mt-32" />
         <div className="relative z-10">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <StatusBadge status={subscriptionStatus} />
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-fixed/20 text-secondary-fixed-dim">
-              {planName}
-            </span>
-          </div>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-2">
             Welcome back, {rpUser.first_name ?? "Landlord"}
           </h2>
@@ -277,6 +508,164 @@ export default async function AdminDashboard() {
           </Link>
         ))}
       </div>
+
+      {/* ─── Revenue Trend Chart ─── */}
+      <RevenueChart data={revenueTrendData} />
+
+      {/* ─── Tenants ─── */}
+      <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
+        <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">
+              group
+            </span>
+            <h3 className="font-headline font-bold text-lg">Tenants</h3>
+          </div>
+          <Link
+            href="/admin/tenants"
+            className="text-xs font-bold text-primary hover:underline"
+          >
+            View All
+          </Link>
+        </div>
+
+        {tenantRows.length === 0 ? (
+          <div className="px-8 py-12 text-center">
+            <span className="material-symbols-outlined text-outline-variant text-4xl mb-3 block">
+              person_off
+            </span>
+            <p className="text-sm text-on-surface-variant">
+              No tenants yet
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-outline-variant/10">
+            {tenantRows.map((tenant) => (
+              <Link
+                key={tenant.userId}
+                href={`/admin/tenants/${tenant.userId}`}
+                className="flex items-center gap-4 px-6 md:px-8 py-4 hover:bg-surface-container-low transition-colors"
+              >
+                {/* Initials avatar */}
+                <div className="w-10 h-10 rounded-xl bg-primary-fixed/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-on-primary-fixed-variant">
+                    {tenant.firstName?.[0]?.toUpperCase() ?? ""}
+                    {tenant.lastName?.[0]?.toUpperCase() ?? ""}
+                  </span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                    <p className="text-sm font-semibold text-primary truncate">
+                      {tenant.firstName} {tenant.lastName}
+                    </p>
+                    <StatusBadge status={tenant.leaseStatusKey} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-on-surface-variant">
+                    <span className="flex items-center gap-1 truncate">
+                      <span className="material-symbols-outlined text-xs">
+                        mail
+                      </span>
+                      {tenant.email}
+                    </span>
+                    <span className="flex items-center gap-1 truncate">
+                      <span className="material-symbols-outlined text-xs">
+                        apartment
+                      </span>
+                      {tenant.propertyAddress}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="material-symbols-outlined text-outline-variant text-sm flex-shrink-0">
+                  chevron_right
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Security Deposits Summary ─── */}
+      <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
+        <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">
+              savings
+            </span>
+            <h3 className="font-headline font-bold text-xl">
+              Security Deposits
+            </h3>
+          </div>
+          <Link
+            href="/admin/financials/deposits"
+            className="text-xs font-bold text-primary hover:underline"
+          >
+            View All
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-surface-container-low rounded-xl p-4">
+            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+              Total Deposits Held
+            </p>
+            <p className="text-2xl font-extrabold font-headline text-primary">
+              {formatCurrency(totalDepositsHeld, "CAD")}
+            </p>
+          </div>
+          <div className="bg-surface-container-low rounded-xl p-4">
+            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+              Active Deposits
+            </p>
+            <p className="text-2xl font-extrabold font-headline text-primary">
+              {depositCount}
+            </p>
+          </div>
+        </div>
+
+        {depositRows.length > 0 && (
+          <div className="divide-y divide-outline-variant/10 rounded-xl bg-surface-container-low overflow-hidden">
+            {depositRows.map((row) => (
+              <div
+                key={row.leaseId}
+                className="flex items-center justify-between px-5 py-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="material-symbols-outlined text-on-surface-variant text-sm">
+                    apartment
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-primary truncate">
+                      {row.address}
+                    </p>
+                    {row.paidDate && (
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        Paid{" "}
+                        <DateDisplay date={row.paidDate} format="short" />
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm font-bold text-on-surface whitespace-nowrap ml-4">
+                  {formatCurrency(row.amount, row.currency)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {depositRows.length === 0 && (
+          <div className="text-center py-4">
+            <p className="text-sm text-on-surface-variant">
+              No active security deposits recorded.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ─── Quick Setup / Premium Features ─── */}
+      <DashboardFeatureCards />
 
       {/* ─── Rent Collection Summary ─── */}
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
@@ -390,7 +779,7 @@ export default async function AdminDashboard() {
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
                     <th className="px-6 md:px-8 py-3">Date</th>
-                    <th className="px-4 py-3">Tenant</th>
+                    <th className="px-4 py-3">Property</th>
                     <th className="px-4 py-3">Amount</th>
                     <th className="px-4 py-3">Method</th>
                     <th className="px-4 py-3 pr-6 md:pr-8">Status</th>
@@ -398,10 +787,8 @@ export default async function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
                   {recentPayments.map((payment) => {
-                    const tenant = payment.rp_users as any;
-                    const tenantName = tenant
-                      ? `${tenant.first_name} ${tenant.last_name}`
-                      : "Unknown";
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const propertyAddress = (payment.rp_leases as any)?.rp_properties?.address_line1 ?? "—";
                     const method =
                       METHOD_LABELS[payment.payment_method] ??
                       METHOD_LABELS.card;
@@ -417,7 +804,7 @@ export default async function AdminDashboard() {
                           />
                         </td>
                         <td className="px-4 py-4 text-sm font-medium text-primary">
-                          {tenantName}
+                          {propertyAddress}
                         </td>
                         <td className="px-4 py-4 text-sm font-bold text-on-surface">
                           {formatCurrency(
@@ -516,70 +903,8 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* ─── Activity Feed ─── */}
-      <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
-        <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">
-              notifications
-            </span>
-            <h3 className="font-headline font-bold text-lg">
-              Activity Feed
-            </h3>
-          </div>
-          <Link
-            href="/admin/messages"
-            className="text-xs font-bold text-primary hover:underline"
-          >
-            View All
-          </Link>
-        </div>
-        <div className="divide-y divide-outline-variant/10">
-          {(notifications ?? []).length === 0 && (
-            <div className="px-8 py-12 text-center">
-              <span className="material-symbols-outlined text-outline-variant text-4xl mb-3 block">
-                notifications_none
-              </span>
-              <p className="text-sm text-on-surface-variant">
-                No recent activity
-              </p>
-            </div>
-          )}
-          {(notifications ?? []).map((notif) => {
-            const config = NOTIF_ICON[notif.type] ?? NOTIF_ICON.general;
-            return (
-              <div
-                key={notif.id}
-                className="flex items-center gap-4 px-6 md:px-8 py-4 hover:bg-surface-container-low transition-colors"
-              >
-                <div
-                  className={`w-10 h-10 rounded-xl ${config.color} flex items-center justify-center flex-shrink-0`}
-                >
-                  <span className="material-symbols-outlined text-white text-sm">
-                    {config.icon}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-primary truncate">
-                    {notif.title}
-                  </p>
-                  <p className="text-xs text-on-surface-variant truncate mt-0.5">
-                    {notif.body}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-on-surface-variant whitespace-nowrap">
-                    <DateDisplay date={notif.created_at} format="relative" />
-                  </span>
-                  {!notif.is_read && (
-                    <span className="w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* ─── Activity Log ─── */}
+      <ActivityLog items={activityItems} />
     </section>
   );
 }

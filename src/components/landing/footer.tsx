@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/shared/logo";
 
 const footerLinks = {
   Product: [
@@ -25,9 +26,7 @@ export function Footer() {
     <footer className="bg-primary text-inverse-primary py-12 md:py-16 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-12">
         <div className="col-span-2 md:col-span-1 space-y-4">
-          <div className="text-2xl font-headline font-extrabold italic text-on-primary">
-            TenantPorch
-          </div>
+          <Logo height={30} variant="light" />
           <p className="text-sm leading-relaxed opacity-70 text-inverse-primary">
             Elevating property management for the modern Canadian landlord.
             Structured serenity for your portfolio.

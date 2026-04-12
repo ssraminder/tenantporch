@@ -2,8 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DateDisplay } from "@/components/shared/date-display";
+import { DeletePropertyButton } from "@/components/shared/delete-property-button";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { formatCurrency } from "@/lib/currency";
 import { getLeaseDisplayStatus } from "@/lib/lease-utils";
+import { ApplicationLinkCard } from "./application-link-card";
 
 const METHOD_LABELS: Record<string, { label: string; icon: string }> = {
   card: { label: "Card", icon: "credit_card" },
@@ -18,6 +21,40 @@ const URGENCY_STYLES: Record<string, string> = {
   medium: "bg-secondary-fixed/30 text-on-secondary-fixed-variant",
   high: "bg-error-container text-on-error-container",
   emergency: "bg-error text-on-error",
+};
+
+const PARKING_LABELS: Record<string, string> = {
+  none: "None",
+  driveway: "Driveway",
+  garage: "Garage",
+  carport: "Carport",
+  street: "Street",
+  underground: "Underground",
+  assigned: "Assigned Spot",
+};
+
+const LAUNDRY_LABELS: Record<string, string> = {
+  none: "None",
+  in_unit: "In-Unit",
+  shared: "Shared",
+  coin_op: "Coin-Op",
+};
+
+const HEATING_LABELS: Record<string, string> = {
+  forced_air: "Forced Air",
+  baseboard: "Baseboard",
+  radiant: "Radiant Floor",
+  boiler: "Boiler",
+  heat_pump: "Heat Pump",
+  other: "Other",
+};
+
+const COOLING_LABELS: Record<string, string> = {
+  none: "None",
+  central_ac: "Central AC",
+  window_unit: "Window Unit",
+  mini_split: "Mini Split",
+  evaporative: "Evaporative",
 };
 
 export default async function PropertyDetailPage({
@@ -43,7 +80,7 @@ export default async function PropertyDetailPage({
   const { data: property } = await supabase
     .from("rp_properties")
     .select(
-      "id, landlord_id, address_line1, address_line2, city, province_state, postal_code, country_code, unit_description, sticker_number, has_separate_entrance, has_separate_mailbox, parking_spots, is_furnished, status, monthly_rent, created_at"
+      "id, landlord_id, address_line1, address_line2, city, province_state, postal_code, country_code, unit_description, sticker_number, has_separate_entrance, has_separate_mailbox, parking_spots, is_furnished, status, monthly_rent, created_at, parking_type, laundry_type, wifi_ssid, wifi_password, heating_type, cooling_type, pet_deposit, storage_included, yard_access"
     )
     .eq("id", propertyId)
     .single();
@@ -100,7 +137,7 @@ export default async function PropertyDetailPage({
       const { data: paymentData } = await supabase
         .from("rp_payments")
         .select(
-          "id, amount, status, payment_method, payment_for_month, created_at, currency_code, rp_users!rp_payments_tenant_id_fkey(first_name, last_name)"
+          "id, amount, status, payment_method, payment_for_month, created_at, currency_code"
         )
         .in("lease_id", allLeaseIds)
         .order("created_at", { ascending: false })
@@ -128,18 +165,56 @@ export default async function PropertyDetailPage({
     .eq("property_id", propertyId)
     .order("created_at", { ascending: false });
 
+  // Fetch addendums for this property
+  const { data: addendums } = await supabase
+    .from("rp_addendums")
+    .select(
+      "id, lease_id, addendum_type, title, additional_rent_amount, currency_code, effective_from, effective_to, status, created_at"
+    )
+    .eq("property_id", propertyId)
+    .order("created_at", { ascending: false });
+
+  // Compute active addendum rent for the current lease
+  const today = new Date().toISOString().split("T")[0];
+  const activeAddendumRent = (addendums ?? [])
+    .filter(
+      (a) =>
+        a.status === "signed" &&
+        a.effective_from <= today &&
+        (!a.effective_to || a.effective_to >= today)
+    )
+    .reduce((sum, a) => sum + Number(a.additional_rent_amount ?? 0), 0);
+
+  const effectiveRent = currentLease
+    ? Number(currentLease.monthly_rent) + activeAddendumRent
+    : Number(property.monthly_rent) + activeAddendumRent;
+
+  // Fetch existing application link token (public placeholder)
+  const { data: existingAppLink } = await supabase
+    .from("rp_tenant_applications")
+    .select("application_url_token")
+    .eq("property_id", propertyId)
+    .eq("landlord_id", rpUser.id)
+    .eq("is_public_link", true)
+    .is("first_name", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const existingToken = existingAppLink?.application_url_token ?? null;
+
   const fullAddress = `${property.address_line1}${property.address_line2 ? `, ${property.address_line2}` : ""}, ${property.city}, ${property.province_state} ${property.postal_code}`;
 
   return (
     <section className="space-y-8">
-      {/* Back Link */}
-      <Link
-        href="/admin/properties"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
-      >
-        <span className="material-symbols-outlined text-lg">arrow_back</span>
-        Back to Properties
-      </Link>
+      {/* Breadcrumb */}
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
+          { label: "Properties", href: "/admin/properties", icon: "apartment" },
+          { label: property.address_line1 },
+        ]}
+      />
 
       {/* Property Header */}
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
@@ -174,78 +249,256 @@ export default async function PropertyDetailPage({
         </div>
       </div>
 
-      {/* Property Details Grid */}
+      {/* Property Details */}
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
         <div className="flex items-center gap-3 mb-6">
           <span className="material-symbols-outlined text-primary">info</span>
           <h2 className="font-headline font-bold text-xl">Property Details</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+        <div className="space-y-8">
+          {/* Unit Features */}
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Separate Entrance
-            </p>
-            <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">
-                {property.has_separate_entrance ? "check_circle" : "cancel"}
+            <h3 className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">
+                apartment
               </span>
-              {property.has_separate_entrance ? "Yes" : "No"}
-            </p>
+              Unit Features
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Separate Entrance
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    {property.has_separate_entrance ? "check_circle" : "cancel"}
+                  </span>
+                  {property.has_separate_entrance ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Separate Mailbox
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    {property.has_separate_mailbox ? "check_circle" : "cancel"}
+                  </span>
+                  {property.has_separate_mailbox ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Furnished
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    {property.is_furnished ? "check_circle" : "cancel"}
+                  </span>
+                  {property.is_furnished ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Storage Included
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    {property.storage_included ? "check_circle" : "cancel"}
+                  </span>
+                  {property.storage_included ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Yard Access
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    {property.yard_access ? "check_circle" : "cancel"}
+                  </span>
+                  {property.yard_access ? "Yes" : "No"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Sticker Number
+                </p>
+                <p className="text-sm font-semibold text-on-surface">
+                  {property.sticker_number ?? "N/A"}
+                </p>
+              </div>
+            </div>
           </div>
 
+          {/* Parking & Laundry */}
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Separate Mailbox
-            </p>
-            <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">
-                {property.has_separate_mailbox ? "check_circle" : "cancel"}
-              </span>
-              {property.has_separate_mailbox ? "Yes" : "No"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Parking Spots
-            </p>
-            <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">
+            <h3 className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">
                 local_parking
               </span>
-              {property.parking_spots ?? 0}
-            </p>
+              Parking &amp; Laundry
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Parking Type
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    local_parking
+                  </span>
+                  {PARKING_LABELS[property.parking_type ?? ""] ?? "Not set"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Parking Spots
+                </p>
+                <p className="text-sm font-semibold text-on-surface">
+                  {property.parking_spots ?? 0}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Laundry Type
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    local_laundry_service
+                  </span>
+                  {LAUNDRY_LABELS[property.laundry_type ?? ""] ?? "Not set"}
+                </p>
+              </div>
+            </div>
           </div>
 
+          {/* Climate Control */}
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Furnished
-            </p>
-            <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm">
-                {property.is_furnished ? "check_circle" : "cancel"}
+            <h3 className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">
+                thermostat
               </span>
-              {property.is_furnished ? "Yes" : "No"}
-            </p>
+              Climate Control
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Heating Type
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    thermostat
+                  </span>
+                  {HEATING_LABELS[property.heating_type ?? ""] ?? "Not set"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Cooling Type
+                </p>
+                <p className="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">
+                    ac_unit
+                  </span>
+                  {COOLING_LABELS[property.cooling_type ?? ""] ?? "Not set"}
+                </p>
+              </div>
+            </div>
           </div>
 
+          {/* Internet / WiFi */}
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Sticker Number
-            </p>
-            <p className="text-sm font-semibold text-on-surface">
-              {property.sticker_number ?? "N/A"}
-            </p>
+            <h3 className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">
+                wifi
+              </span>
+              Internet / WiFi
+            </h3>
+            {property.wifi_ssid ? (
+              <div className="bg-surface-container-low rounded-2xl p-5 max-w-sm">
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-3">
+                  WiFi Network
+                </p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-sm text-primary">
+                      wifi
+                    </span>
+                    <div>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
+                        SSID
+                      </p>
+                      <p className="text-sm font-bold text-on-surface font-mono">
+                        {property.wifi_ssid}
+                      </p>
+                    </div>
+                  </div>
+                  {property.wifi_password && (
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-sm text-primary">
+                        key
+                      </span>
+                      <div>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
+                          Password
+                        </p>
+                        <p className="text-sm font-bold text-on-surface font-mono select-all">
+                          {property.wifi_password}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-on-surface-variant">Not configured</p>
+            )}
           </div>
 
+          {/* Financials */}
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
-              Monthly Rent
-            </p>
-            <p className="text-sm font-bold text-primary">
-              {formatCurrency(property.monthly_rent)}
-            </p>
+            <h3 className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-primary">
+                payments
+              </span>
+              Financials
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                  Monthly Rent
+                </p>
+                <p className="text-sm font-bold text-primary">
+                  {formatCurrency(effectiveRent)}
+                </p>
+                {activeAddendumRent > 0 && (
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Base {formatCurrency(property.monthly_rent)} + {formatCurrency(activeAddendumRent)} addendum
+                  </p>
+                )}
+              </div>
+
+              {property.pet_deposit != null && Number(property.pet_deposit) > 0 && (
+                <div>
+                  <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">
+                    Pet Deposit
+                  </p>
+                  <p className="text-sm font-bold text-on-surface">
+                    {formatCurrency(Number(property.pet_deposit))}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -259,9 +512,47 @@ export default async function PropertyDetailPage({
             </span>
             <h2 className="font-headline font-bold text-xl">Current Lease</h2>
           </div>
-          {leaseDisplayStatus && (
-            <StatusBadge status={leaseDisplayStatus.key} />
-          )}
+          <div className="flex items-center gap-3">
+            {leaseDisplayStatus && (
+              <StatusBadge status={leaseDisplayStatus.key} />
+            )}
+            {currentLease && (
+              <>
+                {(currentLease.status === "active" || currentLease.status === "expired") && (
+                  <Link
+                    href={`/admin/leases/${currentLease.id}/renew`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface text-sm font-semibold hover:bg-surface-container-highest transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">autorenew</span>
+                    Renew Lease
+                  </Link>
+                )}
+                {currentLease.security_deposit != null && Number(currentLease.security_deposit) > 0 && (
+                  <Link
+                    href={`/admin/leases/${currentLease.id}/deposit-refund`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface text-sm font-semibold hover:bg-surface-container-highest transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                    Refund Deposit
+                  </Link>
+                )}
+                <Link
+                  href={`/admin/leases/${currentLease.id}/document`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface text-sm font-semibold hover:bg-surface-container-highest transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">description</span>
+                  Document
+                </Link>
+                <Link
+                  href={`/admin/leases/${currentLease.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary text-on-secondary text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                  Edit Lease
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {currentLease ? (
@@ -303,8 +594,13 @@ export default async function PropertyDetailPage({
                 Monthly Rent
               </p>
               <p className="text-sm font-bold text-primary">
-                {formatCurrency(currentLease.monthly_rent, currency)}
+                {formatCurrency(effectiveRent, currency)}
               </p>
+              {activeAddendumRent > 0 && (
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Base {formatCurrency(currentLease.monthly_rent, currency)} + {formatCurrency(activeAddendumRent, currency)} addendum
+                </p>
+              )}
             </div>
 
             {/* Security Deposit */}
@@ -408,15 +704,32 @@ export default async function PropertyDetailPage({
         )}
       </div>
 
+      {/* Application Link */}
+      <ApplicationLinkCard
+        propertyId={propertyId}
+        landlordId={rpUser.id}
+        propertyAddress={property.address_line1}
+        existingToken={existingToken}
+      />
+
       {/* Tenants Section */}
       <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
         <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center gap-3">
           <span className="material-symbols-outlined text-primary">group</span>
           <h2 className="font-headline font-bold text-lg">Tenants</h2>
           {leaseTenants.length > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-primary-fixed/30 text-on-primary-fixed-variant text-xs font-bold ml-auto">
+            <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-primary-fixed/30 text-on-primary-fixed-variant text-xs font-bold">
               {leaseTenants.length}
             </span>
+          )}
+          {currentLease && (
+            <Link
+              href={`/admin/tenants/invite?propertyId=${propertyId}&leaseId=${currentLease.id}`}
+              className="ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary text-on-secondary text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              <span className="material-symbols-outlined text-sm">person_add</span>
+              Add Tenant
+            </Link>
           )}
         </div>
 
@@ -521,7 +834,7 @@ export default async function PropertyDetailPage({
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
                     <th className="px-6 md:px-8 py-3">Date</th>
-                    <th className="px-4 py-3">Tenant</th>
+                    <th className="px-4 py-3">Property</th>
                     <th className="px-4 py-3">Amount</th>
                     <th className="px-4 py-3">Method</th>
                     <th className="px-4 py-3 pr-6 md:pr-8">Status</th>
@@ -529,11 +842,6 @@ export default async function PropertyDetailPage({
                 </thead>
                 <tbody className="divide-y divide-outline-variant/10">
                   {recentPayments.map((payment) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const tenant = payment.rp_users as any;
-                    const tenantName = tenant
-                      ? `${tenant.first_name} ${tenant.last_name}`
-                      : "Unknown";
                     const method =
                       METHOD_LABELS[payment.payment_method] ??
                       METHOD_LABELS.card;
@@ -549,7 +857,7 @@ export default async function PropertyDetailPage({
                           />
                         </td>
                         <td className="px-4 py-4 text-sm font-medium text-primary">
-                          {tenantName}
+                          {property.address_line1}
                         </td>
                         <td className="px-4 py-4 text-sm font-bold text-on-surface">
                           {formatCurrency(
@@ -578,11 +886,6 @@ export default async function PropertyDetailPage({
             {/* Mobile Cards */}
             <div className="md:hidden divide-y divide-outline-variant/10">
               {recentPayments.map((payment) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const tenant = payment.rp_users as any;
-                const tenantName = tenant
-                  ? `${tenant.first_name} ${tenant.last_name}`
-                  : "Unknown";
                 const method =
                   METHOD_LABELS[payment.payment_method] ?? METHOD_LABELS.card;
                 return (
@@ -598,7 +901,7 @@ export default async function PropertyDetailPage({
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-on-surface-variant">
                       <span className="font-medium text-primary">
-                        {tenantName}
+                        {property.address_line1}
                       </span>
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-xs">
@@ -701,6 +1004,82 @@ export default async function PropertyDetailPage({
         )}
       </div>
 
+      {/* Addendums */}
+      <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
+        <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center gap-3">
+          <span className="material-symbols-outlined text-primary">
+            post_add
+          </span>
+          <h2 className="font-headline font-bold text-lg">Addendums</h2>
+          <span className="text-xs text-on-surface-variant ml-auto">
+            {(addendums ?? []).length}
+          </span>
+          {currentLease && (
+            <Link
+              href={`/admin/addendums/new?propertyId=${propertyId}&leaseId=${currentLease.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-bold hover:opacity-90 transition-all"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              New Addendum
+            </Link>
+          )}
+        </div>
+
+        {(addendums ?? []).length === 0 ? (
+          <div className="px-8 py-12 text-center">
+            <span className="material-symbols-outlined text-outline-variant text-4xl mb-3 block">
+              post_add
+            </span>
+            <p className="text-sm text-on-surface-variant">
+              No addendums for this property
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-outline-variant/10">
+            {(addendums ?? []).map((addendum) => {
+              const hasRent = Number(addendum.additional_rent_amount ?? 0) > 0;
+              return (
+                <div
+                  key={addendum.id}
+                  className="px-6 md:px-8 py-4 flex items-center gap-4 hover:bg-surface-container-low transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-primary-fixed/20 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">
+                      description
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {addendum.title}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+                      <span className="text-xs text-on-surface-variant">
+                        <DateDisplay date={addendum.effective_from} format="short" />
+                        {addendum.effective_to && (
+                          <>
+                            {" "}— <DateDisplay date={addendum.effective_to} format="short" />
+                          </>
+                        )}
+                      </span>
+                      {hasRent && (
+                        <span className="text-xs font-semibold text-tertiary">
+                          +{formatCurrency(
+                            Number(addendum.additional_rent_amount),
+                            addendum.currency_code ?? "CAD"
+                          )}
+                          /mo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <StatusBadge status={addendum.status} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Documents */}
       <div className="bg-surface-bright rounded-3xl overflow-hidden shadow-ambient-sm">
         <div className="px-6 md:px-8 py-5 bg-surface-container-highest flex items-center gap-3">
@@ -775,6 +1154,25 @@ export default async function PropertyDetailPage({
             })}
           </div>
         )}
+      </div>
+
+      {/* Danger Zone: Delete Property */}
+      <div className="bg-surface-container-lowest rounded-3xl shadow-ambient-sm overflow-hidden border border-error/20">
+        <div className="p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="material-symbols-outlined text-error">
+              warning
+            </span>
+            <h2 className="text-lg font-headline font-bold text-error">
+              Danger Zone
+            </h2>
+          </div>
+          <p className="text-sm text-on-surface-variant mb-6">
+            Permanently delete this property and all associated data. Properties
+            with active leases cannot be deleted.
+          </p>
+          <DeletePropertyButton propertyId={propertyId} />
+        </div>
       </div>
     </section>
   );

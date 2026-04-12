@@ -3,6 +3,7 @@ import { DateDisplay } from "@/components/shared/date-display";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ProfileForm } from "./profile-form";
 import { getLeaseDisplayStatus } from "@/lib/lease-utils";
+import { IdVerificationForm } from "@/components/forms/id-verification-form";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -172,6 +173,21 @@ export default async function ProfilePage() {
 
         {/* Right: Editable sections */}
         <div className="md:col-span-8 flex flex-col gap-8">
+          <IdVerificationForm
+            tenantId={rpUser.id}
+            mode="tenant"
+            currentData={{
+              id_type: rpUser.id_type,
+              id_number: rpUser.id_number,
+              id_place_of_issue: rpUser.id_place_of_issue,
+              id_expiry_date: rpUser.id_expiry_date,
+              id_name_on_document: rpUser.id_name_on_document,
+              id_document_url: rpUser.id_document_url,
+              id_document_status: rpUser.id_document_status,
+              id_uploaded_at: rpUser.id_uploaded_at,
+              id_reviewed_at: rpUser.id_reviewed_at,
+            }}
+          />
           <ProfileForm />
         </div>
       </div>

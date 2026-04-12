@@ -1,13 +1,11 @@
 import Link from "next/link";
+import { Logo } from "@/components/shared/logo";
 
 export function Navbar() {
   return (
     <nav className="fixed top-0 z-50 w-full px-6 py-4 h-16 flex justify-between items-center bg-surface-container-lowest/80 backdrop-blur-xl">
-      <Link
-        href="/"
-        className="text-xl font-headline font-bold text-primary tracking-tight"
-      >
-        TenantPorch
+      <Link href="/" className="flex items-center">
+        <Logo height={28} />
       </Link>
 
       <div className="hidden md:flex gap-8 items-center">

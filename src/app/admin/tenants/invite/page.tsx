@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Property = {
@@ -20,15 +21,25 @@ type Lease = {
 };
 
 export default function InviteTenantPage() {
+  const router = useRouter();
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const prefillPropertyId = searchParams.get("propertyId") ?? "";
+  const prefillLeaseId = searchParams.get("leaseId") ?? "";
+
+  // Mode: "create" = direct account creation, "invite" = send invite link
+  const [mode, setMode] = useState<"create" | "invite">("create");
 
   // Form state
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [selectedPropertyId, setSelectedPropertyId] = useState("");
-  const [selectedLeaseId, setSelectedLeaseId] = useState("");
+  const [phone, setPhone] = useState("");
+  const [selectedPropertyId, setSelectedPropertyId] = useState(prefillPropertyId);
+  const [selectedLeaseId, setSelectedLeaseId] = useState(prefillLeaseId);
   const [role, setRole] = useState<"tenant" | "permitted_occupant">("tenant");
+  const [wantsAdditionalRent, setWantsAdditionalRent] = useState(false);
+  const [additionalRentAmount, setAdditionalRentAmount] = useState("");
 
   // Data state
   const [properties, setProperties] = useState<Property[]>([]);
@@ -82,23 +93,35 @@ export default function InviteTenantPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter leases when property selection changes
+  const userChangedProperty = useRef(false);
   useEffect(() => {
     if (selectedPropertyId) {
-      setFilteredLeases(
-        leases.filter((l) => l.property_id === selectedPropertyId)
-      );
+      const filtered = leases.filter((l) => l.property_id === selectedPropertyId);
+      setFilteredLeases(filtered);
+
+      if (userChangedProperty.current) {
+        setSelectedLeaseId("");
+      }
     } else {
       setFilteredLeases([]);
+      setSelectedLeaseId("");
     }
-    setSelectedLeaseId("");
-  }, [selectedPropertyId, leases]);
+  }, [selectedPropertyId, leases]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("First name and last name are required.");
+      return;
+    }
     if (!email.trim()) {
       setError("Email is required.");
+      return;
+    }
+    if (!phone.trim()) {
+      setError("Phone number is required.");
       return;
     }
     if (!selectedPropertyId) {
@@ -112,20 +135,74 @@ export default function InviteTenantPage() {
 
     setSubmitting(true);
 
-    // Simulate API call delay
-    setTimeout(() => {
+    try {
+      if (mode === "create") {
+        const { inviteTenant } = await import("@/app/admin/actions/invite-actions");
+        const result = await inviteTenant({
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+          propertyId: selectedPropertyId,
+          leaseId: selectedLeaseId,
+          role,
+        });
+
+        if (result.success) {
+          if (
+            role === "permitted_occupant" &&
+            wantsAdditionalRent &&
+            additionalRentAmount &&
+            parseFloat(additionalRentAmount) > 0
+          ) {
+            const occupant = `${firstName.trim()} ${lastName.trim()}`.trim();
+            const params = new URLSearchParams({
+              propertyId: selectedPropertyId,
+              leaseId: selectedLeaseId,
+              type: "occupant",
+              occupantName: occupant || email.trim(),
+            });
+            router.push(`/admin/addendums/new?${params.toString()}`);
+            return;
+          }
+          setSuccess(true);
+        } else {
+          setError(result.error ?? "Failed to create account.");
+        }
+      } else {
+        const { sendTenantInvite } = await import("@/app/admin/actions/invite-actions");
+        const result = await sendTenantInvite({
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+          propertyId: selectedPropertyId,
+          leaseId: selectedLeaseId,
+          role,
+        });
+
+        if (result.success) {
+          setSuccess(true);
+        } else {
+          setError(result.error ?? "Failed to send invitation.");
+        }
+      }
+    } catch {
+      setError("An unexpected error occurred.");
+    } finally {
       setSubmitting(false);
-      setSuccess(true);
-    }, 800);
+    }
   }
 
   function handleReset() {
     setEmail("");
     setFirstName("");
     setLastName("");
+    setPhone("");
     setSelectedPropertyId("");
     setSelectedLeaseId("");
     setRole("tenant");
+    setMode("create");
     setSuccess(false);
     setError(null);
   }
@@ -143,7 +220,7 @@ export default function InviteTenantPage() {
             </span>
           </Link>
           <h1 className="text-2xl md:text-3xl font-headline font-extrabold text-primary tracking-tight">
-            Invite Tenant
+            Add Tenant
           </h1>
         </div>
         <div className="bg-surface-container-lowest rounded-3xl p-8 shadow-ambient-sm flex items-center justify-center min-h-[300px]">
@@ -171,7 +248,7 @@ export default function InviteTenantPage() {
             </span>
           </Link>
           <h1 className="text-2xl md:text-3xl font-headline font-extrabold text-primary tracking-tight">
-            Invite Tenant
+            Add Tenant
           </h1>
         </div>
         <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient-sm text-center">
@@ -184,13 +261,17 @@ export default function InviteTenantPage() {
             </span>
           </div>
           <h2 className="font-headline text-xl font-bold text-primary mb-2">
-            Invitation Sent
+            {mode === "create" ? "Tenant Account Created" : "Invitation Sent"}
           </h2>
           <p className="text-on-surface-variant mb-2">
-            An invite link has been sent to <strong>{email}</strong>.
+            {mode === "create"
+              ? <>Login credentials have been emailed to <strong>{email}</strong>.</>
+              : <>An invite link has been sent to <strong>{email}</strong>.</>}
           </p>
           <p className="text-xs text-on-surface-variant mb-8">
-            They will receive an email with instructions to create their account and access the tenant portal.
+            {mode === "create"
+              ? "The tenant must change their password on first login."
+              : "The tenant will create their own password when they accept the invitation."}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -198,7 +279,7 @@ export default function InviteTenantPage() {
               className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-all flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">person_add</span>
-              Invite Another
+              Add Another Tenant
             </button>
             <Link
               href="/admin/tenants"
@@ -227,12 +308,52 @@ export default function InviteTenantPage() {
         </Link>
         <div>
           <h1 className="text-2xl md:text-3xl font-headline font-extrabold text-primary tracking-tight">
-            Invite Tenant
+            Add Tenant
           </h1>
           <p className="text-sm text-on-surface-variant font-medium mt-1">
-            Send an invite link to a new or existing tenant
+            Create an account or send an invite link
           </p>
         </div>
+      </div>
+
+      {/* Mode Toggle */}
+      <div className="bg-surface-container-lowest rounded-2xl shadow-ambient-sm p-1 flex gap-1">
+        <button
+          type="button"
+          onClick={() => setMode("create")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+            mode === "create"
+              ? "bg-primary text-on-primary"
+              : "text-on-surface-variant hover:bg-surface-container-low"
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">person_add</span>
+          Create Account
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("invite")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+            mode === "invite"
+              ? "bg-primary text-on-primary"
+              : "text-on-surface-variant hover:bg-surface-container-low"
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">send</span>
+          Send Invite Link
+        </button>
+      </div>
+
+      {/* Info callout */}
+      <div className="flex items-start gap-3 bg-surface-container-low rounded-xl px-5 py-4">
+        <span className="material-symbols-outlined text-on-surface-variant text-lg mt-0.5">
+          info
+        </span>
+        <p className="text-xs text-on-surface-variant leading-relaxed">
+          {mode === "create"
+            ? "Creates the tenant account immediately. A temporary password will be emailed and the tenant must change it on first login."
+            : "Sends an invite email with a link. The tenant will set their own password when they accept the invitation."}
+        </p>
       </div>
 
       {/* Form Card */}
@@ -282,7 +403,7 @@ export default function InviteTenantPage() {
                 htmlFor="firstName"
                 className="block text-sm font-bold text-primary mb-2"
               >
-                First Name
+                First Name <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">
@@ -303,7 +424,7 @@ export default function InviteTenantPage() {
                 htmlFor="lastName"
                 className="block text-sm font-bold text-primary mb-2"
               >
-                Last Name
+                Last Name <span className="text-error">*</span>
               </label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">
@@ -318,6 +439,30 @@ export default function InviteTenantPage() {
                   className="w-full pl-10 pr-4 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label
+              htmlFor="phone"
+              className="block text-sm font-bold text-primary mb-2"
+            >
+              Phone Number <span className="text-error">*</span>
+            </label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">
+                phone
+              </span>
+              <input
+                id="phone"
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(403) 555-0123"
+                className="w-full pl-10 pr-4 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              />
             </div>
           </div>
 
@@ -339,7 +484,7 @@ export default function InviteTenantPage() {
               <select
                 id="property"
                 value={selectedPropertyId}
-                onChange={(e) => setSelectedPropertyId(e.target.value)}
+                onChange={(e) => { userChangedProperty.current = true; setSelectedPropertyId(e.target.value); }}
                 className="w-full pl-10 pr-4 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer"
               >
                 <option value="">Select a property</option>
@@ -492,6 +637,58 @@ export default function InviteTenantPage() {
               </label>
             </div>
           </div>
+
+          {/* Additional Rent for Permitted Occupant */}
+          {role === "permitted_occupant" && (
+            <>
+              <div className="h-px bg-outline-variant/15" />
+
+              <div>
+                <div className="flex items-start gap-3 bg-surface-container-low rounded-xl px-5 py-4 mb-4">
+                  <input
+                    type="checkbox"
+                    id="additional-rent"
+                    checked={wantsAdditionalRent}
+                    onChange={(e) => setWantsAdditionalRent(e.target.checked)}
+                    className="mt-0.5 h-5 w-5 rounded accent-primary flex-shrink-0"
+                  />
+                  <label htmlFor="additional-rent" className="cursor-pointer">
+                    <p className="text-sm font-bold text-primary">
+                      Charge additional rent for this occupant?
+                    </p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">
+                      A rent addendum will be created and sent for signatures. The additional charge applies during the addendum period.
+                    </p>
+                  </label>
+                </div>
+
+                {wantsAdditionalRent && (
+                  <div className="ml-8">
+                    <label className="block text-sm font-bold text-primary mb-2">
+                      Additional Monthly Rent
+                    </label>
+                    <div className="relative max-w-xs">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">
+                        attach_money
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={additionalRentAmount}
+                        onChange={(e) => setAdditionalRentAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-10 pr-4 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                    <p className="text-xs text-on-surface-variant mt-2">
+                      After sending the invitation, you&apos;ll be taken to create a rent addendum with signing flow.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer actions */}
@@ -512,12 +709,14 @@ export default function InviteTenantPage() {
                 <span className="material-symbols-outlined text-sm animate-spin">
                   progress_activity
                 </span>
-                Sending...
+                {mode === "create" ? "Creating..." : "Sending..."}
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-sm">send</span>
-                Send Invitation
+                <span className="material-symbols-outlined text-sm">
+                  {mode === "create" ? "person_add" : "send"}
+                </span>
+                {mode === "create" ? "Create Tenant Account" : "Send Invite Link"}
               </>
             )}
           </button>

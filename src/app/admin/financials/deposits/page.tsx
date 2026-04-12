@@ -83,7 +83,7 @@ export default async function DepositsPage() {
 
   // ─── Summary: active leases only ───
   const activeDeposits = leasesWithDeposits.filter(
-    (l) => l.status === "active"
+    (l) => l.status === "active" && l.deposit_paid_date
   );
   const totalDepositsHeld = activeDeposits.reduce(
     (sum, l) => sum + Number(l.security_deposit ?? 0),

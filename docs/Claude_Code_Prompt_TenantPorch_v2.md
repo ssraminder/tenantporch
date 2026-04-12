@@ -43,9 +43,7 @@ Per-unit pricing with volume discount. First property free forever. Landlords wi
 |-----------|------|---------------|---------------|---------------|----------|
 | `free` | Free | 1 | 1 | $0 | All Phase 1 core features |
 | `starter` | Starter | 1 | 5 | $7 | + Card payments, utility splitting, reports, lease builder, PAD auto-debit |
-| `growth` | Growth | 6 | 20 | $6 | + T776 export, SMS reminders, screening, rent guarantee |
-| `pro` | Pro | 21 | 50 | $4 | + API access, bulk operations, priority support |
-| `enterprise` | Enterprise | 51 | 9999 | Custom | + White-label, custom integrations |
+
 
 Transaction-based revenue (all tiers including free):
 - Card payment surcharge: 6% on free tier (~$30.60 net per $1,300 payment), 4% on paid tiers (~$5.48 net per $1,300 payment) — rate stored on `rp_plans.card_surcharge_percent`
@@ -132,6 +130,7 @@ CREATE TABLE rp_plans (
   min_properties INTEGER NOT NULL,
   max_properties INTEGER NOT NULL,
   per_unit_price NUMERIC(10,2) NOT NULL,
+  min_monthly_billing NUMERIC(10,2) NOT NULL DEFAULT 0,  -- minimum monthly charge regardless of property count
   currency_code TEXT REFERENCES rp_currencies(code) DEFAULT 'CAD',
   stripe_price_id TEXT,             -- Stripe price object ID for billing
   is_active BOOLEAN DEFAULT true,
@@ -940,12 +939,12 @@ INSERT INTO rp_currencies (code, name, symbol, decimal_places, is_active, sort_o
   ('INR', 'Indian Rupee', '₹', 2, false, 6);
 
 -- Plans
-INSERT INTO rp_plans (slug, name, min_properties, max_properties, per_unit_price, currency_code, card_surcharge_percent, features, sort_order) VALUES
-  ('free', 'Free', 1, 1, 0, 'CAD', 6.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking"]', 1),
-  ('starter', 'Starter', 1, 5, 7.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning"]', 2),
-  ('growth', 'Growth', 6, 20, 6.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning","t776_export","sms_notifications","tenant_screening","rent_guarantee","listing_syndication"]', 3),
-  ('pro', 'Pro', 21, 50, 4.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning","t776_export","sms_notifications","tenant_screening","rent_guarantee","listing_syndication","api_access","bulk_operations","advanced_analytics","priority_support"]', 4),
-  ('enterprise', 'Enterprise', 51, 9999, 0, 'CAD', 3.50, '["all"]', 5);
+INSERT INTO rp_plans (slug, name, min_properties, max_properties, per_unit_price, min_monthly_billing, currency_code, card_surcharge_percent, features, sort_order) VALUES
+  ('free', 'Free', 1, 1, 0, 0, 'CAD', 6.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking"]', 1),
+  ('starter', 'Starter', 1, 5, 7.00, 14.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning"]', 2),
+  ('growth', 'Growth', 1, 20, 6.00, 36.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning","t776_export","sms_notifications","tenant_screening","rent_guarantee","listing_syndication"]', 3),
+  ('pro', 'Pro', 1, 50, 4.00, 84.00, 'CAD', 4.00, '["tenant_portal","etransfer_tracking","ab_lease_template","document_storage","maintenance_requests","rent_reminders","late_fee_tracking","inspections","inventory_tracking","card_payments","utility_splitting","financial_reports","multi_property_dashboard","lease_builder","esigning","t776_export","sms_notifications","tenant_screening","rent_guarantee","listing_syndication","api_access","bulk_operations","advanced_analytics","priority_support"]', 4),
+  ('enterprise', 'Enterprise', 51, 9999, 0, 0, 'CAD', 3.50, '["all"]', 5);
 
 -- Feature flags
 INSERT INTO rp_feature_flags (slug, name, description, phase, min_customers, is_enabled, min_plan_slug, category) VALUES
@@ -1189,6 +1188,8 @@ The landlord settings page shows a currency selector. At launch it's locked to C
 The pricing page must read from `rp_plans` and render dynamically:
 
 1. Show a slider: "How many properties do you manage?" (1–50)
+   - Billing formula: monthly_charge = MAX(properties × per_unit_price, min_monthly_billing)
+   - Read per_unit_price and min_monthly_billing from rp_plans
 2. At 1: show Free tier card highlighted
 3. At 2–5: show Starter card with calculated total ($7 × properties)
 4. At 6–20: show Growth card with calculated total ($6 × properties)

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/shared/logo";
 
 export default function LoginPage() {
   return (
@@ -97,9 +98,7 @@ function LoginForm() {
   return (
     <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient">
       <div className="text-center mb-8">
-        <h1 className="font-headline text-3xl font-extrabold text-primary italic">
-          TenantPorch
-        </h1>
+        <Logo height={36} />
         <p className="text-on-surface-variant mt-2 text-sm">
           Your front porch to smarter renting.
         </p>
