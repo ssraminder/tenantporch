@@ -11,7 +11,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Get user role and redirect appropriately
+      // If an explicit next path was requested (e.g. /reset-password), honour it
+      if (next && next !== "/") {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+
+      // Otherwise redirect based on user role
       const {
         data: { user },
       } = await supabase.auth.getUser();
