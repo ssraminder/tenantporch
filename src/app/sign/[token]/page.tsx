@@ -55,10 +55,11 @@ export default async function LeaseSigningPage({
               </span>
             </div>
             <h1 className="font-headline text-xl font-bold text-on-surface mb-2">
-              Already Signed
+              Thank You for Signing
             </h1>
             <p className="text-sm text-on-surface-variant">
-              This lease has already been signed. No further action is required.
+              Your signature has been recorded. A fully signed copy will be
+              emailed to all parties once everyone has signed.
             </p>
           </div>
         </main>
