@@ -4,7 +4,7 @@ import { useState } from "react";
 import { updateTenantProfile, changePassword } from "@/app/tenant/actions/profile-actions";
 import { toast } from "sonner";
 
-export function ProfileForm() {
+export function ProfileForm({ smsAvailable = false }: { smsAvailable?: boolean }) {
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -112,32 +112,34 @@ export function ProfileForm() {
             </button>
           </div>
 
-          {/* SMS Toggle */}
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined">sms</span>
+          {/* SMS Toggle — only if landlord has SMS feature */}
+          {smsAvailable && (
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined">sms</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-primary">SMS Alerts</p>
+                  <p className="text-xs text-on-surface-variant">
+                    Urgent emergency and maintenance entries.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-primary">SMS Alerts</p>
-                <p className="text-xs text-on-surface-variant">
-                  Urgent emergency and maintenance entries.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setSmsNotifs(!smsNotifs)}
-              className={`w-12 h-6 rounded-full relative flex items-center px-1 transition-colors ${
-                smsNotifs ? "bg-secondary-container" : "bg-surface-variant"
-              }`}
-            >
-              <div
-                className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all ${
-                  smsNotifs ? "ml-auto" : ""
+              <button
+                onClick={() => setSmsNotifs(!smsNotifs)}
+                className={`w-12 h-6 rounded-full relative flex items-center px-1 transition-colors ${
+                  smsNotifs ? "bg-secondary-container" : "bg-surface-variant"
                 }`}
-              />
-            </button>
-          </div>
+              >
+                <div
+                  className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all ${
+                    smsNotifs ? "ml-auto" : ""
+                  }`}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Push Toggle */}
           <div className="flex items-center justify-between py-2">

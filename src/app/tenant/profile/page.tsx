@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { ProfileForm } from "./profile-form";
 import { getLeaseDisplayStatus } from "@/lib/lease-utils";
 import { IdVerificationForm } from "@/components/forms/id-verification-form";
+import { isFeatureAvailable } from "@/lib/feature-gates";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -49,10 +50,37 @@ export default async function ProfilePage() {
     if (lease) {
       const { data: propData } = await supabase
         .from("rp_properties")
-        .select("address_line1, city, province_state, postal_code")
+        .select("address_line1, city, province_state, postal_code, landlord_id")
         .eq("id", lease.property_id)
         .single();
       property = propData;
+    }
+  }
+
+  // Check if tenant's landlord has SMS feature enabled
+  let smsAvailable = false;
+  if (property?.landlord_id) {
+    const { data: landlordProfile } = await supabase
+      .from("rp_landlord_profiles")
+      .select("id, plan_id, rp_plans(slug)")
+      .eq("user_id", property.landlord_id)
+      .single();
+
+    if (landlordProfile) {
+      const planSlug = (landlordProfile.rp_plans as any)?.slug ?? "free";
+      let activeAddonSlugs: string[] = [];
+
+      const { data: activeAddons } = await supabase
+        .from("rp_landlord_addons")
+        .select("addon_id, rp_plan_addons(slug)")
+        .eq("landlord_profile_id", landlordProfile.id)
+        .eq("status", "active");
+
+      activeAddonSlugs = (activeAddons ?? [])
+        .map((a) => (a.rp_plan_addons as any)?.slug)
+        .filter(Boolean);
+
+      smsAvailable = isFeatureAvailable("sms_notifications", planSlug, activeAddonSlugs);
     }
   }
 
@@ -74,9 +102,12 @@ export default async function ProfilePage() {
                 {rpUser.first_name?.[0]}
                 {rpUser.last_name?.[0]}
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-secondary p-2 rounded-lg text-white shadow-lg">
-                <span className="material-symbols-outlined text-base">verified</span>
-              </div>
+              {(rpUser.id_document_status === "approved" ||
+                (rpUser as any).stripe_identity_status === "verified") && (
+                <div className="absolute -bottom-2 -right-2 bg-secondary p-2 rounded-lg text-white shadow-lg">
+                  <span className="material-symbols-outlined text-base">verified</span>
+                </div>
+              )}
             </div>
 
             <h3 className="font-headline text-2xl font-bold text-primary">
@@ -187,8 +218,13 @@ export default async function ProfilePage() {
               id_uploaded_at: rpUser.id_uploaded_at,
               id_reviewed_at: rpUser.id_reviewed_at,
             }}
+            stripeVerification={{
+              status: (rpUser as any).stripe_identity_status ?? null,
+              verificationUrl: (rpUser as any).stripe_identity_verification_url ?? null,
+              expiresAt: (rpUser as any).stripe_identity_expires_at ?? null,
+            }}
           />
-          <ProfileForm />
+          <ProfileForm smsAvailable={smsAvailable} />
         </div>
       </div>
     </section>

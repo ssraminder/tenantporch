@@ -16,6 +16,8 @@ type Tenant = {
   phone: string | null;
   role: string;
   isPrimaryContact: boolean;
+  idDocumentStatus: string | null;
+  stripeIdentityStatus: string | null;
   leaseId: string;
   leaseStatus: { label: string; key: string };
   leaseStartDate: string | null;
@@ -91,11 +93,19 @@ export function TenantsList({ tenants }: { tenants: Tenant[] }) {
             >
               <div className="flex items-start gap-4">
                 {/* Avatar */}
-                <div className="w-12 h-12 rounded-xl bg-primary-fixed/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg font-bold text-on-primary-fixed-variant">
-                    {tenant.firstName?.[0]?.toUpperCase() ?? ""}
-                    {tenant.lastName?.[0]?.toUpperCase() ?? ""}
-                  </span>
+                <div className="relative w-12 h-12 flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-primary-fixed/20 flex items-center justify-center">
+                    <span className="text-lg font-bold text-on-primary-fixed-variant">
+                      {tenant.firstName?.[0]?.toUpperCase() ?? ""}
+                      {tenant.lastName?.[0]?.toUpperCase() ?? ""}
+                    </span>
+                  </div>
+                  {(tenant.idDocumentStatus === "approved" ||
+                    tenant.stripeIdentityStatus === "verified") && (
+                    <div className="absolute -bottom-1 -right-1 bg-secondary p-0.5 rounded-full text-white shadow">
+                      <span className="material-symbols-outlined text-xs">verified</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">

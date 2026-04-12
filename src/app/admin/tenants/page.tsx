@@ -68,7 +68,7 @@ export default async function AdminTenantsPage() {
     const { data: ltData } = await supabase
       .from("rp_lease_tenants")
       .select(
-        "id, lease_id, user_id, role, is_primary_contact, rp_users!inner(id, first_name, last_name, email, phone)"
+        "id, lease_id, user_id, role, is_primary_contact, rp_users!inner(id, first_name, last_name, email, phone, id_document_status, stripe_identity_status)"
       )
       .in("lease_id", leaseIds);
     leaseTenantRows = ltData ?? [];
@@ -112,6 +112,8 @@ export default async function AdminTenantsPage() {
       phone: tenantUser.phone,
       role: lt.role,
       isPrimaryContact: lt.is_primary_contact,
+      idDocumentStatus: tenantUser.id_document_status ?? null,
+      stripeIdentityStatus: tenantUser.stripe_identity_status ?? null,
       leaseId: lt.lease_id,
       leaseStatus: displayStatus,
       leaseStartDate: lease?.start_date ?? null,

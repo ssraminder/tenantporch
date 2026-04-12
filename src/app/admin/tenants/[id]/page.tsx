@@ -52,6 +52,14 @@ export default async function TenantDetailPage({
 
   if (!tenant) return <NotFound />;
 
+  // Fetch stripe identity columns separately (may not exist until migration is applied)
+  const { data: tenantStripeId } = await supabase
+    .from("rp_users")
+    .select("stripe_identity_status, stripe_identity_verification_url, stripe_identity_expires_at")
+    .eq("id", tenantId)
+    .single()
+    .then((res) => res, () => ({ data: null }));
+
   // Get all landlord's properties
   const { data: properties } = await supabase
     .from("rp_properties")
@@ -197,6 +205,35 @@ export default async function TenantDetailPage({
     ? Number(currentLease.monthly_rent) + activeAddendumRent
     : 0;
 
+  // Fetch landlord's plan for free ID verification quota
+  const { data: landlordProfileData } = await supabase
+    .from("rp_landlord_profiles")
+    .select("plan_id, rp_plans(free_id_verifications_per_month)")
+    .eq("user_id", rpUser.id)
+    .single();
+
+  const freePerMonth = Number(
+    (landlordProfileData?.rp_plans as any)?.free_id_verifications_per_month ?? 0
+  );
+
+  let usedThisMonth = 0;
+  if (freePerMonth > 0) {
+    try {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("rp_id_verifications")
+        .select("id", { count: "exact", head: true })
+        .eq("landlord_id", rpUser.id)
+        .eq("used_free_quota", true)
+        .gte("created_at", startOfMonth.toISOString());
+      usedThisMonth = count ?? 0;
+    } catch {
+      // Table may not exist until migration is applied
+    }
+  }
+
   const initials = `${tenant.first_name?.[0]?.toUpperCase() ?? ""}${tenant.last_name?.[0]?.toUpperCase() ?? ""}`;
   const currency = currentLease?.currency_code ?? "CAD";
 
@@ -244,10 +281,18 @@ export default async function TenantDetailPage({
       <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-ambient-sm">
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Avatar */}
-          <div className="w-20 h-20 rounded-2xl bg-primary-fixed/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-on-primary-fixed-variant">
-              {initials}
-            </span>
+          <div className="relative w-20 h-20 flex-shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-primary-fixed/20 flex items-center justify-center">
+              <span className="text-2xl font-bold text-on-primary-fixed-variant">
+                {initials}
+              </span>
+            </div>
+            {(tenant.id_document_status === "approved" ||
+              tenantStripeId?.stripe_identity_status === "verified") && (
+              <div className="absolute -bottom-1.5 -right-1.5 bg-secondary p-1 rounded-lg text-white shadow-lg">
+                <span className="material-symbols-outlined text-sm">verified</span>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -309,6 +354,15 @@ export default async function TenantDetailPage({
           id_document_status: tenant.id_document_status,
           id_uploaded_at: tenant.id_uploaded_at,
           id_reviewed_at: tenant.id_reviewed_at,
+        }}
+        stripeVerification={{
+          status: tenantStripeId?.stripe_identity_status ?? null,
+          verificationUrl: tenantStripeId?.stripe_identity_verification_url ?? null,
+          expiresAt: tenantStripeId?.stripe_identity_expires_at ?? null,
+        }}
+        planVerificationInfo={{
+          freePerMonth,
+          usedThisMonth,
         }}
       />
 

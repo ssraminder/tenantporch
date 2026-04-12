@@ -37,9 +37,98 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
-      // ─── Checkout completed — tenant paid rent ───
+      // ─── Checkout completed — tenant paid rent OR landlord purchased ID verification ───
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // ── ID Verification Purchase (landlord-initiated) ──
+        if (session.metadata?.type === "id_verification_purchase") {
+          const tenantId = session.metadata.tenant_id;
+          const landlordUserId = session.metadata.landlord_user_id;
+
+          if (tenantId && landlordUserId) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+
+            // Create Stripe Identity verification session
+            const verificationSession =
+              await stripe.identity.verificationSessions.create({
+                type: "document",
+                metadata: {
+                  rp_user_id: tenantId,
+                  landlord_id: landlordUserId,
+                  source: "purchased",
+                  used_free_quota: "false",
+                },
+                options: {
+                  document: {
+                    require_matching_selfie: true,
+                  },
+                },
+                return_url: `${appUrl}/tenant/profile?verification=complete`,
+              });
+
+            const expiresAt = new Date(
+              Date.now() + 48 * 60 * 60 * 1000
+            ).toISOString();
+
+            // Insert audit record
+            await supabase.from("rp_id_verifications").insert({
+              tenant_id: tenantId,
+              landlord_id: landlordUserId,
+              stripe_session_id: verificationSession.id,
+              stripe_checkout_session_id: session.id,
+              verification_url: verificationSession.url,
+              status: "pending",
+              used_free_quota: false,
+              expires_at: expiresAt,
+            });
+
+            // Update tenant's rp_users for quick lookups
+            await supabase
+              .from("rp_users")
+              .update({
+                stripe_identity_session_id: verificationSession.id,
+                stripe_identity_status: "pending",
+                stripe_identity_verification_url: verificationSession.url,
+                stripe_identity_expires_at: expiresAt,
+                stripe_identity_purchased_by: landlordUserId,
+                id_document_status: "pending",
+                id_uploaded_at: new Date().toISOString(),
+              })
+              .eq("id", tenantId);
+
+            // Get tenant name for notification
+            const { data: tenantUser } = await supabase
+              .from("rp_users")
+              .select("first_name, last_name")
+              .eq("id", tenantId)
+              .single();
+
+            // Notify tenant
+            await supabase.from("rp_notifications").insert({
+              user_id: tenantId,
+              title: "ID Verification Requested",
+              body: "Your landlord has requested identity verification. Please complete it from your profile page.",
+              type: "general",
+              link: "/tenant/profile",
+            });
+
+            // Notify landlord
+            const tenantName = tenantUser
+              ? `${tenantUser.first_name} ${tenantUser.last_name}`
+              : "your tenant";
+            await supabase.from("rp_notifications").insert({
+              user_id: landlordUserId,
+              title: "Verification Purchased",
+              body: `ID verification has been sent to ${tenantName}. They will be notified.`,
+              type: "general",
+              link: `/admin/tenants/${tenantId}`,
+            });
+          }
+          break;
+        }
+
+        // ── Rent payment checkout ──
         const paymentId = session.metadata?.payment_id;
         const tenantUserId = session.metadata?.tenant_user_id;
 
@@ -200,10 +289,25 @@ export async function POST(req: NextRequest) {
               session.verified_outputs.document.issuing_country;
           }
 
+          // Also clear the verification URL and mark stripe identity as verified
+          updateData.stripe_identity_status = "verified";
+          updateData.stripe_identity_verification_url = null;
+
           await supabase
             .from("rp_users")
             .update(updateData)
             .eq("id", rpUserId);
+
+          // Update rp_id_verifications audit record
+          if (session.id) {
+            await supabase
+              .from("rp_id_verifications")
+              .update({
+                status: "verified",
+                completed_at: new Date().toISOString(),
+              })
+              .eq("stripe_session_id", session.id);
+          }
 
           // Notify the tenant
           await supabase.from("rp_notifications").insert({
@@ -252,8 +356,21 @@ export async function POST(req: NextRequest) {
             .update({
               id_document_status: "rejected",
               id_reviewed_at: new Date().toISOString(),
+              stripe_identity_status: "failed",
+              stripe_identity_verification_url: null,
             })
             .eq("id", rpUserId);
+
+          // Update rp_id_verifications audit record
+          if (session.id) {
+            await supabase
+              .from("rp_id_verifications")
+              .update({
+                status: "failed",
+                completed_at: new Date().toISOString(),
+              })
+              .eq("stripe_session_id", session.id);
+          }
 
           await supabase.from("rp_notifications").insert({
             user_id: rpUserId,
