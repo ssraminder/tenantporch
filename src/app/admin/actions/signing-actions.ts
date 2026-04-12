@@ -1,9 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
-import { sendSigningEmail } from "@/lib/email";
+import { sendSigningEmail, sendSigningCompletionEmail } from "@/lib/email";
+import { generateLeaseBuffer } from "@/lib/pdf/generate-lease-pdf";
+import type { SignatureInfo } from "@/lib/pdf/generate-lease-pdf";
 import crypto from "crypto";
 
 /**
@@ -206,6 +209,7 @@ export async function sendForSignatures(leaseId: string) {
     const propertyAddress =
       (lease.rp_properties as any)?.address_line1 ?? "your property";
     const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
+    const landlordEmail = rpUser.email;
     const appUrl =
       process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
     const expiresAt = new Date(
@@ -225,6 +229,7 @@ export async function sendForSignatures(leaseId: string) {
           signerRole: "tenant",
           propertyAddress,
           landlordName,
+          landlordEmail,
           signingUrl: `${appUrl}/sign/${tp.token}`,
           expiresAt,
         });
@@ -537,6 +542,153 @@ export async function submitSignature(
           lease_id: signingRequest.lease_id,
         },
       });
+
+      // --- Generate signed PDF, store, and send completion emails ---
+      try {
+        const adminClient = createAdminClient();
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+
+        // Fetch lease with document content and property
+        const { data: completedLease } = await supabase
+          .from("rp_leases")
+          .select(
+            "id, property_id, lease_document_content, rp_properties(address_line1, landlord_id)"
+          )
+          .eq("id", signingRequest.lease_id)
+          .single();
+
+        if (completedLease?.lease_document_content) {
+          const propertyAddress =
+            (completedLease.rp_properties as any)?.address_line1 ??
+            "Property";
+          const propertyId = completedLease.property_id;
+          const landlordId = (completedLease.rp_properties as any)
+            ?.landlord_id;
+
+          // Fetch full signature details for all participants
+          const { data: sigParticipants } = await supabase
+            .from("rp_signing_participants")
+            .select(
+              "signer_name, signer_role, signer_email, signed_name, signature_method, signature_image_url, signed_at"
+            )
+            .eq("signing_request_id", signingRequest.id)
+            .order("signing_order");
+
+          const signatures: SignatureInfo[] = (sigParticipants ?? []).map(
+            (p) => ({
+              signerName: p.signer_name,
+              signerRole: p.signer_role,
+              signedName: p.signed_name,
+              signatureMethod: p.signature_method,
+              signatureImageUrl: p.signature_image_url,
+              signedAt: p.signed_at,
+            })
+          );
+
+          // Generate signed PDF buffer
+          const pdfBuffer = await generateLeaseBuffer(
+            completedLease.lease_document_content as any,
+            propertyAddress,
+            signatures
+          );
+
+          // Upload to Supabase Storage
+          const storagePath = `${propertyId}/${Date.now()}_Signed_Lease_Agreement.pdf`;
+          const { data: uploadData, error: uploadError } =
+            await adminClient.storage
+              .from("documents")
+              .upload(storagePath, pdfBuffer, {
+                contentType: "application/pdf",
+                upsert: false,
+              });
+
+          let documentUrl = "";
+          if (!uploadError && uploadData) {
+            const { data: urlData } = adminClient.storage
+              .from("documents")
+              .getPublicUrl(uploadData.path);
+            documentUrl = urlData.publicUrl;
+
+            // Create rp_documents record
+            await adminClient.from("rp_documents").insert({
+              property_id: propertyId,
+              lease_id: completedLease.id,
+              uploaded_by: landlordId,
+              category: "lease",
+              title: `Signed Lease Agreement — ${propertyAddress}`,
+              file_url: documentUrl,
+              file_size: pdfBuffer.length,
+              mime_type: "application/pdf",
+              visible_to_tenant: true,
+            });
+          }
+
+          // Fetch landlord info for FROM/reply-to
+          const { data: landlordUser } = await supabase
+            .from("rp_users")
+            .select("first_name, last_name, email")
+            .eq("id", landlordId)
+            .single();
+
+          const ownerName = landlordUser
+            ? `${landlordUser.first_name} ${landlordUser.last_name}`
+            : "Your Landlord";
+          const ownerEmail = landlordUser?.email;
+
+          // Send completion emails to all participants
+          for (const sp of sigParticipants ?? []) {
+            try {
+              const emailResult = await sendSigningCompletionEmail({
+                to: sp.signer_email,
+                recipientName: sp.signer_name,
+                propertyAddress,
+                landlordName: ownerName,
+                landlordEmail: ownerEmail,
+                documentUrl:
+                  documentUrl || `${appUrl}/tenant/documents`,
+                signerCount: (sigParticipants ?? []).length,
+              });
+
+              if (emailResult.data?.id) {
+                await adminClient.from("rp_email_logs").insert({
+                  signing_request_id: signingRequest.id,
+                  participant_id: null,
+                  recipient_email: sp.signer_email,
+                  recipient_name: sp.signer_name,
+                  email_type: "signing_completed",
+                  resend_message_id: emailResult.data.id,
+                  status: "sent",
+                  subject: `Lease Agreement Fully Signed — ${propertyAddress}`,
+                });
+              }
+            } catch {
+              // Email failure should not break the completion flow
+            }
+          }
+
+          // In-app notifications for all parties
+          for (const sp of sigParticipants ?? []) {
+            const { data: rpUser } = await supabase
+              .from("rp_users")
+              .select("id")
+              .eq("email", sp.signer_email)
+              .single();
+
+            if (rpUser) {
+              await createNotification(supabase, {
+                userId: rpUser.id,
+                title: "Lease Fully Signed",
+                body: `All parties have signed the lease for ${propertyAddress}. A signed copy is available in your documents.`,
+                type: "lease",
+                urgency: "high",
+              });
+            }
+          }
+        }
+      } catch {
+        // PDF generation / email failures should not break the signing completion
+      }
     } else if (someSigned) {
       // Update to partially signed
       await supabase
@@ -583,6 +735,7 @@ export async function submitSignature(
                 signerRole: "landlord",
                 propertyAddress,
                 landlordName: lp.signer_name,
+                landlordEmail: lp.signer_email,
                 signingUrl: `${appUrl}/sign/${lp.token}`,
                 expiresAt:
                   signingRequest.expires_at ?? new Date().toISOString(),

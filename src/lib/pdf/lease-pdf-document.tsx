@@ -4,9 +4,19 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
+
+export interface SignatureInfo {
+  signerName: string;
+  signerRole: string;
+  signedName: string;
+  signatureMethod: string;
+  signatureImageUrl?: string | null;
+  signedAt: string;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -127,18 +137,50 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: "#bbb",
   },
+  signatureRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 20,
+    marginBottom: 16,
+  },
+  signedBlock: {
+    width: "45%",
+    marginBottom: 12,
+  },
+  signedImage: {
+    height: 40,
+    objectFit: "contain" as const,
+    marginBottom: 4,
+  },
+  signedTypedName: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Oblique",
+    color: "#1a1a1a",
+    marginBottom: 4,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+    borderBottomStyle: "solid" as const,
+  },
+  signedMeta: {
+    fontSize: 8,
+    color: "#555",
+    marginTop: 2,
+  },
 });
 
 interface LeasePDFDocumentProps {
   content: LeaseDocumentContent;
   propertyAddress: string;
   isDraft: boolean;
+  signatures?: SignatureInfo[];
 }
 
 export function LeasePDFDocument({
   content,
   propertyAddress,
   isDraft,
+  signatures,
 }: LeasePDFDocumentProps) {
   return (
     <Document
@@ -184,26 +226,58 @@ export function LeasePDFDocument({
         {/* Signatures */}
         <View style={styles.signatureSection} wrap={false}>
           <Text style={styles.signatureTitle}>Signatures</Text>
-          <View style={styles.signatureGrid}>
-            <View style={styles.signatureBlock}>
-              <Text style={styles.signatureLabel}>Landlord</Text>
-              <View style={styles.signatureLine} />
-              <Text style={styles.signatureCaption}>Signature</Text>
-              <View style={styles.signatureNameLine} />
-              <Text style={styles.signatureCaption}>
-                Printed Name & Date
-              </Text>
+          {signatures && signatures.length > 0 ? (
+            <View style={styles.signatureRow}>
+              {signatures.map((sig, idx) => {
+                const roleLabel =
+                  sig.signerRole === "landlord" ? "Landlord / Owner" : `Tenant ${signatures.filter((s, i) => s.signerRole === "tenant" && i <= idx).length}`;
+                const signedDate = new Date(sig.signedAt).toLocaleDateString(
+                  "en-CA",
+                  { year: "numeric", month: "long", day: "numeric" }
+                );
+                return (
+                  <View key={idx} style={styles.signedBlock}>
+                    <Text style={styles.signatureLabel}>{roleLabel}</Text>
+                    {sig.signatureImageUrl ? (
+                      <Image src={sig.signatureImageUrl} style={styles.signedImage} />
+                    ) : (
+                      <Text style={styles.signedTypedName}>
+                        {sig.signedName}
+                      </Text>
+                    )}
+                    <Text style={styles.signedMeta}>
+                      Signed by: {sig.signerName}
+                    </Text>
+                    <Text style={styles.signedMeta}>Date: {signedDate}</Text>
+                    <Text style={styles.signedMeta}>
+                      Method: {sig.signatureMethod}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
-            <View style={styles.signatureBlock}>
-              <Text style={styles.signatureLabel}>Tenant</Text>
-              <View style={styles.signatureLine} />
-              <Text style={styles.signatureCaption}>Signature</Text>
-              <View style={styles.signatureNameLine} />
-              <Text style={styles.signatureCaption}>
-                Printed Name & Date
-              </Text>
+          ) : (
+            <View style={styles.signatureGrid}>
+              <View style={styles.signatureBlock}>
+                <Text style={styles.signatureLabel}>Landlord</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureCaption}>Signature</Text>
+                <View style={styles.signatureNameLine} />
+                <Text style={styles.signatureCaption}>
+                  Printed Name & Date
+                </Text>
+              </View>
+              <View style={styles.signatureBlock}>
+                <Text style={styles.signatureLabel}>Tenant</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureCaption}>Signature</Text>
+                <View style={styles.signatureNameLine} />
+                <Text style={styles.signatureCaption}>
+                  Printed Name & Date
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Footer */}

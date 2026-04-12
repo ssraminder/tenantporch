@@ -2,7 +2,12 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "TenantPorch <noreply@tenantporch.com>";
+const DEFAULT_FROM = "TenantPorch <noreply@tenantporch.com>";
+
+function buildFrom(ownerName?: string): string {
+  if (ownerName) return `${ownerName} - TenantPorch <noreply@tenantporch.com>`;
+  return DEFAULT_FROM;
+}
 
 export async function sendWelcomeEmail({
   to,
@@ -20,7 +25,7 @@ export async function sendWelcomeEmail({
   const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
 
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: DEFAULT_FROM,
     to,
     subject: "Welcome to TenantPorch — Your tenant portal is ready",
     html: `
@@ -84,7 +89,7 @@ export async function sendDepositReturnEmail({
   const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
 
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: DEFAULT_FROM,
     to,
     subject: "Your Security Deposit Return Statement",
     html: `
@@ -139,7 +144,7 @@ export async function sendInviteEmail({
   inviteUrl: string;
 }) {
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: DEFAULT_FROM,
     to,
     subject: "You're invited to TenantPorch — Set up your account",
     html: `
@@ -186,6 +191,7 @@ export async function sendSigningEmail({
   signerRole,
   propertyAddress,
   landlordName,
+  landlordEmail,
   signingUrl,
   expiresAt,
 }: {
@@ -194,6 +200,7 @@ export async function sendSigningEmail({
   signerRole: "tenant" | "landlord";
   propertyAddress: string;
   landlordName: string;
+  landlordEmail?: string;
   signingUrl: string;
   expiresAt: string;
 }) {
@@ -209,8 +216,9 @@ export async function sendSigningEmail({
   });
 
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: buildFrom(landlordName),
     to,
+    ...(landlordEmail ? { replyTo: landlordEmail } : {}),
     subject,
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
@@ -258,6 +266,74 @@ export async function sendSigningEmail({
   });
 }
 
+export async function sendSigningCompletionEmail({
+  to,
+  recipientName,
+  propertyAddress,
+  landlordName,
+  landlordEmail,
+  documentUrl,
+  signerCount,
+}: {
+  to: string;
+  recipientName: string;
+  propertyAddress: string;
+  landlordName: string;
+  landlordEmail?: string;
+  documentUrl: string;
+  signerCount: number;
+}) {
+  return resend.emails.send({
+    from: buildFrom(landlordName),
+    to,
+    ...(landlordEmail ? { replyTo: landlordEmail } : {}),
+    subject: `Lease Agreement Fully Signed — ${propertyAddress}`,
+    html: `
+      <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
+          Lease Agreement Signed
+        </h1>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          Hi ${recipientName},
+        </p>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          All ${signerCount} parties have signed the lease agreement for
+          <strong>${propertyAddress}</strong>. A signed copy of the document is now available for download.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${documentUrl}" style="display: inline-block; background: #273f4f; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; text-decoration: none;">
+            Download Signed Lease
+          </a>
+        </div>
+        <div style="background: #f2f3f7; border-radius: 12px; padding: 16px 20px; margin: 24px 0;">
+          <p style="margin: 0 0 6px; font-size: 13px; color: #45464e; font-weight: 600;">Details</p>
+          <p style="margin: 4px 0; font-size: 14px; color: #191c1f;">
+            <strong>Property:</strong> ${propertyAddress}
+          </p>
+          <p style="margin: 4px 0; font-size: 14px; color: #191c1f;">
+            <strong>Signed by:</strong> ${signerCount} parties
+          </p>
+          <p style="margin: 4px 0; font-size: 14px; color: #191c1f;">
+            <strong>Completed:</strong> ${new Date().toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" })}
+          </p>
+        </div>
+        <p style="color: #45464e; font-size: 14px; line-height: 1.6;">
+          This document is also available in your TenantPorch portal under Documents.
+          Please keep a copy for your records.
+        </p>
+        <p style="color: #45464e; font-size: 13px; line-height: 1.6; margin-top: 20px;">
+          This electronic signature process complies with the Alberta <em>Electronic Transactions Act</em>
+          and the <em>Residential Tenancies Act</em>.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e1e2e6; margin: 32px 0 16px;" />
+        <p style="color: #9a9ba3; font-size: 12px;">
+          &mdash; TenantPorch &middot; Your front porch to smarter renting.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendGenericEmail({
   to,
   subject,
@@ -268,7 +344,7 @@ export async function sendGenericEmail({
   html: string;
 }) {
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: DEFAULT_FROM,
     to,
     subject,
     html,
