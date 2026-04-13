@@ -560,7 +560,7 @@ export async function submitSignature(
 
       await supabase
         .from("rp_leases")
-        .update({ signing_status: "completed" })
+        .update({ signing_status: "completed", status: "active" })
         .eq("id", signingRequest.lease_id);
 
       // Update rp_lease_documents if this is a per-document signing
@@ -1043,6 +1043,155 @@ export async function resendParticipantEmail(participantId: string) {
       `/admin/leases/${(signingRequest.rp_leases as any)?.id ?? signingRequest.lease_id}/document`
     );
 
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Mark a lease as signed offline (paper signing).
+ * Sets signing_status to "completed" and lease status to "active".
+ * Optionally accepts a scanned signed PDF upload.
+ */
+export async function markLeaseSignedOffline(
+  leaseId: string,
+  formData?: FormData
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Fetch lease with ownership check
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, property_id, signing_status, rp_properties(landlord_id, address_line1)"
+      )
+      .eq("id", leaseId)
+      .single();
+
+    if (!lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const landlordId = (lease.rp_properties as any)?.landlord_id;
+    if (landlordId !== rpUser.id) {
+      return { success: false, error: "You do not own this property" };
+    }
+
+    if (lease.signing_status === "completed") {
+      return { success: false, error: "Lease is already signed" };
+    }
+
+    // Handle optional signed PDF upload
+    let signedPdfUrl: string | null = null;
+    const file = formData?.get("file") as File | null;
+    if (file && file.size > 0) {
+      if (file.type !== "application/pdf") {
+        return { success: false, error: "Only PDF files are accepted" };
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        return { success: false, error: "File size must be under 20MB" };
+      }
+
+      const filePath = `lease-documents/${leaseId}/${Date.now()}-signed-lease.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        return {
+          success: false,
+          error: `Upload failed: ${uploadError.message}`,
+        };
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("documents")
+        .getPublicUrl(filePath);
+      signedPdfUrl = urlData.publicUrl;
+
+      // Create rp_documents record for the signed PDF
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const propertyAddress =
+        (lease.rp_properties as any)?.address_line1 ?? "Property";
+      await supabase.from("rp_documents").insert({
+        property_id: lease.property_id,
+        lease_id: leaseId,
+        uploaded_by: rpUser.id,
+        category: "lease",
+        title: `Signed Lease Agreement — ${propertyAddress}`,
+        file_url: signedPdfUrl,
+        file_size: file.size,
+        mime_type: "application/pdf",
+        visible_to_tenant: true,
+      });
+    }
+
+    // Cancel any active e-sign requests for this lease
+    if (
+      lease.signing_status === "sent" ||
+      lease.signing_status === "partially_signed"
+    ) {
+      await supabase
+        .from("rp_signing_requests")
+        .update({ status: "cancelled" })
+        .eq("lease_id", leaseId)
+        .in("status", ["sent", "partially_signed"]);
+    }
+
+    // Update lease: mark as signed and activate
+    const { error: updateError } = await supabase
+      .from("rp_leases")
+      .update({
+        signing_status: "completed",
+        status: "active",
+        sent_for_signing_at: lease.signing_status === "draft"
+          ? new Date().toISOString()
+          : undefined,
+      })
+      .eq("id", leaseId);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    // Audit log
+    await supabase.from("rp_signing_audit_log").insert({
+      action: "signed_offline",
+      metadata: {
+        lease_id: leaseId,
+        signed_by: rpUser.id,
+        has_uploaded_pdf: !!signedPdfUrl,
+      },
+    });
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    revalidatePath(`/admin/properties/${lease.property_id}`);
+    revalidatePath("/admin/dashboard");
     return { success: true };
   } catch (error) {
     return {

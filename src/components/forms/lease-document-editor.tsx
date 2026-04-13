@@ -69,6 +69,9 @@ export function LeaseDocumentEditor({
   const [regenerating, setRegenerating] = useState(false);
   const [showIdOverrideDialog, setShowIdOverrideDialog] = useState(false);
   const [idOverrideAcknowledged, setIdOverrideAcknowledged] = useState(false);
+  const [showSignedOfflineModal, setShowSignedOfflineModal] = useState(false);
+  const [markingOffline, setMarkingOffline] = useState(false);
+  const offlineFileRef = useRef<HTMLInputElement>(null);
 
   function updateClause(sectionId: string, clauseId: string, newText: string) {
     if (!content) return;
@@ -258,6 +261,34 @@ export function LeaseDocumentEditor({
     }
   }
 
+  async function handleMarkSignedOffline() {
+    setMarkingOffline(true);
+    try {
+      const { markLeaseSignedOffline } = await import(
+        "@/app/admin/actions/signing-actions"
+      );
+      const file = offlineFileRef.current?.files?.[0];
+      let formData: FormData | undefined;
+      if (file) {
+        formData = new FormData();
+        formData.append("file", file);
+      }
+      const result = await markLeaseSignedOffline(leaseId, formData);
+      if (result.success) {
+        toast.success("Lease marked as signed. Lease is now active.");
+        setShowSignedOfflineModal(false);
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to mark as signed.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setMarkingOffline(false);
+      if (offlineFileRef.current) offlineFileRef.current.value = "";
+    }
+  }
+
   if (!content) {
     return (
       <div className="bg-surface-container-lowest rounded-3xl p-10 shadow-ambient-sm text-center">
@@ -398,6 +429,15 @@ export function LeaseDocumentEditor({
           <div className="flex-1" />
 
           <button
+            onClick={() => setShowSignedOfflineModal(true)}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors"
+            title="Mark this lease as signed offline (paper signing)"
+          >
+            <span className="material-symbols-outlined text-sm">draw</span>
+            Signed Offline
+          </button>
+
+          <button
             onClick={handleSendClick}
             disabled={sendingForSign}
             className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -480,6 +520,72 @@ export function LeaseDocumentEditor({
                   verified_user
                 </span>
                 I&apos;ll Verify In Person
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signed Offline Modal */}
+      {showSignedOfflineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => setShowSignedOfflineModal(false)}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 pt-6 pb-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-tertiary-fixed/20 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-xl">
+                    draw
+                  </span>
+                </div>
+                <div>
+                  <h2 className="font-headline text-lg font-extrabold text-primary">
+                    Mark Lease as Signed Offline
+                  </h2>
+                  <p className="text-sm text-on-surface-variant">
+                    {propertyAddress}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                Mark this lease as signed outside the platform (e.g., paper signing).
+                The lease will become <strong>active</strong> immediately.
+                You can optionally upload a scanned copy of the signed document.
+              </p>
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2">
+                  Upload Signed PDF (optional)
+                </label>
+                <input
+                  ref={offlineFileRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="w-full text-sm text-on-surface file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-container-highest"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-end gap-3 bg-surface-container-lowest" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
+              <button
+                onClick={() => {
+                  setShowSignedOfflineModal(false);
+                  if (offlineFileRef.current) offlineFileRef.current.value = "";
+                }}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkSignedOffline}
+                disabled={markingOffline}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {markingOffline ? "progress_activity" : "check_circle"}
+                </span>
+                {markingOffline ? "Marking..." : "Mark as Signed & Activate"}
               </button>
             </div>
           </div>
