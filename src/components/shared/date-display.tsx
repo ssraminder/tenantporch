@@ -9,7 +9,11 @@ export function DateDisplay({
   format?: "short" | "medium" | "long" | "relative";
   className?: string;
 }) {
-  const d = typeof date === "string" ? new Date(date) : date;
+  // Append T00:00:00 to date-only strings so they're parsed as local time, not UTC
+  const d =
+    typeof date === "string"
+      ? new Date(date.includes("T") ? date : date + "T00:00:00")
+      : date;
 
   if (format === "relative") {
     return <span className={className}>{getRelativeTime(d)}</span>;
@@ -22,10 +26,7 @@ export function DateDisplay({
         ? { year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }
         : { year: "numeric", month: "short", day: "numeric" };
 
-  const formatted = d.toLocaleDateString("en-CA", {
-    ...options,
-    timeZone: "America/Edmonton",
-  });
+  const formatted = d.toLocaleDateString("en-CA", options);
 
   return <span className={className}>{formatted}</span>;
 }
@@ -45,6 +46,5 @@ function getRelativeTime(date: Date): string {
   return date.toLocaleDateString("en-CA", {
     month: "short",
     day: "numeric",
-    timeZone: "America/Edmonton",
   });
 }

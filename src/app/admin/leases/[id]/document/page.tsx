@@ -55,6 +55,13 @@ export default async function LeaseDocumentPage({
   // Use stored document content or generate fresh
   const documentContent = lease.lease_document_content as LeaseDocumentContent | null;
 
+  // Detect if document has stale/missing tenant data
+  const tenantNames = tenants.map((t: any) => `${t.first_name} ${t.last_name}`);
+  const partiesTenantText = documentContent?.sections
+    ?.find((s) => s.id === "parties")
+    ?.clauses?.find((c) => c.id === "parties-tenant")?.text ?? "";
+  const tenantDataStale = tenants.length > 0 && !tenantNames.some((name: string) => partiesTenantText.includes(name));
+
   const signingStatus = (lease.signing_status as string) ?? "draft";
   const isReadOnly = signingStatus === "sent" || signingStatus === "partially_signed" || signingStatus === "completed";
 
@@ -152,6 +159,7 @@ export default async function LeaseDocumentPage({
         hasUnverifiedTenants={tenants.some(
           (t: any) => t.id_document_status !== "approved"
         )}
+        tenantDataStale={tenantDataStale}
         recipients={recipients}
         emailLogs={emailLogs}
         signedDocumentUrl={signedDocumentUrl}
