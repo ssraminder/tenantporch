@@ -82,7 +82,7 @@ export default function EditLeasePage() {
         const { data: leaseData } = await supabase
           .from("rp_leases")
           .select(
-            "id, property_id, lease_type, start_date, end_date, monthly_rent, currency_code, security_deposit, deposit_paid_date, utility_split_percent, internet_included, pad_enabled, pets_allowed, smoking_allowed, max_occupants, late_fee_type, late_fee_amount, status, rp_properties(address_line1, city, landlord_id)"
+            "id, property_id, lease_type, start_date, end_date, monthly_rent, currency_code, security_deposit, deposit_paid_date, utility_split_percent, internet_included, pad_enabled, pets_allowed, smoking_allowed, max_occupants, late_fee_type, late_fee_amount, status, signing_status, rp_properties(address_line1, city, landlord_id)"
           )
           .eq("id", leaseId)
           .single();
@@ -95,6 +95,12 @@ export default function EditLeasePage() {
         const landlordId = (leaseData.rp_properties as any)?.landlord_id;
         if (landlordId !== rpUser.id) {
           setError("You do not own this lease");
+          return;
+        }
+
+        // Block editing if lease is signed
+        if ((leaseData as any).signing_status === "completed") {
+          setError("This lease has been signed and cannot be edited.");
           return;
         }
 

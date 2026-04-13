@@ -111,7 +111,7 @@ export default async function PropertyDetailPage({
   const { data: leases } = await supabase
     .from("rp_leases")
     .select(
-      "id, lease_type, start_date, end_date, monthly_rent, currency_code, security_deposit, deposit_paid_date, utility_split_percent, internet_included, pad_enabled, pets_allowed, smoking_allowed, max_occupants, late_fee_type, late_fee_amount, status, created_at"
+      "id, lease_type, start_date, end_date, monthly_rent, currency_code, security_deposit, deposit_paid_date, utility_split_percent, internet_included, pad_enabled, pets_allowed, smoking_allowed, max_occupants, late_fee_type, late_fee_amount, status, signing_status, created_at"
     )
     .eq("property_id", propertyId)
     .in("status", ["active", "draft"])
@@ -535,9 +535,25 @@ export default async function PropertyDetailPage({
             </span>
             <h2 className="font-headline font-bold text-xl">Current Lease</h2>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {leaseDisplayStatus && (
               <StatusBadge status={leaseDisplayStatus.key} />
+            )}
+            {currentLease?.signing_status === "completed" && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary-fixed/30 text-on-tertiary-fixed-variant">
+                <span className="material-symbols-outlined text-xs">verified</span>
+                Signed
+              </span>
+            )}
+            {currentLease?.signing_status === "sent" && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-fixed/30 text-on-secondary-fixed-variant">
+                Sent for Signing
+              </span>
+            )}
+            {currentLease?.signing_status === "partially_signed" && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-fixed/30 text-on-secondary-fixed-variant">
+                Partially Signed
+              </span>
             )}
             {currentLease && (
               <>
@@ -566,13 +582,15 @@ export default async function PropertyDetailPage({
                   <span className="material-symbols-outlined text-sm">description</span>
                   Document
                 </Link>
-                <Link
-                  href={`/admin/leases/${currentLease.id}/edit`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary text-on-secondary text-sm font-semibold hover:opacity-90 transition-opacity"
-                >
-                  <span className="material-symbols-outlined text-sm">edit</span>
-                  Edit Lease
-                </Link>
+                {currentLease.signing_status !== "completed" && (
+                  <Link
+                    href={`/admin/leases/${currentLease.id}/edit`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary text-on-secondary text-sm font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                    Edit Lease
+                  </Link>
+                )}
               </>
             )}
           </div>
