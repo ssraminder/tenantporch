@@ -44,7 +44,30 @@ function LoginForm() {
       return;
     }
 
-    router.push(redirectTo);
+    // If there's an explicit redirect (not default "/"), use it
+    if (redirectTo !== "/") {
+      router.push(redirectTo);
+      router.refresh();
+      return;
+    }
+
+    // Otherwise, determine dashboard by role
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const { data: rpUser } = await supabase
+        .from("rp_users")
+        .select("role")
+        .eq("auth_id", authUser.id)
+        .single();
+
+      if (rpUser?.role === "landlord") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/tenant/dashboard");
+      }
+    } else {
+      router.push("/");
+    }
     router.refresh();
   };
 
