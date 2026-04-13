@@ -362,8 +362,8 @@ export function generateAlbertaLeaseContent(
       title: "Schedule B — Tenant Identification",
       clauses: tenants.map((t, i) => ({
         id: `schedule-b-tenant-${i}`,
-        text: `Tenant ${i + 1}: ${t.first_name} ${t.last_name}\n${"─".repeat(40)}\n• Name:              ${t.first_name} ${t.last_name}\n• Email:             ${t.email}\n• Phone:             ${t.phone ?? "—"}\n• ID Type:           ${t.id_type ? ID_TYPE_LABELS[t.id_type] ?? t.id_type : "Not provided"}\n• ID Number:         ${t.id_number ?? "Not provided"}\n• Name on Document:  ${t.id_name_on_document ?? "Not provided"}\n• Place of Issue:    ${t.id_place_of_issue ?? "Not provided"}\n• Expiry Date:       ${t.id_expiry_date ? formatDate(t.id_expiry_date) : "Not provided"}`,
-        editable: false,
+        text: `Tenant ${i + 1}: ${t.first_name} ${t.last_name}\n${"─".repeat(40)}\n• Name:              ${t.first_name} ${t.last_name}\n• Email:             ${t.email}\n• Phone:             ${t.phone ?? "________________"}\n• ID Type:           ${t.id_type ? ID_TYPE_LABELS[t.id_type] ?? t.id_type : "________________"}\n• ID Number:         ${t.id_number ?? "________________"}\n• Name on Document:  ${t.id_name_on_document ?? "________________"}\n• Place of Issue:    ${t.id_place_of_issue ?? "________________"}\n• Expiry Date:       ${t.id_expiry_date ? formatDate(t.id_expiry_date) : "________________"}`,
+        editable: true,
       })),
     },
   ];
