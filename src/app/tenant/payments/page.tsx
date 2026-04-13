@@ -209,10 +209,9 @@ export default async function PaymentsPage() {
             propertyAddress={`${property?.address_line1}, ${property?.city}`}
             dueDateLabel={
               nextDue
-                ? new Date(nextDue.due_date).toLocaleDateString("en-CA", {
+                ? new Date(nextDue.due_date + "T00:00:00").toLocaleDateString("en-CA", {
                     month: "long",
                     year: "numeric",
-                    timeZone: "America/Edmonton",
                   })
                 : "Rent"
             }
