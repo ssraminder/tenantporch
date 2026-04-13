@@ -58,7 +58,7 @@ export default function NewUtilityBillPage() {
   const [propertyId, setPropertyId] = useState("");
   const [leaseId, setLeaseId] = useState("");
   const [selectedLease, setSelectedLease] = useState<Lease | null>(null);
-  const [utilityType, setUtilityType] = useState("electricity");
+  const [utilityTypes, setUtilityTypes] = useState<string[]>(["electricity"]);
   const [billingPeriod, setBillingPeriod] = useState(getBillingPeriodDefault());
   const [totalAmount, setTotalAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -146,6 +146,10 @@ export default function NewUtilityBillPage() {
       setError("Please select a property and lease.");
       return;
     }
+    if (utilityTypes.length === 0) {
+      setError("Please select at least one utility type.");
+      return;
+    }
     if (!totalAmount || parseFloat(totalAmount) <= 0) {
       setError("Please enter a valid total amount.");
       return;
@@ -159,7 +163,7 @@ export default function NewUtilityBillPage() {
       const formData = new FormData();
       formData.set("lease_id", leaseId);
       formData.set("property_id", propertyId);
-      formData.set("utility_type", utilityType);
+      formData.set("utility_type", utilityTypes.join(","));
       formData.set("billing_period", billingPeriod);
       formData.set("total_amount", totalAmount);
       formData.set("split_percent", String(splitPercent));
@@ -330,30 +334,52 @@ export default function NewUtilityBillPage() {
           </div>
         </div>
 
-        {/* ─── Step 2: Utility Type ─── */}
+        {/* ─── Step 2: Utility Type(s) ─── */}
         <div className="bg-surface-container-lowest rounded-3xl shadow-ambient-sm p-6 space-y-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-sm font-bold">2</div>
             <h2 className="font-headline font-bold text-lg text-primary">Utility Type</h2>
           </div>
+          <p className="text-xs text-on-surface-variant -mt-2">
+            Select one or more — e.g. water + garbage if billed together
+          </p>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-            {UTILITY_TYPES.map((ut) => (
-              <button
-                key={ut.key}
-                type="button"
-                onClick={() => setUtilityType(ut.key)}
-                className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl text-xs font-bold transition-all ${
-                  utilityType === ut.key
-                    ? "bg-primary text-on-primary shadow-ambient-sm"
-                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                }`}
-              >
-                <span className="material-symbols-outlined text-xl">{ut.icon}</span>
-                {ut.label}
-              </button>
-            ))}
+            {UTILITY_TYPES.map((ut) => {
+              const selected = utilityTypes.includes(ut.key);
+              return (
+                <button
+                  key={ut.key}
+                  type="button"
+                  onClick={() => {
+                    setUtilityTypes((prev) =>
+                      selected
+                        ? prev.filter((k) => k !== ut.key)
+                        : [...prev, ut.key]
+                    );
+                  }}
+                  className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl text-xs font-bold transition-all ${
+                    selected
+                      ? "bg-primary text-on-primary shadow-ambient-sm"
+                      : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                >
+                  {selected && (
+                    <span className="absolute top-1 right-1 material-symbols-outlined text-xs">
+                      check_circle
+                    </span>
+                  )}
+                  <span className="material-symbols-outlined text-xl">{ut.icon}</span>
+                  {ut.label}
+                </button>
+              );
+            })}
           </div>
+          {utilityTypes.length > 1 && (
+            <p className="text-xs text-secondary font-semibold">
+              Combined bill: {utilityTypes.map((k) => UTILITY_TYPES.find((u) => u.key === k)?.label).filter(Boolean).join(" + ")}
+            </p>
+          )}
         </div>
 
         {/* ─── Step 3: Billing Details ─── */}

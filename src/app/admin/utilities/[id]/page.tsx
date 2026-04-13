@@ -5,26 +5,7 @@ import { formatCurrency } from "@/lib/currency";
 import { DateDisplay } from "@/components/shared/date-display";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { UtilityBillActions } from "@/components/forms/utility-bill-actions";
-
-const UTILITY_ICONS: Record<string, string> = {
-  electricity: "bolt",
-  gas: "local_fire_department",
-  water: "water_drop",
-  internet: "wifi",
-  sewer: "plumbing",
-  trash: "delete_sweep",
-  other: "category",
-};
-
-const UTILITY_LABELS: Record<string, string> = {
-  electricity: "Electricity",
-  gas: "Gas",
-  water: "Water",
-  internet: "Internet",
-  sewer: "Sewer",
-  trash: "Garbage",
-  other: "Other",
-};
+import { getUtilityLabel, getUtilityIcon } from "@/lib/utility-types";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-surface-container-high text-on-surface-variant",
@@ -99,8 +80,8 @@ export default async function UtilityBillDetailPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenants = (leaseTenants ?? []).map((lt) => lt.rp_users as any);
 
-  const utilityLabel = UTILITY_LABELS[bill.utility_type] ?? bill.utility_type;
-  const icon = UTILITY_ICONS[bill.utility_type] ?? "category";
+  const utilityLabel = getUtilityLabel(bill.utility_type);
+  const icon = getUtilityIcon(bill.utility_type);
   const statusStyle = STATUS_STYLES[bill.status] ?? STATUS_STYLES.draft;
   const statusLabel = STATUS_LABELS[bill.status] ?? bill.status;
   const currency = bill.currency_code ?? "CAD";

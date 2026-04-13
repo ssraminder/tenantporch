@@ -5,26 +5,7 @@ import { formatCurrency } from "@/lib/currency";
 import { DateDisplay } from "@/components/shared/date-display";
 import { GatedSection } from "@/components/shared/gated-section";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-
-const UTILITY_ICONS: Record<string, string> = {
-  electricity: "bolt",
-  gas: "local_fire_department",
-  water: "water_drop",
-  internet: "wifi",
-  sewer: "plumbing",
-  trash: "delete_sweep",
-  other: "category",
-};
-
-const UTILITY_LABELS: Record<string, string> = {
-  electricity: "Electricity",
-  gas: "Gas",
-  water: "Water",
-  internet: "Internet",
-  sewer: "Sewer",
-  trash: "Garbage",
-  other: "Other",
-};
+import { getUtilityLabel, getUtilityIcon } from "@/lib/utility-types";
 
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-surface-container-high text-on-surface-variant",
@@ -225,8 +206,8 @@ export default async function UtilitiesPage({
           <div className="divide-y divide-outline-variant/10">
             {allBills.map((bill) => {
               const prop = propertyMap[bill.property_id];
-              const icon = UTILITY_ICONS[bill.utility_type] ?? "category";
-              const label = UTILITY_LABELS[bill.utility_type] ?? bill.utility_type;
+              const icon = getUtilityIcon(bill.utility_type);
+              const label = getUtilityLabel(bill.utility_type);
               const statusStyle = STATUS_STYLES[bill.status] ?? STATUS_STYLES.draft;
               const statusLabel = STATUS_LABELS[bill.status] ?? bill.status;
 
