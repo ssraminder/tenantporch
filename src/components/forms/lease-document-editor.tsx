@@ -394,14 +394,14 @@ export function LeaseDocumentEditor({
 
       {/* ID Verification Override Dialog */}
       {showIdOverrideDialog && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
             onClick={() => setShowIdOverrideDialog(false)}
           />
-          <div className="relative bg-surface-container-lowest rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4 space-y-4">
+            <div className="px-6 pt-6 pb-4 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-amber-600 text-xl">
@@ -621,16 +621,19 @@ export function LeaseDocumentEditor({
 
         {/* Sections */}
         <div className="px-8 md:px-16 py-8 space-y-8">
-          {content.sections.map((section) => (
-            <DocumentSection
-              key={section.id}
-              section={section}
-              isReadOnly={isReadOnly}
-              onUpdateClause={(clauseId, text) =>
-                updateClause(section.id, clauseId, text)
-              }
-            />
-          ))}
+          {/* Main lease clauses (excluding schedules) */}
+          {content.sections
+            .filter((section) => !section.id.startsWith("schedule-"))
+            .map((section) => (
+              <DocumentSection
+                key={section.id}
+                section={section}
+                isReadOnly={isReadOnly}
+                onUpdateClause={(clauseId, text) =>
+                  updateClause(section.id, clauseId, text)
+                }
+              />
+            ))}
 
           {/* Additional Terms */}
           <div>
@@ -755,6 +758,57 @@ export function LeaseDocumentEditor({
               ))}
             </div>
           </div>
+
+          {/* Schedules — after main agreement and signatures */}
+          {content.sections
+            .filter((section) => section.id.startsWith("schedule-"))
+            .map((section) => (
+              <DocumentSection
+                key={section.id}
+                section={section}
+                isReadOnly={isReadOnly}
+                onUpdateClause={(clauseId, text) =>
+                  updateClause(section.id, clauseId, text)
+                }
+              />
+            ))}
+
+          {/* Schedule Signature Blocks */}
+          {content.sections.some((s) => s.id.startsWith("schedule-")) && (
+            <div className="mt-8 pt-6 border-t border-outline-variant/20">
+              <p className="text-sm text-on-surface-variant italic mb-6">
+                By signing below, the parties acknowledge and agree to the details in the above schedules.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                {(recipients.filter((r) => r.role === "landlord").length > 0
+                  ? recipients.filter((r) => r.role === "landlord")
+                  : [{ name: "Landlord", email: "", role: "landlord", signingOrder: 1 }]
+                ).map((owner, i) => (
+                  <div key={`sched-owner-${i}`}>
+                    <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-1">
+                      Landlord / Owner
+                    </p>
+                    <p className="text-xs text-on-surface-variant mb-6">{owner.name}</p>
+                    <div className="border-b border-on-surface/30 mb-2 h-12" />
+                    <p className="text-xs text-on-surface-variant">Signature &amp; Date</p>
+                  </div>
+                ))}
+                {(recipients.filter((r) => r.role === "tenant").length > 0
+                  ? recipients.filter((r) => r.role === "tenant")
+                  : [{ name: "Tenant", email: "", role: "tenant", signingOrder: 1 }]
+                ).map((tenant, i) => (
+                  <div key={`sched-tenant-${i}`}>
+                    <p className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mb-1">
+                      Tenant
+                    </p>
+                    <p className="text-xs text-on-surface-variant mb-6">{tenant.name}</p>
+                    <div className="border-b border-on-surface/30 mb-2 h-12" />
+                    <p className="text-xs text-on-surface-variant">Signature &amp; Date</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center">

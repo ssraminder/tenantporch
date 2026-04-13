@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Manrope } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -16,6 +16,10 @@ const manrope = Manrope({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "TenantPorch — Canadian Rental Property Management",
   description:
@@ -29,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn(dmSans.variable, manrope.variable)}>
-      <body className="antialiased">
+      <body className="antialiased" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         {children}
         <Toaster position="top-right" richColors />
       </body>
