@@ -635,14 +635,16 @@ export function LeaseDocumentEditor({
               All parties have signed this lease agreement.
             </p>
           </div>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloading}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-            Download Signed PDF
-          </button>
+          {signedDocumentUrl && (
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+              Download Signed PDF
+            </button>
+          )}
         </div>
       )}
 

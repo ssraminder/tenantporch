@@ -226,6 +226,17 @@ export async function createLease(formData: FormData) {
       await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id, splitContent);
     }
 
+    // Create security deposit record if deposit amount is set
+    if (securityDeposit > 0) {
+      await supabase.from("rp_security_deposits").insert({
+        lease_id: lease.id,
+        amount: securityDeposit,
+        currency_code: currencyCode,
+        received_date: depositPaidDate || new Date().toISOString().split("T")[0],
+        status: "held",
+      });
+    }
+
     revalidatePath("/admin/properties");
     revalidatePath(`/admin/properties/${propertyId}`);
     revalidatePath("/admin/dashboard");
@@ -367,6 +378,35 @@ export async function updateLease(leaseId: string, formData: FormData) {
 
     if (updateError) {
       return { success: false, error: updateError.message };
+    }
+
+    // Upsert security deposit record if deposit amount changed
+    const newDepositAmount = updateData.security_deposit ?? null;
+    if (newDepositAmount !== null && newDepositAmount > 0) {
+      const { data: existingDeposit } = await supabase
+        .from("rp_security_deposits")
+        .select("id")
+        .eq("lease_id", leaseId)
+        .eq("status", "held")
+        .maybeSingle();
+
+      if (existingDeposit) {
+        await supabase
+          .from("rp_security_deposits")
+          .update({
+            amount: newDepositAmount,
+            received_date: updateData.deposit_paid_date || new Date().toISOString().split("T")[0],
+          })
+          .eq("id", existingDeposit.id);
+      } else {
+        await supabase.from("rp_security_deposits").insert({
+          lease_id: leaseId,
+          amount: newDepositAmount,
+          currency_code: "CAD",
+          received_date: updateData.deposit_paid_date || new Date().toISOString().split("T")[0],
+          status: "held",
+        });
+      }
     }
 
     revalidatePath("/admin/properties");

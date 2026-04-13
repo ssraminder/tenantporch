@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { LeaseDocumentEditor } from "@/components/forms/lease-document-editor";
+import { AdditionalDocumentsSection } from "@/components/forms/additional-documents-section";
 import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
+import { getLeaseDocuments } from "@/lib/lease-documents";
 
 export default async function LeaseDocumentPage({
   params,
@@ -54,6 +56,9 @@ export default async function LeaseDocumentPage({
 
   // Use stored document content
   const documentContent = lease.lease_document_content as LeaseDocumentContent | null;
+
+  // Fetch additional documents from rp_lease_documents
+  const leaseDocuments = await getLeaseDocuments(supabase, leaseId);
 
   // Detect if document has stale/missing tenant data
   const tenantNames = tenants.map((t: any) => `${t.first_name} ${t.last_name}`);
@@ -163,6 +168,11 @@ export default async function LeaseDocumentPage({
         recipients={recipients}
         emailLogs={emailLogs}
         signedDocumentUrl={signedDocumentUrl}
+      />
+
+      <AdditionalDocumentsSection
+        leaseId={leaseId}
+        documents={leaseDocuments}
       />
     </section>
   );

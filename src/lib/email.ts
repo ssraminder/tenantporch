@@ -357,3 +357,101 @@ export async function sendGenericEmail({
     html,
   });
 }
+
+export async function sendUtilityBillEmail({
+  to,
+  firstName,
+  landlordName,
+  landlordEmail,
+  propertyAddress,
+  utilityType,
+  billingPeriod,
+  totalAmount,
+  tenantAmount,
+  dueDate,
+  isReminder,
+  etransferEmail,
+}: {
+  to: string;
+  firstName: string;
+  landlordName: string;
+  landlordEmail?: string;
+  propertyAddress: string;
+  utilityType: string;
+  billingPeriod: string;
+  totalAmount: string;
+  tenantAmount: string;
+  dueDate: string;
+  isReminder?: boolean;
+  etransferEmail?: string;
+}) {
+  const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+  const subject = isReminder
+    ? `Reminder: Utility Bill Due — ${propertyAddress}`
+    : `Utility Bill — ${utilityType} for ${billingPeriod}`;
+
+  return resend.emails.send({
+    from: buildFrom(landlordName),
+    to,
+    ...(landlordEmail ? { replyTo: landlordEmail } : {}),
+    subject,
+    html: `
+      <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        ${EMAIL_LOGO_IMG}
+        <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 24px; margin-bottom: 8px;">
+          ${isReminder ? "Reminder: Utility Bill Due" : "Utility Bill"}
+        </h1>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          Hi ${firstName},
+        </p>
+        <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+          ${isReminder
+            ? `This is a reminder that your utility bill for <strong>${propertyAddress}</strong> is due.`
+            : `A utility bill has been sent to you for <strong>${propertyAddress}</strong>.`
+          }
+        </p>
+        <div style="background: #f2f3f7; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <p style="margin: 0 0 12px; font-size: 13px; color: #9a9ba3; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Bill Summary</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 4px 0; color: #45464e;">Utility type</td>
+              <td style="padding: 4px 0; color: #191c1f; font-weight: 600; text-align: right;">${utilityType}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #45464e;">Billing period</td>
+              <td style="padding: 4px 0; color: #191c1f; font-weight: 600; text-align: right;">${billingPeriod}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #45464e;">Total bill</td>
+              <td style="padding: 4px 0; color: #191c1f; font-weight: 600; text-align: right;">${totalAmount}</td>
+            </tr>
+            <tr style="border-top: 1px solid #e1e2e6;">
+              <td style="padding: 8px 0 4px; color: #273f4f; font-weight: 700; font-size: 15px;">Your share</td>
+              <td style="padding: 8px 0 4px; color: #273f4f; font-weight: 800; font-size: 18px; text-align: right;">${tenantAmount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #45464e;">Due date</td>
+              <td style="padding: 4px 0; color: #e8732c; font-weight: 600; text-align: right;">${dueDate}</td>
+            </tr>
+          </table>
+        </div>
+        ${etransferEmail ? `
+        <div style="background: #e8f5e9; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+          <p style="margin: 0 0 4px; font-size: 13px; color: #2e7d32; font-weight: 700;">Pay via E-Transfer</p>
+          <p style="margin: 0; font-size: 14px; color: #1b5e20;">Send to: <strong>${etransferEmail}</strong></p>
+          <p style="margin: 4px 0 0; font-size: 12px; color: #388e3c;">Please include your name and address in the message.</p>
+        </div>
+        ` : ""}
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${portalUrl}/tenant/payments" style="display: inline-block; background: #273f4f; color: #ffffff; padding: 12px 32px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none;">
+            View in Portal
+          </a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e1e2e6; margin: 32px 0 16px;" />
+        <p style="color: #9a9ba3; font-size: 12px;">
+          — TenantPorch &middot; Your front porch to smarter renting.
+        </p>
+      </div>
+    `,
+  });
+}

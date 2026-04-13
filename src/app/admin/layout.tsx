@@ -11,6 +11,7 @@ const adminNav: NavItem[] = [
   { label: "Applications", href: "/admin/applications", icon: "assignment" },
   { label: "Tenants", href: "/admin/tenants", icon: "group" },
   { label: "Financials", href: "/admin/financials", icon: "payments" },
+  { label: "Utilities", href: "/admin/utilities", icon: "bolt" },
   { label: "Maintenance", href: "/admin/maintenance", icon: "handyman" },
   { label: "Documents", href: "/admin/documents", icon: "description" },
   { label: "Messages", href: "/admin/messages", icon: "mail" },

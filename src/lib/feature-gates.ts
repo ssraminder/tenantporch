@@ -257,6 +257,20 @@ export const FEATURE_GATES: Record<string, FeatureGateInfo> = {
     addonName: null,
     addonPrice: null,
   },
+  lease_addendum: {
+    name: "Lease Addendums",
+    description:
+      "Create binding lease amendments with optional additional rent and e-signature workflow.",
+    benefits: [
+      "Rent increase and occupant change addendums",
+      "Pet and other lease amendment types",
+      "E-signature workflow for tenant and landlord",
+    ],
+    minPlanSlug: "growth",
+    addonSlug: null,
+    addonName: null,
+    addonPrice: null,
+  },
   advanced_templates: {
     name: "Advanced Document Templates",
     description:

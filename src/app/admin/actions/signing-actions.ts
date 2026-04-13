@@ -589,6 +589,19 @@ export async function submitSignature(
         .update({ signing_status: "completed", status: "active" })
         .eq("id", signingRequest.lease_id);
 
+      // Update property status to occupied
+      const { data: signedLease } = await supabase
+        .from("rp_leases")
+        .select("property_id")
+        .eq("id", signingRequest.lease_id)
+        .single();
+      if (signedLease) {
+        await supabase
+          .from("rp_properties")
+          .update({ status: "occupied" })
+          .eq("id", signedLease.property_id);
+      }
+
       // Update rp_lease_documents if this is a per-document signing
       if (leaseDocumentId) {
         await supabase
@@ -1204,6 +1217,12 @@ export async function markLeaseSignedOffline(
     if (updateError) {
       return { success: false, error: updateError.message };
     }
+
+    // Update property status to occupied
+    await supabase
+      .from("rp_properties")
+      .update({ status: "occupied" })
+      .eq("id", lease.property_id);
 
     // Audit log
     await supabase.from("rp_signing_audit_log").insert({
