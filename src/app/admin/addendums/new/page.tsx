@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { createAddendum } from "@/app/admin/actions/addendum-actions";
 import { ADDENDUM_TYPE_LABELS } from "@/lib/lease-templates/alberta-addendum";
+import { usePlanGate } from "@/components/shared/plan-gate-provider";
 
 type Property = { id: string; address_line1: string; city: string };
 type Lease = {
@@ -22,6 +23,7 @@ type Lease = {
 export default function NewAddendumPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAvailable, openFeatureGate } = usePlanGate();
   const initialPropertyId = searchParams.get("propertyId") || "";
   const initialLeaseId = searchParams.get("leaseId") || "";
   const initialType = searchParams.get("type") || "other";
@@ -195,6 +197,67 @@ export default function NewAddendumPage() {
             </span>
             <p className="text-sm text-on-surface-variant">Loading data...</p>
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isAvailable("lease_addendum")) {
+    return (
+      <section className="space-y-8">
+        <div className="flex items-center gap-3">
+          <Link
+            href={
+              searchParams.get("propertyId")
+                ? `/admin/properties/${searchParams.get("propertyId")}`
+                : "/admin/properties"
+            }
+            className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant">
+              arrow_back
+            </span>
+          </Link>
+          <h1 className="text-2xl md:text-3xl font-headline font-extrabold text-primary tracking-tight">
+            New Addendum
+          </h1>
+        </div>
+        <div className="bg-surface-container-lowest rounded-3xl p-12 shadow-ambient-sm flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-secondary-container flex items-center justify-center mb-5">
+            <span className="material-symbols-outlined text-3xl text-on-secondary-container">
+              lock
+            </span>
+          </div>
+          <h2 className="font-headline text-xl font-extrabold text-primary mb-2">
+            Lease Addendums
+          </h2>
+          <p className="text-sm text-on-surface-variant max-w-sm mb-2">
+            Create binding lease amendments with optional additional rent and an e-signature workflow.
+          </p>
+          <ul className="text-sm text-on-surface-variant text-left space-y-1 mb-6">
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-secondary">check_circle</span>
+              Rent increase and occupant change addendums
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-secondary">check_circle</span>
+              Pet and other lease amendment types
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-secondary">check_circle</span>
+              E-signature workflow for tenant and landlord
+            </li>
+          </ul>
+          <p className="text-xs text-on-surface-variant mb-4">
+            Available on <strong>Growth</strong> plan and above
+          </p>
+          <button
+            onClick={() => openFeatureGate("lease_addendum")}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-all"
+          >
+            <span className="material-symbols-outlined text-sm">workspace_premium</span>
+            Upgrade to Growth
+          </button>
         </div>
       </section>
     );
