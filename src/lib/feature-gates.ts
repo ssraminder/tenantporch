@@ -56,7 +56,7 @@ export const FEATURE_GATES: Record<string, FeatureGateInfo> = {
       "Editable clauses and custom terms",
       "PDF generation with professional formatting",
     ],
-    minPlanSlug: "growth",
+    minPlanSlug: "free",
     addonSlug: null,
     addonName: null,
     addonPrice: null,

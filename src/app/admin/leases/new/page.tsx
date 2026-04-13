@@ -191,7 +191,7 @@ export default function NewLeasePage() {
           </div>
           <h2 className="font-headline text-xl font-bold text-primary mb-2">Custom Lease Builder</h2>
           <p className="text-sm text-on-surface-variant max-w-md mb-6">
-            Build custom leases from province-specific templates with clause-by-clause editing. Available on Starter and above.
+            Build custom leases from province-specific templates with clause-by-clause editing. Available on all plans.
           </p>
           <button
             onClick={() => openFeatureGate("lease_builder")}
