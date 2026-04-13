@@ -46,7 +46,7 @@ const PLAN_HIGHLIGHTS: Record<string, string[]> = {
     "Utility bill splitting",
     "Financial reports",
     "Everything in Free",
-    "$4/extra property",
+    "$5/extra property",
   ],
   growth: [
     "10 properties included",
