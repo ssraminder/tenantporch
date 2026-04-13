@@ -240,8 +240,17 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
+  } catch (error: any) {
     console.error("ID verification purchase error:", error);
+
+    // Surface Stripe permission errors clearly
+    if (error?.type === "StripePermissionError" || error?.code === "account_invalid") {
+      return NextResponse.json(
+        { error: "Stripe Identity is not enabled on this account. Please enable it at https://dashboard.stripe.com/identity/application" },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

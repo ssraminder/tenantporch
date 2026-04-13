@@ -47,83 +47,96 @@ export async function POST(req: NextRequest) {
           const landlordUserId = session.metadata.landlord_user_id;
 
           if (tenantId && landlordUserId) {
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+            try {
+              const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
 
-            // Create Stripe Identity verification session
-            const verificationSession =
-              await stripe.identity.verificationSessions.create({
-                type: "document",
-                metadata: {
-                  rp_user_id: tenantId,
-                  landlord_id: landlordUserId,
-                  source: "purchased",
-                  used_free_quota: "false",
-                },
-                options: {
-                  document: {
-                    require_matching_selfie: true,
+              // Create Stripe Identity verification session
+              const verificationSession =
+                await stripe.identity.verificationSessions.create({
+                  type: "document",
+                  metadata: {
+                    rp_user_id: tenantId,
+                    landlord_id: landlordUserId,
+                    source: "purchased",
+                    used_free_quota: "false",
                   },
-                },
-                return_url: `${appUrl}/tenant/profile?verification=complete`,
+                  options: {
+                    document: {
+                      require_matching_selfie: true,
+                    },
+                  },
+                  return_url: `${appUrl}/tenant/profile?verification=complete`,
+                });
+
+              const expiresAt = new Date(
+                Date.now() + 48 * 60 * 60 * 1000
+              ).toISOString();
+
+              // Insert audit record
+              await supabase.from("rp_id_verifications").insert({
+                tenant_id: tenantId,
+                landlord_id: landlordUserId,
+                stripe_session_id: verificationSession.id,
+                stripe_checkout_session_id: session.id,
+                verification_url: verificationSession.url,
+                status: "pending",
+                used_free_quota: false,
+                expires_at: expiresAt,
               });
 
-            const expiresAt = new Date(
-              Date.now() + 48 * 60 * 60 * 1000
-            ).toISOString();
+              // Update tenant's rp_users for quick lookups
+              await supabase
+                .from("rp_users")
+                .update({
+                  stripe_identity_session_id: verificationSession.id,
+                  stripe_identity_status: "pending",
+                  stripe_identity_verification_url: verificationSession.url,
+                  stripe_identity_expires_at: expiresAt,
+                  stripe_identity_purchased_by: landlordUserId,
+                  id_document_status: "pending",
+                  id_uploaded_at: new Date().toISOString(),
+                })
+                .eq("id", tenantId);
 
-            // Insert audit record
-            await supabase.from("rp_id_verifications").insert({
-              tenant_id: tenantId,
-              landlord_id: landlordUserId,
-              stripe_session_id: verificationSession.id,
-              stripe_checkout_session_id: session.id,
-              verification_url: verificationSession.url,
-              status: "pending",
-              used_free_quota: false,
-              expires_at: expiresAt,
-            });
+              // Get tenant name for notification
+              const { data: tenantUser } = await supabase
+                .from("rp_users")
+                .select("first_name, last_name")
+                .eq("id", tenantId)
+                .single();
 
-            // Update tenant's rp_users for quick lookups
-            await supabase
-              .from("rp_users")
-              .update({
-                stripe_identity_session_id: verificationSession.id,
-                stripe_identity_status: "pending",
-                stripe_identity_verification_url: verificationSession.url,
-                stripe_identity_expires_at: expiresAt,
-                stripe_identity_purchased_by: landlordUserId,
-                id_document_status: "pending",
-                id_uploaded_at: new Date().toISOString(),
-              })
-              .eq("id", tenantId);
+              // Notify tenant
+              await supabase.from("rp_notifications").insert({
+                user_id: tenantId,
+                title: "ID Verification Requested",
+                body: "Your landlord has requested identity verification. Please complete it from your profile page.",
+                type: "general",
+                link: "/tenant/profile",
+              });
 
-            // Get tenant name for notification
-            const { data: tenantUser } = await supabase
-              .from("rp_users")
-              .select("first_name, last_name")
-              .eq("id", tenantId)
-              .single();
+              // Notify landlord
+              const tenantName = tenantUser
+                ? `${tenantUser.first_name} ${tenantUser.last_name}`
+                : "your tenant";
+              await supabase.from("rp_notifications").insert({
+                user_id: landlordUserId,
+                title: "Verification Purchased",
+                body: `ID verification has been sent to ${tenantName}. They will be notified.`,
+                type: "general",
+                link: `/admin/tenants/${tenantId}`,
+              });
+            } catch (identityErr: any) {
+              console.error(`Stripe Identity error for tenant ${tenantId}:`, identityErr?.message ?? identityErr);
 
-            // Notify tenant
-            await supabase.from("rp_notifications").insert({
-              user_id: tenantId,
-              title: "ID Verification Requested",
-              body: "Your landlord has requested identity verification. Please complete it from your profile page.",
-              type: "general",
-              link: "/tenant/profile",
-            });
-
-            // Notify landlord
-            const tenantName = tenantUser
-              ? `${tenantUser.first_name} ${tenantUser.last_name}`
-              : "your tenant";
-            await supabase.from("rp_notifications").insert({
-              user_id: landlordUserId,
-              title: "Verification Purchased",
-              body: `ID verification has been sent to ${tenantName}. They will be notified.`,
-              type: "general",
-              link: `/admin/tenants/${tenantId}`,
-            });
+              // Notify landlord about the failure
+              await supabase.from("rp_notifications").insert({
+                user_id: landlordUserId,
+                title: "Verification Setup Failed",
+                body: "ID verification could not be created. Stripe Identity may not be enabled on this account.",
+                type: "general",
+                link: `/admin/tenants/${tenantId}`,
+              });
+            }
           }
           break;
         }
