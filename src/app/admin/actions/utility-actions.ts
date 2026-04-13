@@ -4,16 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
 import { sendUtilityBillEmail } from "@/lib/email";
-
-const UTILITY_TYPE_LABELS: Record<string, string> = {
-  electricity: "Electricity",
-  gas: "Gas",
-  water: "Water",
-  internet: "Internet",
-  sewer: "Sewer",
-  trash: "Garbage",
-  other: "Other",
-};
+import { getUtilityLabel } from "@/lib/utility-types";
 
 function formatCurrencySimple(amount: number, currency = "CAD") {
   return `${currency} ${amount.toFixed(2)}`;
@@ -315,7 +306,7 @@ export async function recordUtilityPayment(billId: string, formData: FormData) {
       paid_date: paidDate,
       status: "confirmed",
       currency_code: bill.currency_code,
-      notes: `Utility bill: ${UTILITY_TYPE_LABELS[bill.utility_type] ?? bill.utility_type}${bill.billing_period ? ` (${bill.billing_period})` : ""}`,
+      notes: `Utility bill: ${getUtilityLabel(bill.utility_type)}${bill.billing_period ? ` (${bill.billing_period})` : ""}`,
     });
 
     // Notify tenants
@@ -324,7 +315,7 @@ export async function recordUtilityPayment(billId: string, formData: FormData) {
       await createNotification(supabase, {
         userId: tenant.id,
         title: "Utility Payment Confirmed",
-        body: `Your ${UTILITY_TYPE_LABELS[bill.utility_type] ?? bill.utility_type} utility payment has been recorded.`,
+        body: `Your ${getUtilityLabel(bill.utility_type)} utility payment has been recorded.`,
         type: "payment",
       });
     }
@@ -412,7 +403,7 @@ async function _sendBillToTenants(
     : "your property";
 
   const tenants = await getTenants(supabase, bill.lease_id);
-  const utilityLabel = UTILITY_TYPE_LABELS[bill.utility_type] ?? bill.utility_type;
+  const utilityLabel = getUtilityLabel(bill.utility_type);
   const currency = bill.currency_code ?? "CAD";
   const dueDateStr = bill.due_date ? formatDateSimple(bill.due_date) : "Upon receipt";
 
