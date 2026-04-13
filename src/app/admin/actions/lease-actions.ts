@@ -221,12 +221,8 @@ export async function createLease(formData: FormData) {
         scheduleB: generateScheduleBContent(tenantUsers),
       };
 
-      await supabase
-        .from("rp_leases")
-        .update({ lease_document_content: documentContent })
-        .eq("id", lease.id);
-
       // Create rp_lease_documents rows (3 documents with split content)
+      // Also dual-writes to rp_leases.lease_document_content for backward compat
       await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id, splitContent);
     }
 
@@ -597,16 +593,7 @@ export async function saveLeaseDocument(
       return { success: false, error: "Not authorized" };
     }
 
-    const { error: updateError } = await supabase
-      .from("rp_leases")
-      .update({ lease_document_content: documentContent })
-      .eq("id", leaseId);
-
-    if (updateError) {
-      return { success: false, error: updateError.message };
-    }
-
-    // Dual-write: also update rp_lease_documents
+    // Write to rp_lease_documents (primary store)
     const { data: leaseDoc } = await supabase
       .from("rp_lease_documents")
       .select("id")
@@ -615,7 +602,19 @@ export async function saveLeaseDocument(
       .single();
 
     if (leaseDoc) {
-      await saveLeaseDocumentContent(supabase, leaseDoc.id, documentContent);
+      const result = await saveLeaseDocumentContent(supabase, leaseDoc.id, documentContent);
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+    } else {
+      // Fallback for leases without rp_lease_documents rows (old data)
+      const { error: updateError } = await supabase
+        .from("rp_leases")
+        .update({ lease_document_content: documentContent })
+        .eq("id", leaseId);
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
     }
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
@@ -830,15 +829,6 @@ export async function regenerateLeaseDocument(leaseId: string) {
       scheduleB: generateScheduleBContent(tenantUsers),
     };
 
-    const { error: updateError } = await supabase
-      .from("rp_leases")
-      .update({ lease_document_content: documentContent })
-      .eq("id", leaseId);
-
-    if (updateError) {
-      return { success: false, error: updateError.message };
-    }
-
     // Update all 3 rp_lease_documents rows with split content
     await regenerateLeaseDocumentContent(supabase, leaseId, documentContent, splitContent);
 
@@ -1003,5 +993,197 @@ export async function terminateLease(leaseId: string) {
       success: false,
       error: error instanceof Error ? error.message : "An unexpected error occurred",
     };
+  }
+}
+
+// ============================================================
+// Document Management Actions (Phase 6 — Plan-gated)
+// ============================================================
+
+/**
+ * Add a new custom document to a lease (upload PDF).
+ * Requires 'starter' plan or higher (custom_lease_documents gate).
+ */
+export async function addDocumentToLease(leaseId: string, formData: FormData) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { success: false, error: "Not authenticated" };
+
+    const { data: rpUser } = await supabase.from("rp_users").select("id").eq("auth_id", user.id).single();
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    const title = formData.get("title") as string;
+    const file = formData.get("file") as File | null;
+    if (!title?.trim()) return { success: false, error: "Title is required" };
+
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, property_id, rp_properties(landlord_id)")
+      .eq("id", leaseId)
+      .single();
+    if (!lease) return { success: false, error: "Lease not found" };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) return { success: false, error: "Not authorized" };
+
+    const { data: existingDocs } = await supabase
+      .from("rp_lease_documents")
+      .select("sort_order")
+      .eq("lease_id", leaseId)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+    const nextSortOrder = existingDocs?.[0] ? existingDocs[0].sort_order + 1 : 0;
+
+    let fileUrl: string | null = null;
+    if (file && file.size > 0) {
+      if (file.type !== "application/pdf") return { success: false, error: "Only PDF files are accepted" };
+      if (file.size > 20 * 1024 * 1024) return { success: false, error: "File size must be under 20MB" };
+
+      const filePath = `lease-documents/${leaseId}/${Date.now()}-${title.trim().replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+      const { error: uploadError } = await supabase.storage.from("documents").upload(filePath, file, { upsert: true });
+      if (uploadError) return { success: false, error: `Upload failed: ${uploadError.message}` };
+
+      const { data: urlData } = supabase.storage.from("documents").getPublicUrl(filePath);
+      fileUrl = urlData.publicUrl;
+    }
+
+    const { error: insertError } = await supabase.from("rp_lease_documents").insert({
+      lease_id: leaseId,
+      document_type: "custom",
+      title: title.trim(),
+      sort_order: nextSortOrder,
+      file_url: fileUrl,
+      signing_status: "draft",
+      created_by: rpUser.id,
+    });
+    if (insertError) return { success: false, error: insertError.message };
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Remove a custom document from a lease.
+ * Core documents (lease_agreement, schedule_a, schedule_b) cannot be removed.
+ */
+export async function removeDocumentFromLease(documentId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { success: false, error: "Not authenticated" };
+
+    const { data: rpUser } = await supabase.from("rp_users").select("id").eq("auth_id", user.id).single();
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    const { data: leaseDoc } = await supabase
+      .from("rp_lease_documents")
+      .select("id, lease_id, document_type, signing_status")
+      .eq("id", documentId)
+      .single();
+    if (!leaseDoc) return { success: false, error: "Document not found" };
+
+    if (["lease_agreement", "schedule_a", "schedule_b"].includes(leaseDoc.document_type)) {
+      return { success: false, error: "Core lease documents cannot be removed" };
+    }
+    if (leaseDoc.signing_status !== "draft") {
+      return { success: false, error: "Only draft documents can be removed" };
+    }
+
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, rp_properties(landlord_id)")
+      .eq("id", leaseDoc.lease_id)
+      .single();
+    if (!lease) return { success: false, error: "Lease not found" };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) return { success: false, error: "Not authorized" };
+
+    const { error: deleteError } = await supabase.from("rp_lease_documents").delete().eq("id", documentId);
+    if (deleteError) return { success: false, error: deleteError.message };
+
+    revalidatePath(`/admin/leases/${leaseDoc.lease_id}/document`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Reorder documents within a lease.
+ */
+export async function reorderLeaseDocuments(leaseId: string, orderedIds: string[]) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { success: false, error: "Not authenticated" };
+
+    const { data: rpUser } = await supabase.from("rp_users").select("id").eq("auth_id", user.id).single();
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, rp_properties(landlord_id)")
+      .eq("id", leaseId)
+      .single();
+    if (!lease) return { success: false, error: "Lease not found" };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) return { success: false, error: "Not authorized" };
+
+    for (let i = 0; i < orderedIds.length; i++) {
+      await supabase
+        .from("rp_lease_documents")
+        .update({ sort_order: i, updated_at: new Date().toISOString() })
+        .eq("id", orderedIds[i])
+        .eq("lease_id", leaseId);
+    }
+
+    revalidatePath(`/admin/leases/${leaseId}/document`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" };
+  }
+}
+
+/**
+ * Rename a lease document title.
+ */
+export async function renameLeaseDocument(documentId: string, newTitle: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { success: false, error: "Not authenticated" };
+
+    const { data: rpUser } = await supabase.from("rp_users").select("id").eq("auth_id", user.id).single();
+    if (!rpUser) return { success: false, error: "User profile not found" };
+
+    const { data: leaseDoc } = await supabase
+      .from("rp_lease_documents")
+      .select("id, lease_id")
+      .eq("id", documentId)
+      .single();
+    if (!leaseDoc) return { success: false, error: "Document not found" };
+
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, rp_properties(landlord_id)")
+      .eq("id", leaseDoc.lease_id)
+      .single();
+    if (!lease) return { success: false, error: "Lease not found" };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) return { success: false, error: "Not authorized" };
+
+    const { error: updateError } = await supabase
+      .from("rp_lease_documents")
+      .update({ title: newTitle.trim(), updated_at: new Date().toISOString() })
+      .eq("id", documentId);
+    if (updateError) return { success: false, error: updateError.message };
+
+    revalidatePath(`/admin/leases/${leaseDoc.lease_id}/document`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" };
   }
 }

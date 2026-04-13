@@ -108,14 +108,6 @@ export async function saveLeaseDocumentContent(
     return { success: false, error: docError.message };
   }
 
-  // Dual-write: also update the old column on rp_leases for lease_agreement type
-  if (doc.document_type === "lease_agreement") {
-    await supabase
-      .from("rp_leases")
-      .update({ lease_document_content: content })
-      .eq("id", doc.lease_id);
-  }
-
   return { success: true };
 }
 
@@ -187,12 +179,6 @@ export async function createLeaseDocumentSet(
     return { success: false, error: insertError.message };
   }
 
-  // Dual-write: also set the old column with the full monolithic content
-  await supabase
-    .from("rp_leases")
-    .update({ lease_document_content: fullContent })
-    .eq("id", leaseId);
-
   return { success: true };
 }
 
@@ -239,12 +225,6 @@ export async function regenerateLeaseDocumentContent(
       .eq("lease_id", leaseId)
       .eq("document_type", "schedule_b");
   }
-
-  // Dual-write: also update the old column with full monolithic content
-  await supabase
-    .from("rp_leases")
-    .update({ lease_document_content: fullContent })
-    .eq("id", leaseId);
 
   return { success: true };
 }

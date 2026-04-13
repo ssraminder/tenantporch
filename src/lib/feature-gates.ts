@@ -243,6 +243,34 @@ export const FEATURE_GATES: Record<string, FeatureGateInfo> = {
     addonName: "Recurring card payments",
     addonPrice: 3,
   },
+  custom_lease_documents: {
+    name: "Custom Lease Documents",
+    description:
+      "Add custom documents to your lease package, rename documents, and reorder them.",
+    benefits: [
+      "Add unlimited additional documents",
+      "Upload custom PDFs for signing",
+      "Rename and reorder documents",
+    ],
+    minPlanSlug: "starter",
+    addonSlug: null,
+    addonName: null,
+    addonPrice: null,
+  },
+  advanced_templates: {
+    name: "Advanced Document Templates",
+    description:
+      "Access additional province-specific document templates beyond the basic lease, Schedule A, and Schedule B.",
+    benefits: [
+      "Pet agreement templates",
+      "Parking addendum templates",
+      "Move-in/move-out checklist templates",
+    ],
+    minPlanSlug: "growth",
+    addonSlug: null,
+    addonName: null,
+    addonPrice: null,
+  },
 };
 
 /**

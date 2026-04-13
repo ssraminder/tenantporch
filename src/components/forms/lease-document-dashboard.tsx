@@ -7,6 +7,7 @@ import type { LeaseDocument } from "@/lib/lease-documents";
 import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
 import { SigningEmailPreviewModal, type SigningRecipient } from "./signing-email-preview-modal";
 import type { EmailLogEntry } from "./lease-document-editor";
+import { usePlanGate } from "@/components/shared/plan-gate-provider";
 
 const DOCUMENT_TYPE_META: Record<
   string,
@@ -93,9 +94,18 @@ export function LeaseDocumentDashboard({
   signedDocumentUrl,
 }: LeaseDocumentDashboardProps) {
   const router = useRouter();
+  const { isAvailable, openFeatureGate } = usePlanGate();
+  const canCustomize = isAvailable("custom_lease_documents");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const [sendingDocId, setSendingDocId] = useState<string | null>(null);
+  const [showAddDocModal, setShowAddDocModal] = useState(false);
+  const [addDocTitle, setAddDocTitle] = useState("");
+  const [addingDoc, setAddingDoc] = useState(false);
+  const addDocFileRef = useRef<HTMLInputElement>(null);
+  const [renamingDocId, setRenamingDocId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [removingDocId, setRemovingDocId] = useState<string | null>(null);
   const [cancellingDocId, setCancellingDocId] = useState<string | null>(null);
   const [showSigningPreview, setShowSigningPreview] = useState(false);
   const [signingDocId, setSigningDocId] = useState<string | null>(null);
@@ -300,6 +310,97 @@ export function LeaseDocumentDashboard({
     }
   }
 
+  async function handleAddDocument() {
+    if (!addDocTitle.trim()) return;
+    setAddingDoc(true);
+    try {
+      const { addDocumentToLease } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const formData = new FormData();
+      formData.append("title", addDocTitle.trim());
+      const file = addDocFileRef.current?.files?.[0];
+      if (file) formData.append("file", file);
+      const result = await addDocumentToLease(leaseId, formData);
+      if (result.success) {
+        toast.success("Document added.");
+        setShowAddDocModal(false);
+        setAddDocTitle("");
+        if (addDocFileRef.current) addDocFileRef.current.value = "";
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to add document.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setAddingDoc(false);
+    }
+  }
+
+  async function handleRenameDocument(docId: string) {
+    if (!renameValue.trim()) return;
+    try {
+      const { renameLeaseDocument } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const result = await renameLeaseDocument(docId, renameValue.trim());
+      if (result.success) {
+        toast.success("Document renamed.");
+        setRenamingDocId(null);
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to rename.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    }
+  }
+
+  async function handleRemoveDocument(docId: string) {
+    setRemovingDocId(docId);
+    try {
+      const { removeDocumentFromLease } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const result = await removeDocumentFromLease(docId);
+      if (result.success) {
+        toast.success("Document removed.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to remove.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setRemovingDocId(null);
+    }
+  }
+
+  async function handleMoveDocument(docId: string, direction: "up" | "down") {
+    const idx = leaseDocuments.findIndex((d) => d.id === docId);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= leaseDocuments.length) return;
+
+    const newOrder = leaseDocuments.map((d) => d.id);
+    [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
+
+    try {
+      const { reorderLeaseDocuments } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const result = await reorderLeaseDocuments(leaseId, newOrder);
+      if (result.success) {
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to reorder.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    }
+  }
+
   function getEditUrl(doc: LeaseDocument): string {
     if (doc.id.startsWith("virtual-")) {
       return `/admin/leases/${leaseId}/document/edit`;
@@ -389,17 +490,37 @@ export function LeaseDocumentDashboard({
       </div>
 
       {/* Global Action Bar */}
-      {!allCompleted && signingStatus === "draft" && (
+      {!allCompleted && (
         <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-ambient-sm flex flex-wrap items-center gap-3">
+          {signingStatus === "draft" && (
+            <button
+              onClick={handleRegenerateAll}
+              disabled={regenerating}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {regenerating ? "progress_activity" : "autorenew"}
+              </span>
+              {regenerating ? "Regenerating..." : "Regenerate All"}
+            </button>
+          )}
+
+          <div className="flex-1" />
+
           <button
-            onClick={handleRegenerateAll}
-            disabled={regenerating}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50"
+            onClick={() => {
+              if (canCustomize) {
+                setShowAddDocModal(true);
+              } else {
+                openFeatureGate("custom_lease_documents");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-secondary text-on-secondary text-sm font-bold hover:opacity-90 transition-all"
           >
             <span className="material-symbols-outlined text-sm">
-              {regenerating ? "progress_activity" : "autorenew"}
+              {canCustomize ? "add" : "lock"}
             </span>
-            {regenerating ? "Regenerating..." : "Regenerate All"}
+            Add Document
           </button>
         </div>
       )}
@@ -426,11 +547,37 @@ export function LeaseDocumentDashboard({
             >
               <div className="p-5">
                 <div className="flex items-start gap-4">
-                  {/* Icon */}
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-primary text-xl">
-                      {meta.icon}
-                    </span>
+                  {/* Icon + management controls */}
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-primary text-xl">
+                        {meta.icon}
+                      </span>
+                    </div>
+                    {canCustomize && !isDocReadOnly && (
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => handleMoveDocument(doc.id, "up")}
+                          disabled={leaseDocuments.indexOf(doc) === 0}
+                          className="p-0.5 rounded text-on-surface-variant/50 hover:text-on-surface disabled:opacity-30 transition-colors"
+                          title="Move up"
+                        >
+                          <span className="material-symbols-outlined text-xs">
+                            arrow_upward
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleMoveDocument(doc.id, "down")}
+                          disabled={leaseDocuments.indexOf(doc) === leaseDocuments.length - 1}
+                          className="p-0.5 rounded text-on-surface-variant/50 hover:text-on-surface disabled:opacity-30 transition-colors"
+                          title="Move down"
+                        >
+                          <span className="material-symbols-outlined text-xs">
+                            arrow_downward
+                          </span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -450,6 +597,35 @@ export function LeaseDocumentDashboard({
                         ? getSectionSummary(doc)
                         : meta.description}
                     </p>
+
+                    {/* Inline rename */}
+                    {renamingDocId === doc.id && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameDocument(doc.id);
+                            if (e.key === "Escape") setRenamingDocId(null);
+                          }}
+                          className="flex-1 text-sm bg-surface-container-low rounded-lg px-3 py-1.5 border border-outline-variant/20 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleRenameDocument(doc.id)}
+                          className="text-xs font-bold text-primary hover:underline"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setRenamingDocId(null)}
+                          className="text-xs font-bold text-on-surface-variant hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -544,6 +720,40 @@ export function LeaseDocumentDashboard({
                           : "Cancel Signing"}
                       </button>
                     )}
+
+                    {/* Rename — paid plans only */}
+                    {canCustomize && !isDocReadOnly && renamingDocId !== doc.id && (
+                      <button
+                        onClick={() => {
+                          setRenamingDocId(doc.id);
+                          setRenameValue(doc.title);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-on-surface-variant text-xs font-bold hover:bg-surface-container-low transition-colors"
+                        title="Rename"
+                      >
+                        <span className="material-symbols-outlined text-xs">
+                          edit_note
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Remove — paid plans, custom docs only */}
+                    {canCustomize &&
+                      doc.document_type === "custom" &&
+                      doc.signing_status === "draft" && (
+                        <button
+                          onClick={() => handleRemoveDocument(doc.id)}
+                          disabled={removingDocId === doc.id}
+                          className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-error text-xs font-bold hover:bg-error-container/20 transition-colors disabled:opacity-50"
+                          title="Remove document"
+                        >
+                          <span className="material-symbols-outlined text-xs">
+                            {removingDocId === doc.id
+                              ? "progress_activity"
+                              : "delete"}
+                          </span>
+                        </button>
+                      )}
 
                     {!hasContent && (
                       <span className="text-xs text-on-surface-variant italic px-2">
@@ -704,6 +914,84 @@ export function LeaseDocumentDashboard({
                   {markingOffline ? "progress_activity" : "check_circle"}
                 </span>
                 {markingOffline ? "Marking..." : "Mark as Signed"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Document Modal */}
+      {showAddDocModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => {
+              setShowAddDocModal(false);
+              setAddDocTitle("");
+            }}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 pt-6 pb-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-secondary text-xl">
+                    add
+                  </span>
+                </div>
+                <h2 className="font-headline text-lg font-extrabold text-primary">
+                  Add Document
+                </h2>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2">
+                  Document Title
+                </label>
+                <input
+                  type="text"
+                  value={addDocTitle}
+                  onChange={(e) => setAddDocTitle(e.target.value)}
+                  placeholder="e.g., Pet Agreement, Parking Addendum..."
+                  className="w-full text-sm bg-surface-container-low rounded-xl px-4 py-3 border border-outline-variant/20 placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2">
+                  Upload PDF (optional)
+                </label>
+                <input
+                  ref={addDocFileRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="w-full text-sm text-on-surface file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-container-highest"
+                />
+              </div>
+            </div>
+            <div
+              className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-end gap-3 bg-surface-container-lowest"
+              style={{
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowAddDocModal(false);
+                  setAddDocTitle("");
+                  if (addDocFileRef.current) addDocFileRef.current.value = "";
+                }}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddDocument}
+                disabled={!addDocTitle.trim() || addingDoc}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-secondary text-on-secondary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {addingDoc ? "progress_activity" : "add"}
+                </span>
+                {addingDoc ? "Adding..." : "Add Document"}
               </button>
             </div>
           </div>
