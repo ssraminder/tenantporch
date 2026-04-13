@@ -141,6 +141,45 @@ export async function POST(req: NextRequest) {
           break;
         }
 
+        // ── Add-on purchase checkout ──
+        if (session.metadata?.type === "addon_purchase") {
+          const landlordProfileId = session.metadata.landlord_profile_id;
+          const addonId = session.metadata.addon_id;
+          const addonSlug = session.metadata.addon_slug;
+          if (landlordProfileId && addonId) {
+            // Activate the add-on
+            await supabase.from("rp_landlord_addons").upsert(
+              {
+                landlord_profile_id: landlordProfileId,
+                addon_id: addonId,
+                status: "active",
+                stripe_subscription_item_id: session.subscription as string,
+                activated_at: new Date().toISOString(),
+                setup_fee_paid: true,
+                setup_fee_paid_at: new Date().toISOString(),
+              },
+              { onConflict: "landlord_profile_id,addon_id" }
+            );
+
+            // Notify landlord
+            const { data: profileData } = await supabase
+              .from("rp_landlord_profiles")
+              .select("user_id")
+              .eq("id", landlordProfileId)
+              .single();
+            if (profileData) {
+              await supabase.from("rp_notifications").insert({
+                user_id: profileData.user_id,
+                title: "Add-on Activated",
+                body: `Your ${addonSlug} add-on is now active.`,
+                type: "general",
+                link: "/admin/plan",
+              });
+            }
+          }
+          break;
+        }
+
         // ── Rent payment checkout ──
         const paymentId = session.metadata?.payment_id;
         const tenantUserId = session.metadata?.tenant_user_id;

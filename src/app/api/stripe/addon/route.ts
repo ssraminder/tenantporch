@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     // Get add-on
     const { data: addon } = await supabase
       .from("rp_plan_addons")
-      .select("id, slug, name, price, setup_fee, min_plan_slug")
+      .select("id, slug, name, price, setup_fee, min_plan_slug, stripe_price_id")
       .eq("slug", addonSlug)
       .eq("is_active", true)
       .single();
@@ -105,23 +105,34 @@ export async function POST(request: Request) {
         .eq("id", profile.id);
     }
 
-    // Create checkout session for add-on setup fee + first month
-    const totalInitial = Number(addon.price) + Number(addon.setup_fee);
+    // Get the addon with stripe_price_id
+    if (!addon.stripe_price_id) {
+      return NextResponse.json(
+        { error: "Add-on not configured for purchase" },
+        { status: 500 }
+      );
+    }
+
+    // Build line items: recurring subscription + optional one-time setup fee
+    const lineItems: any[] = [
+      { price: addon.stripe_price_id, quantity: 1 },
+    ];
+
+    if (Number(addon.setup_fee) > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "cad",
+          product_data: { name: `${addon.name} — Setup Fee` },
+          unit_amount: Math.round(Number(addon.setup_fee) * 100),
+        },
+        quantity: 1,
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "cad",
-            product_data: {
-              name: `${addon.name} — First Month${Number(addon.setup_fee) > 0 ? " + Setup" : ""}`,
-            },
-            unit_amount: Math.round(totalInitial * 100),
-          },
-          quantity: 1,
-        },
-      ],
+      mode: "subscription",
+      line_items: lineItems,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?addon=success&slug=${addon.slug}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/admin/settings?addon=cancelled`,
       metadata: {
