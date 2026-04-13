@@ -687,7 +687,7 @@ export async function regenerateLeaseDocument(leaseId: string) {
     }
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
-    return { success: true };
+    return { success: true, content: documentContent };
   } catch (error) {
     return {
       success: false,

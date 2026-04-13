@@ -222,6 +222,9 @@ export function LeaseDocumentEditor({
       const { regenerateLeaseDocument } = await import("@/app/admin/actions/lease-actions");
       const result = await regenerateLeaseDocument(leaseId);
       if (result.success) {
+        if (result.content) {
+          setContent(result.content);
+        }
         toast.success("Document regenerated with latest data.");
         router.refresh();
       } else {
