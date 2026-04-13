@@ -225,15 +225,7 @@ export async function POST(request: Request) {
       mode: "payment",
       line_items: [
         {
-          price_data: {
-            currency: "cad",
-            product_data: {
-              name: `Stripe Identity Verification — ${tenant.first_name} ${tenant.last_name}`,
-              description:
-                "Auto-verified ID check via phone camera with selfie match",
-            },
-            unit_amount: 399,
-          },
+          price: process.env.STRIPE_ID_VERIFICATION_PRICE_ID!,
           quantity: 1,
         },
       ],

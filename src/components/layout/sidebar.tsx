@@ -52,7 +52,7 @@ export function Sidebar({ items, role, planName, planSlug, propertyAddress, user
     <aside className="fixed h-screen flex flex-col gap-2 py-6 bg-primary w-64 hidden lg:flex left-0 top-0 z-40 shadow-ambient-lg">
       {/* Logo */}
       <div className="px-6 mb-8">
-        <Logo height={28} type={role === "landlord" ? "landlord" : "tenant"} background="dark" />
+        <Logo height={40} type={role === "landlord" ? "landlord" : "tenant"} background="dark" />
         {role === "tenant" && propertyAddress && (
           <p className="font-headline font-medium text-xs text-inverse-primary/50 mt-1.5 truncate">
             {propertyAddress}
