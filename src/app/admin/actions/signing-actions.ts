@@ -30,7 +30,10 @@ function generateToken(): string {
  * Send a lease for electronic signatures.
  * Creates signing request + participants, notifies all parties.
  */
-export async function sendForSignatures(leaseId: string) {
+export async function sendForSignatures(
+  leaseId: string,
+  options?: { overrideIdCheck?: boolean }
+) {
   try {
     const supabase = await createClient();
     const {
@@ -97,7 +100,7 @@ export async function sendForSignatures(leaseId: string) {
     const unverified = tenants.filter(
       (t) => t.id_document_status !== "approved"
     );
-    if (unverified.length > 0) {
+    if (unverified.length > 0 && !options?.overrideIdCheck) {
       const names = unverified
         .map((t: any) => `${t.first_name} ${t.last_name}`)
         .join(", ");
@@ -203,6 +206,14 @@ export async function sendForSignatures(leaseId: string) {
         lease_id: leaseId,
         participant_count: participants.length,
         created_by: rpUser.id,
+        ...(unverified.length > 0 && options?.overrideIdCheck
+          ? {
+              id_verification_overridden: true,
+              unverified_tenants: unverified.map(
+                (t: any) => `${t.first_name} ${t.last_name}`
+              ),
+            }
+          : {}),
       },
     });
 

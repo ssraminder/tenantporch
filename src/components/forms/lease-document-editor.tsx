@@ -26,6 +26,7 @@ interface LeaseDocumentEditorProps {
   propertyAddress: string;
   tenantCount: number;
   hasUnverifiedTenants: boolean;
+  tenantDataStale?: boolean;
   recipients?: SigningRecipient[];
   emailLogs?: EmailLogEntry[];
   signedDocumentUrl?: string | null;
@@ -40,6 +41,7 @@ export function LeaseDocumentEditor({
   propertyAddress,
   tenantCount,
   hasUnverifiedTenants,
+  tenantDataStale = false,
   recipients = [],
   emailLogs = [],
   signedDocumentUrl,
@@ -56,6 +58,8 @@ export function LeaseDocumentEditor({
   const [showSigningPreview, setShowSigningPreview] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [showIdOverrideDialog, setShowIdOverrideDialog] = useState(false);
+  const [idOverrideAcknowledged, setIdOverrideAcknowledged] = useState(false);
 
   function updateClause(sectionId: string, clauseId: string, newText: string) {
     if (!content) return;
@@ -160,15 +164,27 @@ export function LeaseDocumentEditor({
     }
   }
 
-  async function handleSendForSignatures() {
-    if (hasUnverifiedTenants) {
-      toast.error("All tenant IDs must be approved before sending for signatures.");
-      return;
+  function handleSendClick() {
+    if (hasUnverifiedTenants && !idOverrideAcknowledged) {
+      setShowIdOverrideDialog(true);
+    } else {
+      setShowSigningPreview(true);
     }
+  }
+
+  function handleIdOverrideConfirm() {
+    setIdOverrideAcknowledged(true);
+    setShowIdOverrideDialog(false);
+    setShowSigningPreview(true);
+  }
+
+  async function handleSendForSignatures() {
     setSendingForSign(true);
     try {
       const { sendForSignatures } = await import("@/app/admin/actions/signing-actions");
-      const result = await sendForSignatures(leaseId);
+      const result = await sendForSignatures(leaseId, {
+        overrideIdCheck: idOverrideAcknowledged,
+      });
       if (result.success) {
         toast.success("Lease sent for signatures. All parties have been notified.");
         router.refresh();
@@ -264,11 +280,19 @@ export function LeaseDocumentEditor({
         </div>
 
         {/* Warning banners */}
+        {tenantDataStale && (
+          <div className="mt-4 flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200/60">
+            <span className="material-symbols-outlined text-amber-600">sync_problem</span>
+            <p className="text-sm text-amber-800">
+              Tenant information in the document is outdated. Click <strong>Regenerate</strong> to update with current tenant data.
+            </p>
+          </div>
+        )}
         {hasUnverifiedTenants && (
-          <div className="mt-4 flex items-center gap-3 p-3 bg-error-container/30 rounded-xl">
-            <span className="material-symbols-outlined text-on-error-container">warning</span>
-            <p className="text-sm text-on-error-container">
-              One or more tenants have unverified IDs. Signing cannot proceed until all tenant IDs are approved.
+          <div className="mt-4 flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200/60">
+            <span className="material-symbols-outlined text-amber-600">shield_person</span>
+            <p className="text-sm text-amber-800">
+              One or more tenants have unverified IDs. You can still send for signatures, but you&apos;ll need to verify their identity in person before handing over the keys.
             </p>
           </div>
         )}
@@ -339,10 +363,10 @@ export function LeaseDocumentEditor({
           <div className="flex-1" />
 
           <button
-            onClick={() => setShowSigningPreview(true)}
-            disabled={sendingForSign || hasUnverifiedTenants}
+            onClick={handleSendClick}
+            disabled={sendingForSign}
             className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            title={hasUnverifiedTenants ? "All tenant IDs must be approved first" : "Send to all parties for electronic signature"}
+            title="Send to all parties for electronic signature"
           >
             <span className="material-symbols-outlined text-sm">
               {sendingForSign ? "progress_activity" : "send"}
@@ -364,6 +388,64 @@ export function LeaseDocumentEditor({
         recipients={recipients}
         propertyAddress={propertyAddress}
       />
+
+      {/* ID Verification Override Dialog */}
+      {showIdOverrideDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => setShowIdOverrideDialog(false)}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-amber-600 text-xl">
+                  shield_person
+                </span>
+              </div>
+              <h2 className="font-headline text-lg font-extrabold text-primary">
+                Unverified Tenant IDs
+              </h2>
+            </div>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              One or more tenants on this lease have not completed ID verification
+              through the app. By proceeding, you acknowledge that:
+            </p>
+            <ul className="text-sm text-on-surface space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-sm mt-0.5 text-amber-600">
+                  check_circle
+                </span>
+                You will verify each tenant&apos;s identity in person before
+                handing over the keys
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-sm mt-0.5 text-amber-600">
+                  check_circle
+                </span>
+                You accept responsibility for confirming their identity
+              </li>
+            </ul>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowIdOverrideDialog(false)}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleIdOverrideConfirm}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  verified_user
+                </span>
+                I&apos;ll Verify In Person
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Read-only action bar (when sent/partially signed) */}
       {isReadOnly && signingStatus !== "completed" && (
