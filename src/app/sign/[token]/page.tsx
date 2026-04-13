@@ -68,8 +68,14 @@ export default async function LeaseSigningPage({
     );
   }
 
-  const { participant, lease, property, signingRequest, participants } =
-    result as any;
+  const {
+    participant,
+    lease,
+    property,
+    signingRequest,
+    participants,
+    documentTitle,
+  } = result as any;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -79,7 +85,7 @@ export default async function LeaseSigningPage({
         {/* Page Title */}
         <div className="text-center space-y-2">
           <h1 className="font-headline text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-            Residential Lease Agreement
+            {documentTitle ?? "Residential Lease Agreement"}
           </h1>
           <p className="text-sm text-on-surface-variant">
             {property?.address ?? "Property"}
