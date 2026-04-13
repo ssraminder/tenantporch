@@ -594,6 +594,78 @@ export async function saveLeaseDocument(
   }
 }
 
+/**
+ * Save document content for a specific rp_lease_documents row.
+ * Used when editing a per-document view (Phase 3+).
+ */
+export async function saveLeaseDocumentById(
+  documentId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  documentContent: any
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    // Fetch document and verify ownership via lease → property → landlord
+    const { data: leaseDoc } = await supabase
+      .from("rp_lease_documents")
+      .select("id, lease_id, document_type")
+      .eq("id", documentId)
+      .single();
+
+    if (!leaseDoc) {
+      return { success: false, error: "Document not found" };
+    }
+
+    const { data: lease } = await supabase
+      .from("rp_leases")
+      .select("id, property_id, rp_properties(landlord_id)")
+      .eq("id", leaseDoc.lease_id)
+      .single();
+
+    if (!lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((lease.rp_properties as any)?.landlord_id !== rpUser.id) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    const result = await saveLeaseDocumentContent(supabase, documentId, documentContent);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    revalidatePath(`/admin/leases/${leaseDoc.lease_id}/document`);
+    revalidatePath(`/admin/leases/${leaseDoc.lease_id}/document/${documentId}`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
 export async function regenerateLeaseDocument(leaseId: string) {
   try {
     const supabase = await createClient();

@@ -30,6 +30,12 @@ interface LeaseDocumentEditorProps {
   recipients?: SigningRecipient[];
   emailLogs?: EmailLogEntry[];
   signedDocumentUrl?: string | null;
+  /** When editing a specific rp_lease_documents row */
+  documentId?: string;
+  /** Custom title for the document (e.g. "Schedule A — Property Details") */
+  documentTitle?: string;
+  /** URL to navigate back to (document dashboard) */
+  parentUrl?: string;
 }
 
 export function LeaseDocumentEditor({
@@ -45,6 +51,9 @@ export function LeaseDocumentEditor({
   recipients = [],
   emailLogs = [],
   signedDocumentUrl,
+  documentId,
+  documentTitle,
+  parentUrl,
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -104,12 +113,24 @@ export function LeaseDocumentEditor({
     if (!content) return;
     setSaving(true);
     try {
-      const { saveLeaseDocument } = await import("@/app/admin/actions/lease-actions");
-      const result = await saveLeaseDocument(leaseId, content);
-      if (result.success) {
-        toast.success("Document saved.");
+      if (documentId) {
+        // Save to the specific rp_lease_documents row (+ dual-write)
+        const { saveLeaseDocumentById } = await import("@/app/admin/actions/lease-actions");
+        const result = await saveLeaseDocumentById(documentId, content);
+        if (result.success) {
+          toast.success("Document saved.");
+        } else {
+          toast.error(result.error ?? "Failed to save.");
+        }
       } else {
-        toast.error(result.error ?? "Failed to save.");
+        // Legacy: save to rp_leases.lease_document_content
+        const { saveLeaseDocument } = await import("@/app/admin/actions/lease-actions");
+        const result = await saveLeaseDocument(leaseId, content);
+        if (result.success) {
+          toast.success("Document saved.");
+        } else {
+          toast.error(result.error ?? "Failed to save.");
+        }
       }
     } catch {
       toast.error("An unexpected error occurred.");
@@ -262,6 +283,17 @@ export function LeaseDocumentEditor({
 
   return (
     <div className="space-y-6">
+      {/* Back to Dashboard */}
+      {parentUrl && (
+        <button
+          onClick={() => router.push(parentUrl)}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">arrow_back</span>
+          Back to Documents
+        </button>
+      )}
+
       {/* Status Bar */}
       <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-ambient-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -269,7 +301,7 @@ export function LeaseDocumentEditor({
             <span className="material-symbols-outlined text-primary text-2xl">description</span>
             <div>
               <h1 className="font-headline font-extrabold text-xl text-primary">
-                Lease Agreement
+                {documentTitle ?? "Lease Agreement"}
               </h1>
               <p className="text-sm text-on-surface-variant">
                 {propertyAddress} &middot; {tenantCount} tenant{tenantCount !== 1 ? "s" : ""}
