@@ -394,12 +394,12 @@ export function LeaseDocumentEditor({
 
       {/* ID Verification Override Dialog */}
       {showIdOverrideDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
           <div
             className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
             onClick={() => setShowIdOverrideDialog(false)}
           />
-          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+          <div className="relative bg-surface-container-lowest rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg p-6 space-y-4" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
                 <span className="material-symbols-outlined text-amber-600 text-xl">

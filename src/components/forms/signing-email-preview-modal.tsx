@@ -30,15 +30,15 @@ export function SigningEmailPreviewModal({
   const landlords = recipients.filter((r) => r.role === "landlord");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      {/* Modal — bottom sheet on mobile, centered on desktop */}
+      <div className="relative bg-surface-container-lowest rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-outline-variant/10">
           <div className="flex items-center gap-3 mb-2">
@@ -212,7 +212,7 @@ export function SigningEmailPreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-end gap-3 bg-surface-container-lowest">
+        <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-end gap-3 bg-surface-container-lowest" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
           <button
             onClick={onClose}
             disabled={sending}
