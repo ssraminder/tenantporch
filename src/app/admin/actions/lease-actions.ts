@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
 import { generateAlbertaLeaseContent, type OwnerData } from "@/lib/lease-templates/alberta";
+import {
+  generateLeaseAgreementContent,
+  generateScheduleAContent,
+  generateScheduleBContent,
+} from "@/lib/lease-templates/alberta-split";
 import { createLeaseDocumentSet, saveLeaseDocumentContent, regenerateLeaseDocumentContent } from "@/lib/lease-documents";
 
 export async function createLease(formData: FormData) {
@@ -187,13 +192,42 @@ export async function createLease(formData: FormData) {
         ownersData
       );
 
+      // Generate split content for individual documents
+      const splitContent = {
+        leaseAgreement: generateLeaseAgreementContent(
+          {
+            lease_type: leaseType || "fixed",
+            start_date: startDate,
+            end_date: endDate || null,
+            monthly_rent: monthlyRent,
+            currency_code: currencyCode,
+            security_deposit: securityDeposit,
+            deposit_paid_date: depositPaidDate || null,
+            utility_split_percent: utilitySplitPercent,
+            internet_included: internetIncluded,
+            pad_enabled: padEnabled,
+            pets_allowed: petsAllowed,
+            smoking_allowed: smokingAllowed,
+            max_occupants: maxOccupants,
+            late_fee_type: lateFeeType,
+            late_fee_amount: lateFeeAmount,
+          },
+          fullProperty,
+          landlordUser,
+          tenantUsers,
+          ownersData
+        ),
+        scheduleA: generateScheduleAContent(fullProperty),
+        scheduleB: generateScheduleBContent(tenantUsers),
+      };
+
       await supabase
         .from("rp_leases")
         .update({ lease_document_content: documentContent })
         .eq("id", lease.id);
 
-      // Dual-write: also create rp_lease_documents row
-      await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id);
+      // Create rp_lease_documents rows (3 documents with split content)
+      await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id, splitContent);
     }
 
     revalidatePath("/admin/properties");
@@ -765,6 +799,37 @@ export async function regenerateLeaseDocument(leaseId: string) {
       ownersData
     );
 
+    // Generate split content for individual documents
+    const leaseParams = {
+      lease_type: lease.lease_type,
+      start_date: lease.start_date,
+      end_date: lease.end_date,
+      monthly_rent: lease.monthly_rent,
+      currency_code: lease.currency_code,
+      security_deposit: lease.security_deposit,
+      deposit_paid_date: lease.deposit_paid_date,
+      utility_split_percent: lease.utility_split_percent,
+      internet_included: lease.internet_included,
+      pad_enabled: lease.pad_enabled,
+      pets_allowed: lease.pets_allowed,
+      smoking_allowed: lease.smoking_allowed,
+      max_occupants: lease.max_occupants,
+      late_fee_type: lease.late_fee_type,
+      late_fee_amount: lease.late_fee_amount,
+    };
+
+    const splitContent = {
+      leaseAgreement: generateLeaseAgreementContent(
+        leaseParams,
+        property,
+        rpUser,
+        tenantUsers,
+        ownersData
+      ),
+      scheduleA: generateScheduleAContent(property),
+      scheduleB: generateScheduleBContent(tenantUsers),
+    };
+
     const { error: updateError } = await supabase
       .from("rp_leases")
       .update({ lease_document_content: documentContent })
@@ -774,8 +839,8 @@ export async function regenerateLeaseDocument(leaseId: string) {
       return { success: false, error: updateError.message };
     }
 
-    // Dual-write: also update rp_lease_documents
-    await regenerateLeaseDocumentContent(supabase, leaseId, documentContent);
+    // Update all 3 rp_lease_documents rows with split content
+    await regenerateLeaseDocumentContent(supabase, leaseId, documentContent, splitContent);
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
     return { success: true, content: documentContent };

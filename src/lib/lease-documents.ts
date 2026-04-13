@@ -120,34 +120,74 @@ export async function saveLeaseDocumentContent(
 }
 
 /**
- * Create the initial set of documents for a new lease.
- * Currently creates a single lease_agreement row (Phase 4 will split into 3).
- * Also writes to rp_leases.lease_document_content for backward compatibility.
+ * Create the initial set of 3 documents for a new lease:
+ * - Lease Agreement (sections 1-12)
+ * - Schedule A (property details)
+ * - Schedule B (tenant identification)
+ * Also writes the full content to rp_leases.lease_document_content for backward compatibility.
  */
 export async function createLeaseDocumentSet(
   supabase: SupabaseClient,
   leaseId: string,
   fullContent: LeaseDocumentContent,
-  createdBy: string
+  createdBy: string,
+  splitContent?: {
+    leaseAgreement: LeaseDocumentContent;
+    scheduleA: LeaseDocumentContent;
+    scheduleB: LeaseDocumentContent;
+  }
 ): Promise<{ success: boolean; error?: string }> {
-  // Insert a lease_agreement row with the full content
+  const rows = splitContent
+    ? [
+        {
+          lease_id: leaseId,
+          document_type: "lease_agreement",
+          title: "Lease Agreement",
+          sort_order: 0,
+          document_content: splitContent.leaseAgreement,
+          signing_status: "draft",
+          created_by: createdBy,
+        },
+        {
+          lease_id: leaseId,
+          document_type: "schedule_a",
+          title: "Schedule A — Property Details",
+          sort_order: 1,
+          document_content: splitContent.scheduleA,
+          signing_status: "draft",
+          created_by: createdBy,
+        },
+        {
+          lease_id: leaseId,
+          document_type: "schedule_b",
+          title: "Schedule B — Tenant Identification",
+          sort_order: 2,
+          document_content: splitContent.scheduleB,
+          signing_status: "draft",
+          created_by: createdBy,
+        },
+      ]
+    : [
+        {
+          lease_id: leaseId,
+          document_type: "lease_agreement",
+          title: "Lease Agreement",
+          sort_order: 0,
+          document_content: fullContent,
+          signing_status: "draft",
+          created_by: createdBy,
+        },
+      ];
+
   const { error: insertError } = await supabase
     .from("rp_lease_documents")
-    .insert({
-      lease_id: leaseId,
-      document_type: "lease_agreement",
-      title: "Lease Agreement",
-      sort_order: 0,
-      document_content: fullContent,
-      signing_status: "draft",
-      created_by: createdBy,
-    });
+    .insert(rows);
 
   if (insertError) {
     return { success: false, error: insertError.message };
   }
 
-  // Dual-write: also set the old column
+  // Dual-write: also set the old column with the full monolithic content
   await supabase
     .from("rp_leases")
     .update({ lease_document_content: fullContent })
@@ -157,22 +197,27 @@ export async function createLeaseDocumentSet(
 }
 
 /**
- * Regenerate a specific lease document's content.
- * Writes to both rp_lease_documents and rp_leases for backward compat.
- * Returns the new content.
+ * Regenerate all lease documents' content.
+ * Updates lease_agreement, schedule_a, and schedule_b rows.
+ * Also writes the full monolithic content to rp_leases for backward compat.
  */
 export async function regenerateLeaseDocumentContent(
   supabase: SupabaseClient,
   leaseId: string,
-  fullContent: LeaseDocumentContent
+  fullContent: LeaseDocumentContent,
+  splitContent?: {
+    leaseAgreement: LeaseDocumentContent;
+    scheduleA: LeaseDocumentContent;
+    scheduleB: LeaseDocumentContent;
+  }
 ): Promise<{ success: boolean; error?: string }> {
-  // Update rp_lease_documents (lease_agreement row)
+  const now = new Date().toISOString();
+
+  // Update lease_agreement row
+  const leaseAgContent = splitContent?.leaseAgreement ?? fullContent;
   const { error: docError } = await supabase
     .from("rp_lease_documents")
-    .update({
-      document_content: fullContent,
-      updated_at: new Date().toISOString(),
-    })
+    .update({ document_content: leaseAgContent, updated_at: now })
     .eq("lease_id", leaseId)
     .eq("document_type", "lease_agreement");
 
@@ -180,7 +225,22 @@ export async function regenerateLeaseDocumentContent(
     return { success: false, error: docError.message };
   }
 
-  // Dual-write: also update the old column
+  // Update schedule_a and schedule_b if split content provided
+  if (splitContent) {
+    await supabase
+      .from("rp_lease_documents")
+      .update({ document_content: splitContent.scheduleA, updated_at: now })
+      .eq("lease_id", leaseId)
+      .eq("document_type", "schedule_a");
+
+    await supabase
+      .from("rp_lease_documents")
+      .update({ document_content: splitContent.scheduleB, updated_at: now })
+      .eq("lease_id", leaseId)
+      .eq("document_type", "schedule_b");
+  }
+
+  // Dual-write: also update the old column with full monolithic content
   await supabase
     .from("rp_leases")
     .update({ lease_document_content: fullContent })
