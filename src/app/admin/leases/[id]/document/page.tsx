@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { LeaseDocumentDashboard } from "@/components/forms/lease-document-dashboard";
-import { getLeaseDocuments } from "@/lib/lease-documents";
+import { LeaseDocumentEditor } from "@/components/forms/lease-document-editor";
+import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
 
 export default async function LeaseDocumentPage({
   params,
@@ -52,23 +52,18 @@ export default async function LeaseDocumentPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenants = (leaseTenants ?? []).map((lt) => lt.rp_users as any);
 
-  // Fetch from rp_lease_documents (new table)
-  const leaseDocuments = await getLeaseDocuments(supabase, leaseId);
+  // Use stored document content
+  const documentContent = lease.lease_document_content as LeaseDocumentContent | null;
 
   // Detect if document has stale/missing tenant data
-  // Check against the first document that has content (lease_agreement)
-  const leaseAgreement = leaseDocuments.find(
-    (d) => d.document_type === "lease_agreement" && d.document_content
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const leaseContent = leaseAgreement?.document_content as any;
   const tenantNames = tenants.map((t: any) => `${t.first_name} ${t.last_name}`);
-  const partiesTenantText = leaseContent?.sections
-    ?.find((s: any) => s.id === "parties")
-    ?.clauses?.find((c: any) => c.id === "parties-tenant")?.text ?? "";
+  const partiesTenantText = documentContent?.sections
+    ?.find((s) => s.id === "parties")
+    ?.clauses?.find((c) => c.id === "parties-tenant")?.text ?? "";
   const tenantDataStale = tenants.length > 0 && !tenantNames.some((name: string) => partiesTenantText.includes(name));
 
   const signingStatus = (lease.signing_status as string) ?? "draft";
+  const isReadOnly = signingStatus === "sent" || signingStatus === "partially_signed" || signingStatus === "completed";
 
   // Fetch property owners (owners + signing authorities) for recipients
   const { data: propertyOwners } = await supabase
@@ -77,7 +72,7 @@ export default async function LeaseDocumentPage({
     .eq("property_id", lease.property_id)
     .in("designation", ["owner", "signing_authority"]);
 
-  // Build recipients list
+  // Build recipients list for signing preview modal
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const landlordRecipients = propertyOwners && propertyOwners.length > 0
     ? propertyOwners.map((po: any, i: number) => ({
@@ -149,21 +144,22 @@ export default async function LeaseDocumentPage({
           { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
           { label: "Properties", href: "/admin/properties", icon: "apartment" },
           { label: property.address_line1, href: `/admin/properties/${lease.property_id}` },
-          { label: "Lease Documents" },
+          { label: "Lease Document" },
         ]}
       />
 
-      <LeaseDocumentDashboard
+      <LeaseDocumentEditor
         leaseId={leaseId}
         propertyId={lease.property_id}
+        documentContent={documentContent}
+        signingStatus={signingStatus}
+        isReadOnly={isReadOnly}
         propertyAddress={`${property.address_line1}, ${property.city}`}
         tenantCount={tenants.length}
         hasUnverifiedTenants={tenants.some(
           (t: any) => t.id_document_status !== "approved"
         )}
         tenantDataStale={tenantDataStale}
-        leaseDocuments={leaseDocuments}
-        signingStatus={signingStatus}
         recipients={recipients}
         emailLogs={emailLogs}
         signedDocumentUrl={signedDocumentUrl}
