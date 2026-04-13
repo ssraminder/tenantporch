@@ -317,17 +317,30 @@ export async function getSigningData(token: string) {
       return { success: false, error: "already_signed" };
     }
 
-    // Get signing request + lease (includes optional lease_document_id)
+    // Get signing request + lease
     const { data: signingRequest } = await supabase
       .from("rp_signing_requests")
       .select(
-        "id, lease_id, lease_document_id, status, expires_at, document_hash"
+        "id, lease_id, status, expires_at, document_hash"
       )
       .eq("id", participant.signing_request_id)
       .single();
 
     if (!signingRequest) {
       return { success: false, error: "Signing request not found" };
+    }
+
+    // Check for per-document signing (lease_document_id may not exist yet)
+    let leaseDocumentId: string | null = null;
+    try {
+      const { data: srExtra } = await supabase
+        .from("rp_signing_requests")
+        .select("lease_document_id")
+        .eq("id", signingRequest.id)
+        .single();
+      leaseDocumentId = srExtra?.lease_document_id ?? null;
+    } catch {
+      // Column may not exist yet — safe to ignore
     }
 
     // Check expiry
@@ -368,11 +381,11 @@ export async function getSigningData(token: string) {
     let documentContent = lease.lease_document_content;
     let documentTitle = "Residential Lease Agreement";
 
-    if (signingRequest.lease_document_id) {
+    if (leaseDocumentId) {
       const { data: leaseDoc } = await supabase
         .from("rp_lease_documents")
         .select("document_content, title")
-        .eq("id", signingRequest.lease_document_id)
+        .eq("id", leaseDocumentId)
         .single();
 
       if (leaseDoc?.document_content) {
@@ -479,15 +492,28 @@ export async function submitSignature(
       return { success: false, error: "You have already signed this document" };
     }
 
-    // Get signing request (includes optional lease_document_id)
+    // Get signing request
     const { data: signingRequest } = await supabase
       .from("rp_signing_requests")
-      .select("id, lease_id, lease_document_id, status, expires_at")
+      .select("id, lease_id, status, expires_at")
       .eq("id", participant.signing_request_id)
       .single();
 
     if (!signingRequest) {
       return { success: false, error: "Signing request not found" };
+    }
+
+    // Check for per-document signing (lease_document_id may not exist yet)
+    let leaseDocumentId: string | null = null;
+    try {
+      const { data: srExtra } = await supabase
+        .from("rp_signing_requests")
+        .select("lease_document_id")
+        .eq("id", signingRequest.id)
+        .single();
+      leaseDocumentId = srExtra?.lease_document_id ?? null;
+    } catch {
+      // Column may not exist yet
     }
 
     if (
@@ -564,14 +590,14 @@ export async function submitSignature(
         .eq("id", signingRequest.lease_id);
 
       // Update rp_lease_documents if this is a per-document signing
-      if (signingRequest.lease_document_id) {
+      if (leaseDocumentId) {
         await supabase
           .from("rp_lease_documents")
           .update({
             signing_status: "completed",
             updated_at: new Date().toISOString(),
           })
-          .eq("id", signingRequest.lease_document_id);
+          .eq("id", leaseDocumentId);
       }
 
       await supabase.from("rp_signing_audit_log").insert({
@@ -580,7 +606,7 @@ export async function submitSignature(
         metadata: {
           total_participants: allParticipants?.length,
           lease_id: signingRequest.lease_id,
-          lease_document_id: signingRequest.lease_document_id,
+          lease_document_id: leaseDocumentId,
         },
       });
 
@@ -747,14 +773,14 @@ export async function submitSignature(
         .eq("id", signingRequest.lease_id);
 
       // Update rp_lease_documents if this is a per-document signing
-      if (signingRequest.lease_document_id) {
+      if (leaseDocumentId) {
         await supabase
           .from("rp_lease_documents")
           .update({
             signing_status: "partially_signed",
             updated_at: new Date().toISOString(),
           })
-          .eq("id", signingRequest.lease_document_id);
+          .eq("id", leaseDocumentId);
       }
 
       // Check if all TENANTS have signed → send landlord signing email
