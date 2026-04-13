@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
 import { generateAlbertaLeaseContent, type OwnerData } from "@/lib/lease-templates/alberta";
+import { createLeaseDocumentSet, saveLeaseDocumentContent, regenerateLeaseDocumentContent } from "@/lib/lease-documents";
 
 export async function createLease(formData: FormData) {
   try {
@@ -190,6 +191,9 @@ export async function createLease(formData: FormData) {
         .from("rp_leases")
         .update({ lease_document_content: documentContent })
         .eq("id", lease.id);
+
+      // Dual-write: also create rp_lease_documents row
+      await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id);
     }
 
     revalidatePath("/admin/properties");
@@ -568,6 +572,18 @@ export async function saveLeaseDocument(
       return { success: false, error: updateError.message };
     }
 
+    // Dual-write: also update rp_lease_documents
+    const { data: leaseDoc } = await supabase
+      .from("rp_lease_documents")
+      .select("id")
+      .eq("lease_id", leaseId)
+      .eq("document_type", "lease_agreement")
+      .single();
+
+    if (leaseDoc) {
+      await saveLeaseDocumentContent(supabase, leaseDoc.id, documentContent);
+    }
+
     revalidatePath(`/admin/leases/${leaseId}/document`);
     return { success: true };
   } catch (error) {
@@ -685,6 +701,9 @@ export async function regenerateLeaseDocument(leaseId: string) {
     if (updateError) {
       return { success: false, error: updateError.message };
     }
+
+    // Dual-write: also update rp_lease_documents
+    await regenerateLeaseDocumentContent(supabase, leaseId, documentContent);
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
     return { success: true, content: documentContent };

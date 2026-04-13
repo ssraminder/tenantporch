@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { LeaseDocumentEditor } from "@/components/forms/lease-document-editor";
 import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
+import { getLeaseDocuments } from "@/lib/lease-documents";
 
 export default async function LeaseDocumentPage({
   params,
@@ -51,6 +52,9 @@ export default async function LeaseDocumentPage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenants = (leaseTenants ?? []).map((lt) => lt.rp_users as any);
+
+  // Fetch from rp_lease_documents (new table) for Phase 3+ use
+  const leaseDocuments = await getLeaseDocuments(supabase, leaseId);
 
   // Use stored document content or generate fresh
   const documentContent = lease.lease_document_content as LeaseDocumentContent | null;
