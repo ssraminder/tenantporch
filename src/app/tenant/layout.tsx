@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Sidebar, type NavItem } from "@/components/layout/sidebar";
 import { BottomTabs, type TabItem } from "@/components/layout/bottom-tabs";
 import { TopBar } from "@/components/layout/top-bar";
@@ -42,7 +43,11 @@ export default async function TenantLayout({
   if (!rpUser || rpUser.role === "landlord") redirect("/admin/dashboard");
 
   // Force password change for auto-created accounts
-  if (rpUser.must_change_password) redirect("/tenant/change-password");
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  if (rpUser.must_change_password && !pathname.includes("/change-password")) {
+    redirect("/tenant/change-password");
+  }
 
   // Fetch tenant's property address for sidebar
   let propertyAddress: string | null = null;

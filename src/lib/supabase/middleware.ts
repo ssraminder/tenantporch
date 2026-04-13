@@ -57,5 +57,8 @@ export async function updateSession(request: NextRequest) {
   // Role-based redirects are handled by the /tenant and /admin layouts
   // to avoid expensive DB queries in edge middleware
 
+  // Forward pathname so server layouts can read it
+  supabaseResponse.headers.set("x-pathname", pathname);
+
   return supabaseResponse;
 }
