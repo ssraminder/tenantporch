@@ -720,8 +720,9 @@ export async function submitSignature(
             signatures
           );
 
-          // Upload to Supabase Storage
-          const storagePath = `${propertyId}/${Date.now()}_Signed_${signedDocFileSlug}.pdf`;
+          // Upload to Supabase Storage organized by
+          // <property_id>/<document_type>/<timestamp>_Signed_<slug>.pdf
+          const storagePath = `${propertyId}/${signedDocCategory}/${Date.now()}_Signed_${signedDocFileSlug}.pdf`;
           const { data: uploadData, error: uploadError } =
             await adminClient.storage
               .from("documents")
@@ -1343,7 +1344,8 @@ export async function markLeaseSignedOffline(
         return { success: false, error: "File size must be under 20MB" };
       }
 
-      const filePath = `lease-documents/${leaseId}/${Date.now()}-signed-lease.pdf`;
+      // Storage organized by <property_id>/<document_type>/<file>
+      const filePath = `${lease.property_id}/lease/${Date.now()}_Signed_Lease_Agreement.pdf`;
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, file, { upsert: true });

@@ -15,6 +15,14 @@ type Property = {
   monthly_rent: number | null;
 };
 
+type TemplateOption = {
+  id: string;
+  name: string;
+  description: string | null;
+  province_code: string;
+  defaults: Record<string, unknown> | null;
+};
+
 export default function NewLeasePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,10 +32,12 @@ export default function NewLeasePage() {
 
   // Data state
   const [properties, setProperties] = useState<Property[]>([]);
+  const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [planFeatures, setPlanFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form state
+  const [templateId, setTemplateId] = useState("");
   const [propertyId, setPropertyId] = useState(initialPropertyId);
   const [leaseType, setLeaseType] = useState<"fixed" | "month_to_month">("fixed");
   const [startDate, setStartDate] = useState("");
@@ -73,6 +83,23 @@ export default function NewLeasePage() {
           .order("address_line1");
         setProperties(propData ?? []);
 
+        // Fetch landlord's lease templates (own + system-shared)
+        const { data: tplData } = await supabase
+          .from("rp_lease_templates")
+          .select("id, name, description, province_code, defaults, landlord_id")
+          .or(`landlord_id.eq.${rpUser.id},landlord_id.is.null`)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+        setTemplates(
+          (tplData ?? []).map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            province_code: t.province_code,
+            defaults: t.defaults ?? null,
+          }))
+        );
+
         // Fetch plan features
         const { data: landlordProfile } = await supabase
           .from("rp_landlord_profiles")
@@ -105,6 +132,26 @@ export default function NewLeasePage() {
       }
     }
   }, [propertyId, properties]);
+
+  // When template selection changes, prefill defaults that map onto form fields.
+  useEffect(() => {
+    if (!templateId) return;
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl?.defaults) return;
+    const d = tpl.defaults as Record<string, unknown>;
+    if (typeof d.utility_split_percent === "number")
+      setUtilitySplitPercent(String(d.utility_split_percent));
+    if (typeof d.internet_included === "boolean")
+      setInternetIncluded(d.internet_included);
+    if (typeof d.pets_allowed === "boolean") setPetsAllowed(d.pets_allowed);
+    if (typeof d.smoking_allowed === "boolean")
+      setSmokingAllowed(d.smoking_allowed);
+    if (typeof d.max_occupants === "number")
+      setMaxOccupants(String(d.max_occupants));
+    if (typeof d.late_fee_type === "string") setLateFeeType(d.late_fee_type);
+    if (typeof d.late_fee_amount === "number")
+      setLateFeeAmount(String(d.late_fee_amount));
+  }, [templateId, templates]);
 
   const hasFeature = (feature: string) =>
     planFeatures.includes("all") || planFeatures.includes(feature);
@@ -153,6 +200,9 @@ export default function NewLeasePage() {
       formData.set("max_occupants", maxOccupants);
       formData.set("late_fee_type", lateFeeType);
       formData.set("late_fee_amount", lateFeeType !== "none" ? lateFeeAmount : "0");
+      if (templateId) {
+        formData.set("template_id", templateId);
+      }
 
       const result = await createLease(formData);
 
@@ -270,6 +320,45 @@ export default function NewLeasePage() {
               <p className="text-sm font-medium text-on-error-container">{error}</p>
             </div>
           )}
+
+          {/* Template picker */}
+          <div>
+            <label
+              htmlFor="template"
+              className="block text-sm font-bold text-primary mb-2"
+            >
+              Use My Template (optional)
+            </label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">
+                description
+              </span>
+              <select
+                id="template"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                className="w-full pl-10 pr-10 py-3 bg-surface-container-low rounded-xl text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all cursor-pointer"
+              >
+                <option value="">No template — generic Alberta lease</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.province_code})
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">
+                expand_more
+              </span>
+            </div>
+            {templateId && (
+              <p className="text-xs text-on-surface-variant mt-2">
+                Template content will be populated with the lease&apos;s tenants, dates, and rent on creation. You can edit it from the lease document page afterwards.
+              </p>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-outline-variant/15" />
 
           {/* Property select */}
           <div>

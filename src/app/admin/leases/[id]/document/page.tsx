@@ -170,6 +170,7 @@ export default async function LeaseDocumentPage({
         emailLogs={emailLogs}
         signedDocumentUrl={signedDocumentUrl}
         isPlatformAdmin={isPlatformAdmin(rpUser.email)}
+        leaseStatus={lease.status as string}
       />
 
       <AdditionalDocumentsSection

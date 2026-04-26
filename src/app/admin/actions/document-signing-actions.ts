@@ -321,7 +321,7 @@ export async function markDocumentSignedOffline(
     // Fetch document and verify ownership
     const { data: leaseDoc } = await supabase
       .from("rp_lease_documents")
-      .select("id, lease_id, title, signing_status")
+      .select("id, lease_id, title, signing_status, document_type")
       .eq("id", documentId)
       .single();
 
@@ -366,7 +366,22 @@ export async function markDocumentSignedOffline(
         return { success: false, error: "File size must be under 20MB" };
       }
 
-      const filePath = `lease-documents/${leaseDoc.lease_id}/${Date.now()}-signed-${leaseDoc.title.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+      // Storage path mirrors the online signing path:
+      // <property_id>/<document_type>/<timestamp>_Signed_<slug>.pdf
+      const docType = (leaseDoc.document_type as string) || "lease_agreement";
+      const category =
+        docType === "schedule_a"
+          ? "schedule_a"
+          : docType === "schedule_b"
+            ? "schedule_b"
+            : docType === "lease_agreement"
+              ? "lease"
+              : "other";
+      const slug =
+        leaseDoc.title.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "") ||
+        docType ||
+        "Document";
+      const filePath = `${lease.property_id}/${category}/${Date.now()}_Signed_${slug}.pdf`;
       const { error: uploadError } = await supabase.storage
         .from("documents")
         .upload(filePath, file, { upsert: true });
@@ -385,11 +400,7 @@ export async function markDocumentSignedOffline(
         property_id: lease.property_id,
         lease_id: lease.id,
         uploaded_by: rpUser.id,
-        category: leaseDoc.title.toLowerCase().includes("schedule a")
-          ? "schedule_a"
-          : leaseDoc.title.toLowerCase().includes("schedule b")
-            ? "schedule_b"
-            : "lease",
+        category,
         title: `Signed ${leaseDoc.title}`,
         file_url: signedPdfUrl,
         file_size: file.size,

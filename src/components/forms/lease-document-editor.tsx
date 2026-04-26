@@ -38,6 +38,8 @@ interface LeaseDocumentEditorProps {
   parentUrl?: string;
   /** True if the current user is a TenantPorch platform admin (gates destructive actions) */
   isPlatformAdmin?: boolean;
+  /** Lifecycle status of the lease ('draft' | 'active' | 'expired' | 'terminated' | 'completed'). */
+  leaseStatus?: string;
 }
 
 export function LeaseDocumentEditor({
@@ -57,6 +59,7 @@ export function LeaseDocumentEditor({
   documentTitle,
   parentUrl,
   isPlatformAdmin = false,
+  leaseStatus,
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -77,6 +80,12 @@ export function LeaseDocumentEditor({
   const offlineFileRef = useRef<HTMLInputElement>(null);
   const [resettingSignatures, setResettingSignatures] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [terminatingLease, setTerminatingLease] = useState(false);
+  const [deletingLease, setDeletingLease] = useState(false);
+  const [savingAsTemplate, setSavingAsTemplate] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
   const [generatingManualLinks, setGeneratingManualLinks] = useState(false);
   const [manualSigningLinks, setManualSigningLinks] = useState<
     | {
@@ -222,6 +231,26 @@ export function LeaseDocumentEditor({
   async function handleSendForSignatures() {
     setSendingForSign(true);
     try {
+      // Per-document signing: each document (Lease Agreement, Schedule A,
+      // Schedule B, addendums, custom) has its own signing flow.
+      if (documentId) {
+        const { sendDocumentForSignatures } = await import(
+          "@/app/admin/actions/document-signing-actions"
+        );
+        const result = await sendDocumentForSignatures(documentId, {
+          overrideIdCheck: idOverrideAcknowledged,
+        });
+        if (result.success) {
+          toast.success(
+            "Document sent for signatures. Tenants will be notified first; the landlord receives a signing link after all tenants finish."
+          );
+          router.refresh();
+        } else {
+          toast.error(result.error ?? "Failed to send for signatures.");
+        }
+        return;
+      }
+
       const { sendForSignatures } = await import("@/app/admin/actions/signing-actions");
       const result = await sendForSignatures(leaseId, {
         overrideIdCheck: idOverrideAcknowledged,
@@ -242,6 +271,8 @@ export function LeaseDocumentEditor({
   async function handleGenerateManualLinks() {
     setGeneratingManualLinks(true);
     try {
+      // Per-document path doesn't expose manual-link generation yet; fall
+      // back to the lease-wide flow so the landlord can copy URLs out of band.
       const { sendForSignatures } = await import("@/app/admin/actions/signing-actions");
       const result = await sendForSignatures(leaseId, {
         overrideIdCheck: idOverrideAcknowledged || hasUnverifiedTenants,
@@ -268,6 +299,89 @@ export function LeaseDocumentEditor({
       setTimeout(() => setCopiedTokenId((current) => (current === id ? null : current)), 1800);
     } catch {
       toast.error("Failed to copy link");
+    }
+  }
+
+  async function handleTerminateLease() {
+    if (
+      !confirm(
+        "Terminate this lease? It will be marked as terminated with today's end date. This cannot be undone."
+      )
+    ) {
+      return;
+    }
+    setTerminatingLease(true);
+    try {
+      const { terminateLease } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const result = await terminateLease(leaseId);
+      if (result.success) {
+        toast.success("Lease terminated.");
+        router.push(`/admin/properties/${propertyId}`);
+      } else {
+        toast.error(result.error ?? "Failed to terminate lease.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setTerminatingLease(false);
+    }
+  }
+
+  async function handleDeleteLease() {
+    if (
+      !confirm(
+        "Delete this draft lease? All draft documents on it will be removed. This cannot be undone."
+      )
+    ) {
+      return;
+    }
+    setDeletingLease(true);
+    try {
+      const { deleteLease } = await import(
+        "@/app/admin/actions/lease-actions"
+      );
+      const result = await deleteLease(leaseId);
+      if (result.success) {
+        toast.success("Draft lease deleted.");
+        router.push(`/admin/properties/${propertyId}`);
+      } else {
+        toast.error(result.error ?? "Failed to delete lease.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setDeletingLease(false);
+    }
+  }
+
+  async function handleSaveAsTemplate() {
+    if (!templateName.trim()) {
+      toast.error("Template name is required.");
+      return;
+    }
+    setSavingAsTemplate(true);
+    try {
+      const { saveLeaseAsTemplate } = await import(
+        "@/app/admin/actions/lease-template-actions"
+      );
+      const result = await saveLeaseAsTemplate(leaseId, {
+        name: templateName.trim(),
+        description: templateDescription.trim() || null,
+      });
+      if (result.success) {
+        toast.success("Saved as a reusable template.");
+        setShowSaveAsTemplate(false);
+        setTemplateName("");
+        setTemplateDescription("");
+      } else {
+        toast.error(result.error ?? "Failed to save template.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setSavingAsTemplate(false);
     }
   }
 
@@ -507,6 +621,22 @@ export function LeaseDocumentEditor({
             onChange={handleUploadDocument}
             className="hidden"
           />
+
+          {!documentId && (
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateName("");
+                setTemplateDescription("");
+                setShowSaveAsTemplate(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors"
+              title="Snapshot the current lease's documents into a reusable template"
+            >
+              <span className="material-symbols-outlined text-sm">bookmark_add</span>
+              Save as Template
+            </button>
+          )}
 
           <div className="flex-1" />
 
@@ -828,6 +958,127 @@ export function LeaseDocumentEditor({
               Reset Signatures
             </button>
           )}
+        </div>
+      )}
+
+      {/* Save as Template modal */}
+      {showSaveAsTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => !savingAsTemplate && setShowSaveAsTemplate(false)}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="px-6 py-5 border-b border-outline-variant/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-primary text-xl">
+                    bookmark_add
+                  </span>
+                </div>
+                <div>
+                  <h2 className="font-headline text-lg font-extrabold text-primary">
+                    Save as Template
+                  </h2>
+                  <p className="text-sm text-on-surface-variant mt-0.5">
+                    Saves this lease&apos;s documents as a template you can reuse for future tenants.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-primary mb-2">
+                  Template Name <span className="text-error">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="e.g. Alberta Furnished Suite (Standard)"
+                  className="w-full px-3 py-2.5 bg-surface-container-low rounded-xl text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-primary mb-2">
+                  Description (optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  placeholder="What makes this template useful?"
+                  className="w-full px-3 py-2.5 bg-surface-container-low rounded-xl text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-surface-container-low flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSaveAsTemplate(false)}
+                disabled={savingAsTemplate}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface hover:bg-surface-container-high"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAsTemplate}
+                disabled={savingAsTemplate || !templateName.trim()}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {savingAsTemplate ? "progress_activity" : "save"}
+                </span>
+                {savingAsTemplate ? "Saving..." : "Save Template"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lease Lifecycle (Terminate / Delete) — only when not editing a sub-document */}
+      {!documentId && leaseStatus && (leaseStatus === "active" || leaseStatus === "draft") && (
+        <div className="bg-surface-container-lowest rounded-3xl shadow-ambient-sm overflow-hidden border border-error/20">
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="material-symbols-outlined text-error">warning</span>
+              <h2 className="text-lg font-headline font-bold text-error">Danger Zone</h2>
+            </div>
+            <p className="text-sm text-on-surface-variant mb-6">
+              {leaseStatus === "active"
+                ? "Terminating a lease ends it immediately and sets the end date to today. This cannot be undone."
+                : "This lease is in draft. You can permanently delete it (and all its draft documents) before sending for signing."}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {leaseStatus === "active" && (
+                <button
+                  type="button"
+                  onClick={handleTerminateLease}
+                  disabled={terminatingLease}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-error text-on-error text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {terminatingLease ? "progress_activity" : "gavel"}
+                  </span>
+                  {terminatingLease ? "Terminating..." : "Terminate Lease"}
+                </button>
+              )}
+              {leaseStatus === "draft" && (
+                <button
+                  type="button"
+                  onClick={handleDeleteLease}
+                  disabled={deletingLease}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-error text-on-error text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {deletingLease ? "progress_activity" : "delete_forever"}
+                  </span>
+                  {deletingLease ? "Deleting..." : "Delete Draft Lease"}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

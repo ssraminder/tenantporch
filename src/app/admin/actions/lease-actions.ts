@@ -64,6 +64,7 @@ export async function createLease(formData: FormData) {
       (formData.get("late_fee_type") as string) || "flat";
     const lateFeeAmount =
       parseFloat(formData.get("late_fee_amount") as string) || 50;
+    const templateId = (formData.get("template_id") as string) || null;
 
     if (!propertyId) {
       return { success: false, error: "Property ID is required" };
@@ -84,18 +85,31 @@ export async function createLease(formData: FormData) {
       return { success: false, error: "You do not own this property" };
     }
 
-    // Check no other active lease exists for this property
-    const { data: existingLease } = await supabase
+    // Allow multiple leases on a property as long as no ACTIVE lease overlaps
+    // with the new one. A lease is considered overlapping if it is currently
+    // active and its term has not yet ended on the new lease's start_date.
+    // (Drafts, expired, terminated, and completed leases never block creation.)
+    const newStart = startDate ? new Date(startDate + "T00:00:00") : null;
+    const { data: activeLeases } = await supabase
       .from("rp_leases")
-      .select("id")
+      .select("id, end_date, lease_type")
       .eq("property_id", propertyId)
-      .eq("status", "active")
-      .maybeSingle();
+      .eq("status", "active");
 
-    if (existingLease) {
+    const blockingLease = (activeLeases ?? []).find((l) => {
+      // Month-to-month with no end date always blocks until terminated.
+      if (!l.end_date) return true;
+      // Fixed-term blocks only if it overlaps the new start date.
+      if (!newStart) return true; // no new start_date → can't reason about overlap
+      const existingEnd = new Date(l.end_date + "T00:00:00");
+      return existingEnd >= newStart;
+    });
+
+    if (blockingLease) {
       return {
         success: false,
-        error: "An active lease already exists for this property. Please end the current lease before creating a new one.",
+        error:
+          "An active lease overlaps with this new lease's start date. Terminate or wait for the current lease to end, or pick a start date after it ends.",
       };
     }
 
@@ -224,6 +238,22 @@ export async function createLease(formData: FormData) {
       // Create rp_lease_documents rows (3 documents with split content)
       // Also dual-writes to rp_leases.lease_document_content for backward compat
       await createLeaseDocumentSet(supabase, lease.id, documentContent, rpUser.id, splitContent);
+    }
+
+    // If a landlord template was picked, render its placeholders against the
+    // lease's data and replace the rp_lease_documents content. This runs AFTER
+    // the default content set above so the template wins.
+    if (templateId) {
+      try {
+        const { applyTemplateToLease } = await import(
+          "./lease-template-actions"
+        );
+        await applyTemplateToLease(lease.id, templateId);
+      } catch (err) {
+        // Template application failure should not block lease creation —
+        // surface to logs but allow the user to retry from the document page.
+        console.error("Failed to apply template to lease", err);
+      }
     }
 
     // Create security deposit record if deposit amount is set
@@ -968,6 +998,99 @@ export async function uploadLeaseDocument(formData: FormData) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "An unexpected error occurred",
+    };
+  }
+}
+
+/**
+ * Delete a lease. Only allowed when the lease is in `draft` status with
+ * `signing_status='draft'` and no completed signatures recorded — i.e. the
+ * lease has never been sent for signing. Cascades cleanly because
+ * rp_lease_documents and rp_signing_requests both reference the lease via
+ * ON DELETE CASCADE.
+ */
+export async function deleteLease(leaseId: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const { data: rpUser, error: rpUserError } = await supabase
+      .from("rp_users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (rpUserError || !rpUser) {
+      return { success: false, error: "User profile not found" };
+    }
+
+    const { data: lease, error: leaseError } = await supabase
+      .from("rp_leases")
+      .select(
+        "id, property_id, status, signing_status, sent_for_signing_at, rp_properties(landlord_id)"
+      )
+      .eq("id", leaseId)
+      .single();
+
+    if (leaseError || !lease) {
+      return { success: false, error: "Lease not found" };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const landlordId = (lease.rp_properties as any)?.landlord_id;
+    if (landlordId !== rpUser.id) {
+      return { success: false, error: "You do not own this lease" };
+    }
+
+    if (lease.status !== "draft") {
+      return {
+        success: false,
+        error:
+          "Only draft leases can be deleted. Use 'Terminate Lease' for active leases.",
+      };
+    }
+
+    if (lease.signing_status && lease.signing_status !== "draft") {
+      return {
+        success: false,
+        error:
+          "This lease has already been sent for signatures. Cancel the signing flow first, or terminate the lease.",
+      };
+    }
+
+    if (lease.sent_for_signing_at) {
+      return {
+        success: false,
+        error: "This lease was sent for signing previously and cannot be deleted.",
+      };
+    }
+
+    const { error: deleteError } = await supabase
+      .from("rp_leases")
+      .delete()
+      .eq("id", leaseId);
+
+    if (deleteError) {
+      return { success: false, error: deleteError.message };
+    }
+
+    revalidatePath("/admin/properties");
+    revalidatePath(`/admin/properties/${lease.property_id}`);
+    revalidatePath("/admin/dashboard");
+
+    return { success: true, propertyId: lease.property_id };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
     };
   }
 }

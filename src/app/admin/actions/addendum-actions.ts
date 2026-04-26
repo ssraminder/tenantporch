@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
+import { sendSigningEmail } from "@/lib/email";
 import {
   generateAlbertaAddendumContent,
   type AddendumDocumentContent,
@@ -260,29 +261,34 @@ export async function sendAddendumForSigning(addendumId: string) {
       };
     }
 
-    // Create participants
+    // Match the lease-document signing flow: tenants sign first (order 1..n),
+    // then landlord (order n+1). submitSignature's "all tenants signed →
+    // email the landlord" handler then naturally fires for addendums too.
     const participants = [
-      {
-        signing_request_id: signingRequest.id,
-        signer_name: `${rpUser.first_name} ${rpUser.last_name}`,
-        signer_email: rpUser.email,
-        signer_role: "landlord",
-        signing_order: 1,
-        token: generateToken(),
-        status: "pending",
-      },
       ...signingTenants.map((t: any, i: number) => ({
         signing_request_id: signingRequest.id,
         signer_name: `${t.first_name} ${t.last_name}`,
         signer_email: t.email,
         signer_role: "tenant",
-        signing_order: i + 2,
+        signing_order: i + 1,
         token: generateToken(),
         status: "pending",
       })),
+      {
+        signing_request_id: signingRequest.id,
+        signer_name: `${rpUser.first_name} ${rpUser.last_name}`,
+        signer_email: rpUser.email,
+        signer_role: "landlord",
+        signing_order: signingTenants.length + 1,
+        token: generateToken(),
+        status: "pending",
+      },
     ];
 
-    await supabase.from("rp_signing_participants").insert(participants);
+    const { data: insertedParticipants } = await supabase
+      .from("rp_signing_participants")
+      .insert(participants)
+      .select("id, signer_name, signer_email, signer_role, token");
 
     // Update addendum
     await supabase
@@ -315,6 +321,54 @@ export async function sendAddendumForSigning(addendumId: string) {
         type: "lease",
         urgency: "high",
       });
+    }
+
+    // Send signing emails to tenants first. Landlord receives their link
+    // automatically once every tenant has signed (via submitSignature).
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+    const expiresAt = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const tenantParticipants = (insertedParticipants ?? []).filter(
+      (p) => p.signer_role === "tenant"
+    );
+    const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
+    const landlordEmail = rpUser.email;
+
+    for (const tp of tenantParticipants) {
+      try {
+        const emailResult = await sendSigningEmail({
+          to: tp.signer_email,
+          signerName: tp.signer_name,
+          signerRole: "tenant",
+          propertyAddress,
+          landlordName,
+          landlordEmail,
+          signingUrl: `${appUrl}/sign/${tp.token}`,
+          expiresAt,
+        });
+
+        await supabase
+          .from("rp_signing_participants")
+          .update({ notified_at: new Date().toISOString() })
+          .eq("id", tp.id);
+
+        if (emailResult.data?.id) {
+          await supabase.from("rp_email_logs").insert({
+            signing_request_id: signingRequest.id,
+            participant_id: tp.id,
+            recipient_email: tp.signer_email,
+            recipient_name: tp.signer_name,
+            email_type: "signing_request",
+            resend_message_id: emailResult.data.id,
+            status: "sent",
+            subject: `Action Required: Sign Addendum "${addendum.title}" for ${propertyAddress}`,
+          });
+        }
+      } catch {
+        // Email failure should not break the signing flow
+      }
     }
 
     revalidatePath(`/admin/properties/${addendum.property_id}`);
