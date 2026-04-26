@@ -4,6 +4,27 @@
  */
 
 /**
+ * Format a day-of-month number as a recurring rent-due-day string.
+ * 1  -> "1st of every month"
+ * 2  -> "2nd of every month"
+ * 23 -> "23rd of every month"
+ * 31 -> "last day of every month" (so the lease still makes sense in February)
+ */
+export function formatRentDueDay(day: number | null | undefined): string {
+  if (day == null || day < 1 || day > 31) return "";
+  if (day === 31) return "last day of every month";
+  const j = day % 10;
+  const k = day % 100;
+  let suffix = "th";
+  if (k < 11 || k > 13) {
+    if (j === 1) suffix = "st";
+    else if (j === 2) suffix = "nd";
+    else if (j === 3) suffix = "rd";
+  }
+  return `${day}${suffix} of every month`;
+}
+
+/**
  * Get today's date as YYYY-MM-DD string in America/Edmonton timezone.
  * Avoids timezone bugs when comparing with date-only strings from the database.
  */

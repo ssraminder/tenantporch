@@ -6,6 +6,7 @@ import { LeaseDocumentEditor } from "@/components/forms/lease-document-editor";
 import { AdditionalDocumentsSection } from "@/components/forms/additional-documents-section";
 import type { LeaseDocumentContent } from "@/lib/lease-templates/alberta";
 import { getLeaseDocuments } from "@/lib/lease-documents";
+import { isPlatformAdmin } from "@/lib/auth/platform-admin";
 
 export default async function LeaseDocumentPage({
   params,
@@ -168,6 +169,7 @@ export default async function LeaseDocumentPage({
         recipients={recipients}
         emailLogs={emailLogs}
         signedDocumentUrl={signedDocumentUrl}
+        isPlatformAdmin={isPlatformAdmin(rpUser.email)}
       />
 
       <AdditionalDocumentsSection
