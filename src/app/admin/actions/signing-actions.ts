@@ -32,7 +32,7 @@ function generateToken(): string {
  */
 export async function sendForSignatures(
   leaseId: string,
-  options?: { overrideIdCheck?: boolean }
+  options?: { overrideIdCheck?: boolean; skipEmail?: boolean }
 ) {
   try {
     const supabase = await createClient();
@@ -227,63 +227,79 @@ export async function sendForSignatures(
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    // Send signing emails to tenants ONLY (landlord signs after all tenants)
+    // Send signing emails to tenants ONLY (landlord signs after all tenants).
+    // Manual mode: skip email + in-app notifications and just return the
+    // participant URLs so the landlord can share them out of band.
     const tenantParticipants = (insertedParticipants ?? []).filter(
       (p) => p.signer_role === "tenant"
     );
 
-    for (const tp of tenantParticipants) {
-      try {
-        const emailResult = await sendSigningEmail({
-          to: tp.signer_email,
-          signerName: tp.signer_name,
-          signerRole: "tenant",
-          propertyAddress,
-          landlordName,
-          landlordEmail,
-          signingUrl: `${appUrl}/sign/${tp.token}`,
-          expiresAt,
-        });
-
-        // Update notified_at
-        await supabase
-          .from("rp_signing_participants")
-          .update({ notified_at: new Date().toISOString() })
-          .eq("id", tp.id);
-
-        // Log the email
-        if (emailResult.data?.id) {
-          await supabase.from("rp_email_logs").insert({
-            signing_request_id: signingRequest.id,
-            participant_id: tp.id,
-            recipient_email: tp.signer_email,
-            recipient_name: tp.signer_name,
-            email_type: "signing_request",
-            resend_message_id: emailResult.data.id,
-            status: "sent",
-            subject: `Action Required: Sign Your Lease for ${propertyAddress}`,
+    if (!options?.skipEmail) {
+      for (const tp of tenantParticipants) {
+        try {
+          const emailResult = await sendSigningEmail({
+            to: tp.signer_email,
+            signerName: tp.signer_name,
+            signerRole: "tenant",
+            propertyAddress,
+            landlordName,
+            landlordEmail,
+            signingUrl: `${appUrl}/sign/${tp.token}`,
+            expiresAt,
           });
-        }
-      } catch {
-        // Email failure should not break the signing flow
-      }
-    }
 
-    // Create in-app notifications for tenants
-    for (const t of tenants) {
-      await createNotification(supabase, {
-        userId: t.id,
-        title: "Lease Ready for Signing",
-        body: `Your lease for ${propertyAddress} is ready for electronic signature. Check your email for the signing link.`,
-        type: "lease",
-        urgency: "high",
-      });
+          // Update notified_at
+          await supabase
+            .from("rp_signing_participants")
+            .update({ notified_at: new Date().toISOString() })
+            .eq("id", tp.id);
+
+          // Log the email
+          if (emailResult.data?.id) {
+            await supabase.from("rp_email_logs").insert({
+              signing_request_id: signingRequest.id,
+              participant_id: tp.id,
+              recipient_email: tp.signer_email,
+              recipient_name: tp.signer_name,
+              email_type: "signing_request",
+              resend_message_id: emailResult.data.id,
+              status: "sent",
+              subject: `Action Required: Sign Your Lease for ${propertyAddress}`,
+            });
+          }
+        } catch {
+          // Email failure should not break the signing flow
+        }
+      }
+
+      // Create in-app notifications for tenants
+      for (const t of tenants) {
+        await createNotification(supabase, {
+          userId: t.id,
+          title: "Lease Ready for Signing",
+          body: `Your lease for ${propertyAddress} is ready for electronic signature. Check your email for the signing link.`,
+          type: "lease",
+          urgency: "high",
+        });
+      }
     }
 
     revalidatePath(`/admin/leases/${leaseId}/document`);
     revalidatePath(`/admin/properties/${lease.property_id}`);
 
-    return { success: true, signingRequestId: signingRequest.id };
+    const participantLinks = (insertedParticipants ?? []).map((p) => ({
+      id: p.id,
+      name: p.signer_name,
+      email: p.signer_email,
+      role: p.signer_role,
+      url: `${appUrl}/sign/${p.token}`,
+    }));
+
+    return {
+      success: true,
+      signingRequestId: signingRequest.id,
+      participants: participantLinks,
+    };
   } catch (error) {
     return {
       success: false,
@@ -638,12 +654,42 @@ export async function submitSignature(
           .eq("id", signingRequest.lease_id)
           .single();
 
-        if (completedLease?.lease_document_content) {
+        // For per-document signings, prefer the document's own content/title
+        // over the legacy lease-wide content. This way Schedule A or Schedule B
+        // signs into a PDF of *that* document, not the whole lease.
+        let signedDocContent: any = completedLease?.lease_document_content;
+        let signedDocTitleBase = "Lease Agreement";
+        let signedDocCategory: "lease" | "schedule_a" | "schedule_b" | "other" =
+          "lease";
+        let signedDocFileSlug = "Lease_Agreement";
+
+        if (leaseDocumentId) {
+          const { data: docRow } = await supabase
+            .from("rp_lease_documents")
+            .select("document_type, title, document_content")
+            .eq("id", leaseDocumentId)
+            .single();
+          if (docRow?.document_content) {
+            signedDocContent = docRow.document_content;
+            signedDocTitleBase = docRow.title || signedDocTitleBase;
+            const dt = (docRow.document_type as string) || "";
+            if (dt === "schedule_a") signedDocCategory = "schedule_a";
+            else if (dt === "schedule_b") signedDocCategory = "schedule_b";
+            else if (dt === "lease_agreement") signedDocCategory = "lease";
+            else signedDocCategory = "other";
+            signedDocFileSlug =
+              signedDocTitleBase.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "") ||
+              dt ||
+              "Document";
+          }
+        }
+
+        if (signedDocContent) {
           const propertyAddress =
-            (completedLease.rp_properties as any)?.address_line1 ??
+            (completedLease?.rp_properties as any)?.address_line1 ??
             "Property";
-          const propertyId = completedLease.property_id;
-          const landlordId = (completedLease.rp_properties as any)
+          const propertyId = completedLease?.property_id;
+          const landlordId = (completedLease?.rp_properties as any)
             ?.landlord_id;
 
           // Fetch full signature details for all participants
@@ -668,13 +714,13 @@ export async function submitSignature(
 
           // Generate signed PDF buffer
           const pdfBuffer = await generateLeaseBuffer(
-            completedLease.lease_document_content as any,
+            signedDocContent,
             propertyAddress,
             signatures
           );
 
           // Upload to Supabase Storage
-          const storagePath = `${propertyId}/${Date.now()}_Signed_Lease_Agreement.pdf`;
+          const storagePath = `${propertyId}/${Date.now()}_Signed_${signedDocFileSlug}.pdf`;
           const { data: uploadData, error: uploadError } =
             await adminClient.storage
               .from("documents")
@@ -690,18 +736,26 @@ export async function submitSignature(
               .getPublicUrl(uploadData.path);
             documentUrl = urlData.publicUrl;
 
-            // Create rp_documents record
+            // Create rp_documents record (visible to tenant)
             await adminClient.from("rp_documents").insert({
               property_id: propertyId,
-              lease_id: completedLease.id,
+              lease_id: completedLease?.id,
               uploaded_by: landlordId,
-              category: "lease",
-              title: `Signed Lease Agreement — ${propertyAddress}`,
+              category: signedDocCategory,
+              title: `Signed ${signedDocTitleBase} — ${propertyAddress}`,
               file_url: documentUrl,
               file_size: pdfBuffer.length,
               mime_type: "application/pdf",
               visible_to_tenant: true,
             });
+
+            // For per-document signings, also stamp signed_pdf_url on the row
+            if (leaseDocumentId) {
+              await adminClient
+                .from("rp_lease_documents")
+                .update({ signed_pdf_url: documentUrl })
+                .eq("id", leaseDocumentId);
+            }
           }
 
           // Fetch landlord info for FROM/reply-to
@@ -721,7 +775,7 @@ export async function submitSignature(
             try {
               const portalUrl =
                 sp.signer_role === "landlord"
-                  ? `${appUrl}/admin/leases/${completedLease.id}/document`
+                  ? `${appUrl}/admin/leases/${signingRequest.lease_id}/document`
                   : `${appUrl}/tenant/documents`;
 
               const emailResult = await sendSigningCompletionEmail({
