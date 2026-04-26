@@ -36,6 +36,8 @@ interface LeaseDocumentEditorProps {
   documentTitle?: string;
   /** URL to navigate back to (document dashboard) */
   parentUrl?: string;
+  /** True if the current user is a TenantPorch platform admin (gates destructive actions) */
+  isPlatformAdmin?: boolean;
 }
 
 export function LeaseDocumentEditor({
@@ -54,6 +56,7 @@ export function LeaseDocumentEditor({
   documentId,
   documentTitle,
   parentUrl,
+  isPlatformAdmin = false,
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -72,6 +75,8 @@ export function LeaseDocumentEditor({
   const [showSignedOfflineModal, setShowSignedOfflineModal] = useState(false);
   const [markingOffline, setMarkingOffline] = useState(false);
   const offlineFileRef = useRef<HTMLInputElement>(null);
+  const [resettingSignatures, setResettingSignatures] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [generatingManualLinks, setGeneratingManualLinks] = useState(false);
   const [manualSigningLinks, setManualSigningLinks] = useState<
     | {
@@ -263,6 +268,39 @@ export function LeaseDocumentEditor({
       setTimeout(() => setCopiedTokenId((current) => (current === id ? null : current)), 1800);
     } catch {
       toast.error("Failed to copy link");
+    }
+  }
+
+  async function handleResetSignatures() {
+    setResettingSignatures(true);
+    try {
+      const { resetLeaseSignatures } = await import(
+        "@/app/admin/actions/signing-actions"
+      );
+      const result = await resetLeaseSignatures(leaseId, {
+        wipeSignedPdfs: true,
+      });
+      if (result.success) {
+        const cancelled = (result as { cancelledRequests?: number })
+          .cancelledRequests ?? 0;
+        const removed = (result as { removedDocuments?: number })
+          .removedDocuments ?? 0;
+        toast.success(
+          `Signatures reset. ${cancelled} request${cancelled === 1 ? "" : "s"} cancelled${
+            removed > 0
+              ? `, ${removed} signed PDF${removed === 1 ? "" : "s"} removed`
+              : ""
+          }.`
+        );
+        setShowResetConfirm(false);
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to reset signatures.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setResettingSignatures(false);
     }
   }
 
@@ -740,16 +778,28 @@ export function LeaseDocumentEditor({
             </span>
             {cancellingSigning ? "Cancelling..." : "Cancel Signing"}
           </button>
+
+          {isPlatformAdmin && (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              disabled={resettingSignatures}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-error/30 text-error text-sm font-bold hover:bg-error-container/20 transition-colors disabled:opacity-50"
+              title="Platform-admin only: discard all collected signatures and put the lease back in draft."
+            >
+              <span className="material-symbols-outlined text-sm">restart_alt</span>
+              Reset Signatures
+            </button>
+          )}
         </div>
       )}
 
       {/* Completed action bar */}
       {signingStatus === "completed" && (
-        <div className="bg-tertiary-fixed/10 rounded-2xl p-5 flex items-center gap-4">
+        <div className="bg-tertiary-fixed/10 rounded-2xl p-5 flex items-center gap-4 flex-wrap">
           <span className="material-symbols-outlined text-2xl text-on-tertiary-fixed-variant">
             verified
           </span>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="font-headline font-bold text-on-tertiary-fixed-variant">
               Lease Fully Signed
             </p>
@@ -767,6 +817,75 @@ export function LeaseDocumentEditor({
               Download Signed PDF
             </button>
           )}
+          {isPlatformAdmin && (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              disabled={resettingSignatures}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-error/30 text-error text-sm font-bold hover:bg-error-container/20 transition-colors disabled:opacity-50"
+              title="Platform-admin only: discard all collected signatures and put the lease back in draft."
+            >
+              <span className="material-symbols-outlined text-sm">restart_alt</span>
+              Reset Signatures
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Reset Signatures confirmation modal (platform-admin only) */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => !resettingSignatures && setShowResetConfirm(false)}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="px-6 pt-6 pb-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-error-container flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-on-error-container text-xl">
+                    warning
+                  </span>
+                </div>
+                <h2 className="font-headline text-lg font-extrabold text-primary">
+                  Reset Signatures?
+                </h2>
+              </div>
+              <div className="space-y-2 text-sm text-on-surface-variant">
+                <p>
+                  This will discard every signature collected on this lease,
+                  cancel all signing requests, and put the lease (and Schedule
+                  A / B documents) back into <strong>draft</strong>.
+                </p>
+                <p>
+                  Generated signed PDFs will also be removed from the documents
+                  repository so the tenant won&apos;t see stale copies.
+                </p>
+                <p className="text-on-surface font-bold">
+                  This action is intended for re-running the signing flow with
+                  test tenants. It cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-outline-variant/20 bg-surface-container-low flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                disabled={resettingSignatures}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetSignatures}
+                disabled={resettingSignatures}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-error text-on-error text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {resettingSignatures ? "progress_activity" : "restart_alt"}
+                </span>
+                {resettingSignatures ? "Resetting..." : "Reset & Re-enable Signing"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
