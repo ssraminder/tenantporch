@@ -8,6 +8,7 @@ import { PlanGateProvider } from "@/components/shared/plan-gate-provider";
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: "dashboard" },
   { label: "Properties", href: "/admin/properties", icon: "domain" },
+  { label: "Leases", href: "/admin/leases", icon: "description" },
   { label: "Applications", href: "/admin/applications", icon: "assignment" },
   { label: "Tenants", href: "/admin/tenants", icon: "group" },
   { label: "Financials", href: "/admin/financials", icon: "payments" },

@@ -7,9 +7,10 @@ import { TopBar } from "@/components/layout/top-bar";
 
 const tenantNav: NavItem[] = [
   { label: "Dashboard", href: "/tenant/dashboard", icon: "space_dashboard" },
+  { label: "Lease", href: "/tenant/lease", icon: "description" },
   { label: "Payments", href: "/tenant/payments", icon: "account_balance_wallet" },
   { label: "Maintenance", href: "/tenant/maintenance", icon: "handyman" },
-  { label: "Documents", href: "/tenant/documents", icon: "description" },
+  { label: "Documents", href: "/tenant/documents", icon: "folder" },
   { label: "Messages", href: "/tenant/messages", icon: "mail" },
   { label: "Profile", href: "/tenant/profile", icon: "person" },
 ];

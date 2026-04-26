@@ -72,6 +72,18 @@ export function LeaseDocumentEditor({
   const [showSignedOfflineModal, setShowSignedOfflineModal] = useState(false);
   const [markingOffline, setMarkingOffline] = useState(false);
   const offlineFileRef = useRef<HTMLInputElement>(null);
+  const [generatingManualLinks, setGeneratingManualLinks] = useState(false);
+  const [manualSigningLinks, setManualSigningLinks] = useState<
+    | {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        url: string;
+      }[]
+    | null
+  >(null);
+  const [copiedTokenId, setCopiedTokenId] = useState<string | null>(null);
 
   function updateClause(sectionId: string, clauseId: string, newText: string) {
     if (!content) return;
@@ -219,6 +231,38 @@ export function LeaseDocumentEditor({
       toast.error("An unexpected error occurred.");
     } finally {
       setSendingForSign(false);
+    }
+  }
+
+  async function handleGenerateManualLinks() {
+    setGeneratingManualLinks(true);
+    try {
+      const { sendForSignatures } = await import("@/app/admin/actions/signing-actions");
+      const result = await sendForSignatures(leaseId, {
+        overrideIdCheck: idOverrideAcknowledged || hasUnverifiedTenants,
+        skipEmail: true,
+      });
+      if (result.success && result.participants) {
+        setManualSigningLinks(result.participants);
+        toast.success("Signing links generated. Share them with each signer.");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to generate signing links.");
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setGeneratingManualLinks(false);
+    }
+  }
+
+  async function copyToClipboard(text: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedTokenId(id);
+      setTimeout(() => setCopiedTokenId((current) => (current === id ? null : current)), 1800);
+    } catch {
+      toast.error("Failed to copy link");
     }
   }
 
@@ -438,6 +482,18 @@ export function LeaseDocumentEditor({
           </button>
 
           <button
+            onClick={handleGenerateManualLinks}
+            disabled={generatingManualLinks || sendingForSign}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-outline-variant/30 text-on-surface text-sm font-bold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Create signing links without sending email — copy and share them manually"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {generatingManualLinks ? "progress_activity" : "link"}
+            </span>
+            {generatingManualLinks ? "Generating..." : "Generate Signing Links (Manual)"}
+          </button>
+
+          <button
             onClick={handleSendClick}
             disabled={sendingForSign}
             className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-tertiary text-on-tertiary text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -448,6 +504,72 @@ export function LeaseDocumentEditor({
             </span>
             {sendingForSign ? "Sending..." : "Send for Signatures"}
           </button>
+        </div>
+      )}
+
+      {/* Manual Signing Links Modal */}
+      {manualSigningLinks && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+            onClick={() => setManualSigningLinks(null)}
+          />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-6 pt-6 pb-4 border-b border-outline-variant/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-tertiary text-xl">link</span>
+                </div>
+                <div>
+                  <h2 className="font-headline text-lg font-extrabold text-primary">
+                    Manual Signing Links
+                  </h2>
+                  <p className="text-sm text-on-surface-variant mt-0.5">
+                    Email was not sent. Copy and share each link with the matching signer.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 overflow-y-auto space-y-3">
+              {manualSigningLinks.map((p) => (
+                <div
+                  key={p.id}
+                  className="border border-outline-variant/30 rounded-2xl p-4 bg-surface-container-low"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                      <p className="font-bold text-on-surface">{p.name}</p>
+                      <p className="text-xs text-on-surface-variant">
+                        {p.email} · {p.role}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(p.url, p.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-bold hover:opacity-90 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {copiedTokenId === p.id ? "check" : "content_copy"}
+                      </span>
+                      {copiedTokenId === p.id ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                  <p className="text-xs font-mono break-all text-on-surface-variant bg-surface-container rounded-lg px-3 py-2">
+                    {p.url}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-6 py-4 border-t border-outline-variant/20 bg-surface-container-low flex justify-end">
+              <button
+                onClick={() => setManualSigningLinks(null)}
+                className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold hover:opacity-90 transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
