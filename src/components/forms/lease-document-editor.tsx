@@ -1219,15 +1219,9 @@ export function LeaseDocumentEditor({
                 {log.resend_message_id && (
                   <div className="ml-11 flex items-center gap-2 text-[10px] text-on-surface-variant">
                     <span className="material-symbols-outlined text-xs">tag</span>
-                    <span className="font-mono">{log.resend_message_id}</span>
-                    <a
-                      href={`https://resend.com/emails/${log.resend_message_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary font-bold hover:underline"
-                    >
-                      Open in Resend →
-                    </a>
+                    <span className="font-mono break-all select-all">
+                      {log.resend_message_id}
+                    </span>
                   </div>
                 )}
                 {log.participant_id && (
