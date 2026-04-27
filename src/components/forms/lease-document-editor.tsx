@@ -43,6 +43,16 @@ interface LeaseDocumentEditorProps {
   isPlatformAdmin?: boolean;
   /** Lifecycle status of the lease ('draft' | 'active' | 'expired' | 'terminated' | 'completed'). */
   leaseStatus?: string;
+  /** Active per-participant signing URLs, surfaced so the landlord can
+   *  copy/share them at any time without regenerating. */
+  activeSigningLinks?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    url: string;
+  }[];
 }
 
 export function LeaseDocumentEditor({
@@ -63,6 +73,7 @@ export function LeaseDocumentEditor({
   parentUrl,
   isPlatformAdmin = false,
   leaseStatus,
+  activeSigningLinks = [],
 }: LeaseDocumentEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState<LeaseDocumentContent | null>(documentContent);
@@ -1139,6 +1150,76 @@ export function LeaseDocumentEditor({
                 {resettingSignatures ? "Resetting..." : "Reset & Re-enable Signing"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Signing Links — always visible while a signing request is
+          out, so the landlord can copy any participant's URL directly. */}
+      {activeSigningLinks.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-ambient-sm">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="font-headline font-bold text-primary text-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">link</span>
+              Signing Links ({activeSigningLinks.length})
+            </h3>
+            <p className="text-[11px] text-on-surface-variant">
+              Copy and share with the matching signer if their email link isn&apos;t arriving.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {activeSigningLinks.map((link) => (
+              <div
+                key={link.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-surface-container-low rounded-xl"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-on-surface truncate">
+                    {link.name}
+                    <span className="ml-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                      {link.role}
+                    </span>
+                    {link.status === "signed" && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-tertiary/10 text-on-tertiary-fixed-variant font-bold">
+                        Signed
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-on-surface-variant truncate">
+                    {link.email}
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant font-mono truncate select-all mt-1">
+                    {link.url}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 sm:flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(link.url);
+                        toast.success(`Copied ${link.name}'s signing link.`);
+                      } catch {
+                        toast.error("Failed to copy. Long-press to copy manually.");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/15"
+                  >
+                    <span className="material-symbols-outlined text-xs">content_copy</span>
+                    Copy
+                  </button>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-outline-variant/30 text-on-surface text-xs font-bold hover:bg-surface-container-high"
+                  >
+                    <span className="material-symbols-outlined text-xs">open_in_new</span>
+                    Open
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

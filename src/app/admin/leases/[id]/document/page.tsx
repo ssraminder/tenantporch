@@ -134,6 +134,51 @@ export default async function LeaseDocumentPage({
     }));
   }
 
+  // Fetch the active (non-cancelled, non-completed) signing request and its
+  // participants so the landlord can copy each signer's URL straight from
+  // the document page — no need to re-trigger emails or regenerate links.
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+  let activeSigningLinks: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    url: string;
+  }[] = [];
+  {
+    const activeRequest = (requests ?? []).find(
+      (r) => r.id // requests are already ordered desc; we filter by status below
+    );
+    if (activeRequest) {
+      const { data: latest } = await supabase
+        .from("rp_signing_requests")
+        .select("id, status")
+        .eq("lease_id", leaseId)
+        .in("status", ["sent", "partially_signed"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latest) {
+        const { data: parts } = await supabase
+          .from("rp_signing_participants")
+          .select("id, signer_name, signer_email, signer_role, status, token, signing_order")
+          .eq("signing_request_id", latest.id)
+          .order("signing_order");
+        activeSigningLinks = (parts ?? []).map((p) => ({
+          id: p.id,
+          name: p.signer_name,
+          email: p.signer_email,
+          role: p.signer_role,
+          status: p.status,
+          url: `${appUrl}/sign/${p.token}`,
+        }));
+      }
+    }
+  }
+
   // Fetch signed document URL if completed
   let signedDocumentUrl: string | null = null;
   if (signingStatus === "completed") {
@@ -177,6 +222,7 @@ export default async function LeaseDocumentPage({
         signedDocumentUrl={signedDocumentUrl}
         isPlatformAdmin={isPlatformAdmin(rpUser.email)}
         leaseStatus={lease.status as string}
+        activeSigningLinks={activeSigningLinks}
       />
 
       <AdditionalDocumentsSection
