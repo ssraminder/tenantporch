@@ -315,7 +315,11 @@ export async function sendForSignatures(
  */
 export async function getSigningData(token: string) {
   try {
-    const supabase = await createClient();
+    // /sign/<token> is hit by unauthenticated tenants from email links, so
+    // a session-based client is blocked by RLS. The 64-char random token is
+    // the capability check — once it matches a participant, we use the
+    // service-role client to read the related rows.
+    const supabase = createAdminClient();
 
     // Find participant by token
     const { data: participant, error: pError } = await supabase
@@ -492,7 +496,10 @@ export async function submitSignature(
   clientInfo?: { ipAddress?: string; userAgent?: string }
 ) {
   try {
-    const supabase = await createClient();
+    // Same reasoning as getSigningData: signers are unauthenticated when
+    // submitting from the email-link page, so we authenticate by token
+    // only and use the service-role client for the writes.
+    const supabase = createAdminClient();
 
     // Find participant
     const { data: participant, error: pError } = await supabase
