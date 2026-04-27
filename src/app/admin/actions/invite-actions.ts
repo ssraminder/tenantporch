@@ -289,7 +289,7 @@ export async function sendTenantInvite(data: {
     }
 
     // Send invite email
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
     const inviteUrl = `${appUrl}/join/${invite.token}`;
     const landlordName = `${rpUser.first_name ?? ""} ${rpUser.last_name ?? ""}`.trim() || "Your landlord";
     const propertyAddress = `${property.address_line1}, ${property.city}`;

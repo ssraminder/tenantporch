@@ -223,7 +223,7 @@ export async function sendForSignatures(
     const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
     const landlordEmail = rpUser.email;
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
     const expiresAt = new Date(
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ).toISOString();
@@ -644,7 +644,7 @@ export async function submitSignature(
       try {
         const adminClient = createAdminClient();
         const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+          process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
 
         // Fetch lease with document content and property
         const { data: completedLease } = await supabase
@@ -875,7 +875,7 @@ export async function submitSignature(
           (lease?.rp_properties as any)?.address_line1 ?? "your property";
         const appUrl =
           process.env.NEXT_PUBLIC_APP_URL ||
-          "https://tenantporch.vercel.app";
+          "https://tenantporch.com";
 
         for (const lp of landlordParts) {
           if (lp.status === "pending" && !lp.notified_at) {
@@ -1233,7 +1233,7 @@ export async function resendParticipantEmail(participantId: string) {
       (signingRequest.rp_leases as any)?.rp_properties?.address_line1 ??
       "your property";
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
     const landlordName = `${rpUser.first_name} ${rpUser.last_name}`;
 
     const emailResult = await sendSigningEmail({

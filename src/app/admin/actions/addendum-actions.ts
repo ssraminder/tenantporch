@@ -326,7 +326,7 @@ export async function sendAddendumForSigning(addendumId: string) {
     // Send signing emails to tenants first. Landlord receives their link
     // automatically once every tenant has signed (via submitSignature).
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
     const expiresAt = new Date(
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ).toISOString();

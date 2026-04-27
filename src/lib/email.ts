@@ -24,7 +24,7 @@ export async function sendWelcomeEmail({
   propertyAddress: string;
   tempPassword: string;
 }) {
-  const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+  const loginUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
 
   return resend.emails.send({
     from: DEFAULT_FROM,
@@ -89,7 +89,7 @@ export async function sendDepositReturnEmail({
   refundAmount: string;
   currency: string;
 }) {
-  const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+  const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
 
   return resend.emails.send({
     from: DEFAULT_FROM,
@@ -385,7 +385,7 @@ export async function sendUtilityBillEmail({
   isReminder?: boolean;
   etransferEmail?: string;
 }) {
-  const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+  const portalUrl = process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
   const subject = isReminder
     ? `Reminder: Utility Bill Due — ${propertyAddress}`
     : `Utility Bill — ${utilityType} for ${billingPeriod}`;

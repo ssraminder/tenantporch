@@ -224,7 +224,7 @@ export async function sendDocumentForSignatures(
 
     // Send signing emails to tenants first
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+      process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
 
     const tenantParticipants = (insertedParticipants ?? []).filter(
       (p) => p.signer_role === "tenant"

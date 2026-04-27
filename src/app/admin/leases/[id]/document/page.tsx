@@ -138,7 +138,7 @@ export default async function LeaseDocumentPage({
   // participants so the landlord can copy each signer's URL straight from
   // the document page — no need to re-trigger emails or regenerate links.
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.vercel.app";
+    process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
   let activeSigningLinks: {
     id: string;
     name: string;
