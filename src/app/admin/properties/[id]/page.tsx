@@ -259,13 +259,22 @@ export default async function PropertyDetailPage({
             </p>
           </div>
 
-          <Link
-            href={`/admin/properties/${propertyId}/edit`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-ambient-sm hover:bg-primary-container hover:text-on-primary-container transition-colors flex-shrink-0"
-          >
-            <span className="material-symbols-outlined text-lg">edit</span>
-            Edit Property
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+            <Link
+              href={`/admin/properties/${propertyId}/inventory`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface text-sm font-semibold hover:bg-surface-container-highest transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">chair</span>
+              Furnished Inventory
+            </Link>
+            <Link
+              href={`/admin/properties/${propertyId}/edit`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold shadow-ambient-sm hover:bg-primary-container hover:text-on-primary-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">edit</span>
+              Edit Property
+            </Link>
+          </div>
         </div>
       </div>
 
