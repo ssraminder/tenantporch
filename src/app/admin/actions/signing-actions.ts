@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "@/lib/notifications";
-import { sendSigningEmail, sendSigningCompletionEmail } from "@/lib/email";
+import {
+  sendSigningEmail,
+  sendSigningCompletionEmail,
+  sendGenericEmail,
+} from "@/lib/email";
 import { generateLeaseBuffer } from "@/lib/pdf/generate-lease-pdf";
 import type { SignatureInfo } from "@/lib/pdf/generate-lease-pdf";
 import { isPlatformAdmin } from "@/lib/auth/platform-admin";
@@ -519,7 +523,7 @@ export async function submitSignature(
     // Get signing request
     const { data: signingRequest } = await supabase
       .from("rp_signing_requests")
-      .select("id, lease_id, status, expires_at")
+      .select("id, lease_id, status, expires_at, created_by")
       .eq("id", participant.signing_request_id)
       .single();
 
@@ -597,6 +601,113 @@ export async function submitSignature(
     const someSigned = (allParticipants ?? []).some(
       (p) => p.status === "signed"
     );
+
+    // Per-signature progress notification to the landlord (creator of the
+    // signing request). Skip when the landlord themselves just signed —
+    // they already know. The existing milestone emails ("All Tenants Have
+    // Signed", "Lease Fully Signed") still fire downstream.
+    if (
+      participant.signer_role !== "landlord" &&
+      signingRequest.created_by &&
+      (allParticipants?.length ?? 0) > 0
+    ) {
+      try {
+        const adminClient = createAdminClient();
+        const signedTenants = (allParticipants ?? []).filter(
+          (p) => p.signer_role === "tenant" && p.status === "signed"
+        ).length;
+        const totalTenants = (allParticipants ?? []).filter(
+          (p) => p.signer_role === "tenant"
+        ).length;
+
+        const { data: landlordUser } = await adminClient
+          .from("rp_users")
+          .select("id, email, first_name, last_name")
+          .eq("id", signingRequest.created_by)
+          .single();
+
+        const { data: leaseRow } = await adminClient
+          .from("rp_leases")
+          .select(
+            "property_id, rp_properties!inner(address_line1, city, province_state)"
+          )
+          .eq("id", signingRequest.lease_id)
+          .single();
+        const property = (leaseRow?.rp_properties ?? null) as
+          | { address_line1: string; city: string; province_state: string }
+          | null;
+        const propertyAddress = property?.address_line1 ?? "your property";
+        const propertyCity = property?.city ?? "";
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://tenantporch.com";
+        const dashboardUrl = `${appUrl}/admin/leases/${signingRequest.lease_id}/document`;
+
+        if (landlordUser?.email) {
+          const subject = `${participant.signer_name} signed the lease for ${propertyAddress}`;
+          const html = `
+            <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+              <h1 style="font-family: Manrope, sans-serif; color: #273f4f; font-size: 22px; margin-bottom: 8px;">
+                Signature received
+              </h1>
+              <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+                Hi ${landlordUser.first_name ?? "there"},
+              </p>
+              <p style="color: #45464e; font-size: 15px; line-height: 1.6;">
+                <strong>${participant.signer_name}</strong> just signed the lease for
+                <strong>${propertyAddress}${propertyCity ? `, ${propertyCity}` : ""}</strong>.
+              </p>
+              <div style="background: #f2f3f7; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 13px; color: #45464e; font-weight: 600;">
+                  Tenant signatures: ${signedTenants} of ${totalTenants}
+                </p>
+                <p style="margin: 6px 0 0; font-size: 13px; color: #45464e;">
+                  ${signedTenants === totalTenants
+                    ? "All tenants have signed. You'll receive your signing link in a separate email."
+                    : `Waiting on ${totalTenants - signedTenants} more tenant${totalTenants - signedTenants === 1 ? "" : "s"}.`}
+                </p>
+              </div>
+              <p style="color: #45464e; font-size: 14px; line-height: 1.6;">
+                <a href="${dashboardUrl}" style="color: #273f4f; font-weight: 600;">View signing progress</a>
+              </p>
+              <hr style="border: none; border-top: 1px solid #e1e2e6; margin: 32px 0 16px;" />
+              <p style="color: #9a9ba3; font-size: 12px;">
+                — TenantPorch
+              </p>
+            </div>
+          `;
+          const emailResult = await sendGenericEmail({
+            to: landlordUser.email,
+            subject,
+            html,
+          });
+          if (emailResult.data?.id) {
+            await adminClient.from("rp_email_logs").insert({
+              signing_request_id: signingRequest.id,
+              participant_id: participant.id,
+              recipient_email: landlordUser.email,
+              recipient_name:
+                `${landlordUser.first_name ?? ""} ${landlordUser.last_name ?? ""}`.trim() ||
+                landlordUser.email,
+              email_type: "signing_progress",
+              resend_message_id: emailResult.data.id,
+              status: "sent",
+              subject,
+            });
+          }
+
+          // In-app notification too, so it surfaces in the bell.
+          await createNotification(adminClient, {
+            userId: landlordUser.id,
+            title: "Lease Signature Received",
+            body: `${participant.signer_name} signed the lease for ${propertyAddress} (${signedTenants}/${totalTenants} tenants signed).`,
+            type: "lease",
+            urgency: "medium",
+          });
+        }
+      } catch {
+        // Progress notifications are best-effort — never block signing.
+      }
+    }
 
     if (allSigned) {
       // All parties signed — complete the signing request
