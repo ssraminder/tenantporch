@@ -154,7 +154,7 @@ export default function NewPaymentPage() {
     async function loadTenants() {
       const { data: leaseTenants } = await supabase
         .from("rp_lease_tenants")
-        .select("tenant_id, rp_users(id, first_name, last_name, email)")
+        .select("user_id, rp_users(id, first_name, last_name, email)")
         .eq("lease_id", leaseId);
 
       if (leaseTenants) {

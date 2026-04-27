@@ -63,10 +63,10 @@ export async function recordPayment(formData: FormData) {
     if (!tenantId) {
       const { data: leaseTenants } = await supabase
         .from("rp_lease_tenants")
-        .select("tenant_id")
+        .select("user_id")
         .eq("lease_id", leaseId);
       if (leaseTenants && leaseTenants.length === 1) {
-        tenantId = leaseTenants[0].tenant_id;
+        tenantId = leaseTenants[0].user_id;
       }
     }
 

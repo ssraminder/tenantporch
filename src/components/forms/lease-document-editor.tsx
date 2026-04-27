@@ -8,6 +8,8 @@ import { SigningEmailPreviewModal, type SigningRecipient } from "./signing-email
 
 export interface EmailLogEntry {
   id: string;
+  signing_request_id: string;
+  lease_document_id: string | null;
   recipient_email: string;
   recipient_name: string | null;
   email_type: string;
@@ -15,6 +17,7 @@ export interface EmailLogEntry {
   sent_at: string;
   participant_id: string | null;
   resend_message_id: string | null;
+  subject?: string | null;
 }
 
 interface LeaseDocumentEditorProps {
@@ -1140,61 +1143,93 @@ export function LeaseDocumentEditor({
         </div>
       )}
 
-      {/* Email Activity Log */}
-      {signingStatus !== "draft" && emailLogs.length > 0 && (
+      {/* Email Activity Log — shows every email sent for this lease across
+          all per-document signing flows. The provider's message ID is shown
+          so the landlord can trace deliverability in the Resend dashboard. */}
+      {emailLogs.length > 0 && (
         <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-ambient-sm">
           <h3 className="font-headline font-bold text-primary text-sm mb-4 flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">mail</span>
-            Email Activity
+            Email Activity ({emailLogs.length})
           </h3>
           <div className="space-y-2">
             {emailLogs.map((log) => (
               <div
                 key={log.id}
-                className="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"
+                className="flex flex-col gap-2 p-3 bg-surface-container-low rounded-xl"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-primary text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-primary text-sm">
+                      {log.email_type === "signing_reminder"
+                        ? "notification_important"
+                        : log.email_type === "signing_completed"
+                          ? "task_alt"
+                          : "send"}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-on-surface truncate">
+                      {log.recipient_name ?? log.recipient_email}
+                      <span className="font-normal text-on-surface-variant text-xs ml-2">
+                        &lt;{log.recipient_email}&gt;
+                      </span>
+                    </p>
+                    {log.subject && (
+                      <p className="text-xs text-on-surface-variant truncate">
+                        {log.subject}
+                      </p>
+                    )}
+                    <p className="text-xs text-on-surface-variant">
+                      {new Date(log.sent_at).toLocaleString("en-CA", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                      log.email_type === "signing_reminder"
+                        ? "bg-secondary/10 text-secondary"
+                        : log.email_type === "signing_completed"
+                          ? "bg-tertiary/10 text-on-tertiary-fixed-variant"
+                          : "bg-primary/10 text-primary"
+                    }`}
+                  >
                     {log.email_type === "signing_reminder"
-                      ? "notification_important"
-                      : "send"}
+                      ? "Reminder"
+                      : log.email_type === "signing_completed"
+                        ? "Completion"
+                        : "Sent"}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                      log.status === "sent"
+                        ? "bg-tertiary/10 text-on-tertiary-fixed-variant"
+                        : log.status === "failed"
+                          ? "bg-error/10 text-error"
+                          : "bg-surface-variant text-on-surface-variant"
+                    }`}
+                  >
+                    {log.status}
                   </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-on-surface truncate">
-                    {log.recipient_name ?? log.recipient_email}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {new Date(log.sent_at).toLocaleString("en-CA", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
-                    log.email_type === "signing_reminder"
-                      ? "bg-secondary/10 text-secondary"
-                      : "bg-primary/10 text-primary"
-                  }`}
-                >
-                  {log.email_type === "signing_reminder"
-                    ? "Reminder"
-                    : "Sent"}
-                </span>
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
-                    log.status === "sent"
-                      ? "bg-tertiary/10 text-on-tertiary-fixed-variant"
-                      : log.status === "failed"
-                        ? "bg-error/10 text-error"
-                        : "bg-surface-variant text-on-surface-variant"
-                  }`}
-                >
-                  {log.status}
-                </span>
+                {log.resend_message_id && (
+                  <div className="ml-11 flex items-center gap-2 text-[10px] text-on-surface-variant">
+                    <span className="material-symbols-outlined text-xs">tag</span>
+                    <span className="font-mono">{log.resend_message_id}</span>
+                    <a
+                      href={`https://resend.com/emails/${log.resend_message_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary font-bold hover:underline"
+                    >
+                      Open in Resend →
+                    </a>
+                  </div>
+                )}
                 {log.participant_id && (
                   <button
                     onClick={async () => {

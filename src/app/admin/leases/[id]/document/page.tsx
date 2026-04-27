@@ -104,28 +104,34 @@ export default async function LeaseDocumentPage({
     ...landlordRecipients,
   ];
 
-  // Fetch email logs if a signing request exists
+  // Fetch email logs across ALL signing requests on this lease (per-doc
+  // signing creates one request per document — surface them all together).
   let emailLogs: any[] = [];
-  if (signingStatus !== "draft") {
-    const { data: signingRequest } = await supabase
-      .from("rp_signing_requests")
-      .select("id")
-      .eq("lease_id", leaseId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+  const { data: requests } = await supabase
+    .from("rp_signing_requests")
+    .select("id, lease_document_id")
+    .eq("lease_id", leaseId)
+    .order("created_at", { ascending: false });
 
-    if (signingRequest) {
-      const { data: logs } = await supabase
-        .from("rp_email_logs")
-        .select(
-          "id, recipient_email, recipient_name, email_type, status, sent_at, participant_id, resend_message_id"
-        )
-        .eq("signing_request_id", signingRequest.id)
-        .order("sent_at", { ascending: false });
+  const requestIds = (requests ?? []).map((r) => r.id);
+  if (requestIds.length > 0) {
+    const { data: logs } = await supabase
+      .from("rp_email_logs")
+      .select(
+        "id, signing_request_id, recipient_email, recipient_name, email_type, status, sent_at, participant_id, resend_message_id, subject"
+      )
+      .in("signing_request_id", requestIds)
+      .order("sent_at", { ascending: false });
 
-      emailLogs = logs ?? [];
-    }
+    // Map signing_request_id → lease_document_id so the editor can show
+    // which document each email belonged to.
+    const reqDocMap = new Map(
+      (requests ?? []).map((r) => [r.id, r.lease_document_id])
+    );
+    emailLogs = (logs ?? []).map((l) => ({
+      ...l,
+      lease_document_id: reqDocMap.get(l.signing_request_id) ?? null,
+    }));
   }
 
   // Fetch signed document URL if completed

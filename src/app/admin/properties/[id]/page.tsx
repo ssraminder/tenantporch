@@ -557,6 +557,15 @@ export default async function PropertyDetailPage({
             )}
             {currentLease && (
               <>
+                {currentLease.status === "active" && (
+                  <Link
+                    href={`/admin/payments/new?lease=${currentLease.id}`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-tertiary text-on-tertiary text-sm font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-sm">payments</span>
+                    Record Payment
+                  </Link>
+                )}
                 {(currentLease.status === "active" || currentLease.status === "expired") && (
                   <Link
                     href={`/admin/leases/${currentLease.id}/renew`}
