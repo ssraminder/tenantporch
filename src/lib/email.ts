@@ -6,6 +6,10 @@ const DEFAULT_FROM = "TenantPorch <noreply@tenantporch.com>";
 const EMAIL_LOGO_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branding/logo-tenant-lightbg.png`;
 const EMAIL_LOGO_IMG = `<img src="${EMAIL_LOGO_URL}" alt="TenantPorch" height="36" style="height:36px;width:auto;margin-bottom:24px;" />`;
 
+// TEMPORARY: BCC every outgoing email here while we monitor deliverability
+// during the Brevo migration. Remove once we have native logging.
+const TEMP_BCC: string[] = ["ss.raminder@gmail.com"];
+
 function buildFrom(ownerName?: string): string {
   if (ownerName) return `${ownerName} - TenantPorch <noreply@tenantporch.com>`;
   return DEFAULT_FROM;
@@ -29,6 +33,7 @@ export async function sendWelcomeEmail({
   return resend.emails.send({
     from: DEFAULT_FROM,
     to,
+    bcc: TEMP_BCC,
     subject: "Welcome to TenantPorch — Your tenant portal is ready",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
@@ -94,6 +99,7 @@ export async function sendDepositReturnEmail({
   return resend.emails.send({
     from: DEFAULT_FROM,
     to,
+    bcc: TEMP_BCC,
     subject: "Your Security Deposit Return Statement",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
@@ -150,6 +156,7 @@ export async function sendInviteEmail({
   return resend.emails.send({
     from: DEFAULT_FROM,
     to,
+    bcc: TEMP_BCC,
     subject: "You're invited to TenantPorch — Set up your account",
     html: `
       <div style="font-family: Inter, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
@@ -223,6 +230,7 @@ export async function sendSigningEmail({
   return resend.emails.send({
     from: buildFrom(landlordName),
     to,
+    bcc: TEMP_BCC,
     ...(landlordEmail ? { replyTo: landlordEmail } : {}),
     subject,
     html: `
@@ -292,6 +300,7 @@ export async function sendSigningCompletionEmail({
   return resend.emails.send({
     from: buildFrom(landlordName),
     to,
+    bcc: TEMP_BCC,
     ...(landlordEmail ? { replyTo: landlordEmail } : {}),
     subject: `Lease Agreement Fully Signed — ${propertyAddress}`,
     html: `
@@ -353,6 +362,7 @@ export async function sendGenericEmail({
   return resend.emails.send({
     from: DEFAULT_FROM,
     to,
+    bcc: TEMP_BCC,
     subject,
     html,
   });
@@ -393,6 +403,7 @@ export async function sendUtilityBillEmail({
   return resend.emails.send({
     from: buildFrom(landlordName),
     to,
+    bcc: TEMP_BCC,
     ...(landlordEmail ? { replyTo: landlordEmail } : {}),
     subject,
     html: `
